@@ -49,3 +49,22 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+.eggs/
+*.whl
+
+# uv / Poetry
+.uv/
+poetry.lock
+uv.lock
+
+# Mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Ruff
+.ruff_cache/
+
+# Coverage reports
+coverage.xml
+.coverage.*
