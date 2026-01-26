@@ -8,3 +8,7 @@ This module provides an interactive terminal interface using Textual:
 - Real-time progress tracking
 - Keyboard navigation
 """
+
+from .app import MacMaintenanceTUI, run
+
+__all__ = ["MacMaintenanceTUI", "run"]

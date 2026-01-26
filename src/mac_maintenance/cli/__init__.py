@@ -7,3 +7,7 @@ This module provides CLI entry points for Python functionality:
 - Report generation
 - Integration with bash script
 """
+
+from .main import main
+
+__all__ = ["main"]
