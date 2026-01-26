@@ -21,6 +21,7 @@ TEST_SUITES=(
   "test_validation.sh"
   "test_integration.sh"
   "test_edge_cases.sh"
+  "test_ux.sh"
 )
 
 # Overall results

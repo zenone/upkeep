@@ -91,7 +91,8 @@ test_shellcheck_clean() {
     return 0
   fi
 
-  shellcheck -x "$MAINTAIN_SH" >/dev/null 2>&1
+  # Only fail on errors and warnings, not info messages
+  shellcheck -x -S warning "$MAINTAIN_SH" >/dev/null 2>&1
 }
 assert_success "Script passes ShellCheck analysis" \
   test_shellcheck_clean

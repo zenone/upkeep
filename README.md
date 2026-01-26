@@ -76,9 +76,87 @@ chmod +x maintain.sh
 
 Run with help output:
 
-```markdown
+```bash
 ./maintain.sh --help
 ```
+
+**Quick Status Check:**
+
+```bash
+./maintain.sh --status
+```
+
+This shows an at-a-glance dashboard of your system health including disk usage, security posture, and maintenance status.
+
+---
+
+## Display & Output Options
+
+### System Health Dashboard
+
+Get a quick overview of your system status:
+
+```bash
+./maintain.sh --status
+```
+
+Shows:
+- Disk usage with visual progress bar
+- Security status (SIP, FileVault)
+- Homebrew installation status
+- Time Machine snapshot count
+- Last maintenance run timestamp
+- Overall health score (0-100)
+
+### Quiet Mode (for Automation)
+
+Run maintenance silently, only showing errors:
+
+```bash
+./maintain.sh --all-safe --quiet
+# or
+./maintain.sh --all-safe -q
+```
+
+Perfect for cron jobs or scheduled tasks. All output still goes to the log file.
+
+### Progress Indicators
+
+Long-running operations (brew updates, software updates, etc.) now show progress spinners so you know the script is working.
+
+### Enhanced Error Messages
+
+Error messages now include:
+- Clear explanation of what went wrong
+- Step-by-step instructions to fix the issue
+- Related documentation links where helpful
+
+Example:
+```
+✗ Invalid --space-threshold: must be at least 50 (got: 30)
+
+Try: --space-threshold 50
+```
+
+### Terminal Compatibility
+
+**Emoji Support:**
+By default, the script uses emoji symbols (✅ ✗ ⚠️  ℹ️) for better visual feedback.
+
+If your terminal doesn't support emojis, use:
+```bash
+./maintain.sh --no-emoji
+```
+
+This falls back to text symbols: `[✓] [✗] [!] [i]`
+
+**Color Support:**
+Colors are automatically disabled when:
+- `NO_COLOR` environment variable is set
+- Terminal doesn't support colors
+- Output is piped or redirected
+
+---
 
 ## Permissions & Requirements
 

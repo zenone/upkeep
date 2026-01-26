@@ -26,14 +26,23 @@ umask 022
 # UI / Logging
 ########################################
 if [[ -n "${NO_COLOR:-}" ]]; then
-  RED=""; GREEN=""; YELLOW=""; BLUE=""; BOLD=""; NC=""
+  RED=""; GREEN=""; YELLOW=""; BLUE=""; CYAN=""; BOLD=""; NC=""
 elif command -v tput >/dev/null 2>&1 && [[ "$(tput colors 2>/dev/null || echo 0)" -ge 8 ]]; then
-  RED=$(tput setaf 1); GREEN=$(tput setaf 2); YELLOW=$(tput setaf 3); BLUE=$(tput setaf 4); BOLD=$(tput bold); NC=$(tput sgr0)
+  RED=$(tput setaf 1); GREEN=$(tput setaf 2); YELLOW=$(tput setaf 3); BLUE=$(tput setaf 4)
+  CYAN=$(tput setaf 6); BOLD=$(tput bold); NC=$(tput sgr0)
 else
-  RED=""; GREEN=""; YELLOW=""; BLUE=""; BOLD=""; NC=""
+  RED=""; GREEN=""; YELLOW=""; BLUE=""; CYAN=""; BOLD=""; NC=""
 fi
 
-INFO="ℹ️"; OK="✅"; WARN="⚠️"; FAIL="❌"
+# Status symbols with emoji fallback (use --no-emoji to disable emojis)
+if [[ -n "${NO_EMOJI:-}" ]]; then
+  INFO="[i]"; OK="[✓]"; WARN="[!]"; FAIL="[✗]"
+else
+  INFO="ℹ️ "; OK="✅"; WARN="⚠️ "; FAIL="❌"
+fi
+
+# Box drawing characters for sections
+BOX_H="─"; BOX_V="│"; BOX_TL="┌"; BOX_TR="┐"; BOX_BL="└"; BOX_BR="┘"
 
 LOG_DIR="${HOME}/Library/Logs"
 mkdir -p "${LOG_DIR}"
@@ -45,14 +54,58 @@ exec > >(tee -a "${LOG_FILE}") 2>&1
 
 ts() { date +"%Y-%m-%d %H:%M:%S"; }
 
-log()        { echo -e "$(ts) $*"; }
-section()    { log "${YELLOW}${BOLD}--- $* ---${NC}"; }
-info()       { log "${BLUE}${INFO} $*${NC}"; }
+log()        { [[ -z "${QUIET:-}" ]] && echo -e "$(ts) $*" || echo -e "$(ts) $*" >> "${LOG_FILE}"; }
+log_always() { echo -e "$(ts) $*"; }  # Always output (for errors in quiet mode)
+
+section() {
+  local text="$*"
+  local width=60
+  local padding=$(( (width - ${#text} - 2) / 2 ))
+  local line=""
+  for ((i=0; i<width; i++)); do line+="$BOX_H"; done
+
+  if [[ -z "${QUIET:-}" ]]; then
+    echo ""
+    log "${CYAN}${BOLD}${BOX_TL}${line}${BOX_TR}${NC}"
+    printf "%s " "$(ts)"
+    echo -e "${CYAN}${BOLD}${BOX_V}$(printf '%*s' $padding '')${text}$(printf '%*s' $padding '')${BOX_V}${NC}"
+    log "${CYAN}${BOLD}${BOX_BL}${line}${BOX_BR}${NC}"
+  else
+    echo -e "$(ts) --- $text ---" >> "${LOG_FILE}"
+  fi
+}
+
+info()       { log "${BLUE}${INFO}${NC} $*"; }
 success()    { log "${GREEN}${OK} $*${NC}"; }
-warning()    { log "${YELLOW}${WARN} $*${NC}"; }
-error()      { log "${RED}${FAIL} $*${NC}"; }
+warning()    { log_always "${YELLOW}${WARN}${NC} $*"; }  # Always show warnings
+error()      { log_always "${RED}${FAIL} $*${NC}"; }     # Always show errors
 
 die()        { error "$*"; exit 1; }
+
+# Progress spinner for long operations
+spinner() {
+  local pid=$1
+  local message="${2:-Working}"
+  local delay=0.1
+  local spinstr='|/-\\'
+
+  # Disable spinner in non-interactive mode or if QUIET is set
+  if [[ ! -t 1 ]] || [[ -n "${QUIET:-}" ]]; then
+    wait "$pid"
+    return $?
+  fi
+
+  while kill -0 "$pid" 2>/dev/null; do
+    local temp=${spinstr#?}
+    printf "\r${CYAN}%s${NC} %s " "${spinstr:0:1}" "$message"
+    spinstr=$temp${spinstr%"$temp"}
+    sleep $delay
+  done
+  printf "\r%*s\r" $((${#message} + 4)) ""  # Clear the line
+
+  wait "$pid"
+  return $?
+}
 
 on_interrupt() { error "Interrupted."; exit 1; }
 trap on_interrupt SIGINT SIGTERM SIGHUP SIGQUIT
@@ -72,17 +125,29 @@ validate_numeric() {
 
   # Check if value is numeric
   if ! [[ "$value" =~ ^[0-9]+$ ]]; then
-    die "Invalid $name: must be a positive integer (got: '$value')"
+    error "Invalid $name: must be a positive integer (got: '$value')"
+    error ""
+    error "Examples:"
+    error "  --space-threshold 85      (disk usage % to warn at: 50-99)"
+    error "  --trim-logs 30            (days to keep: 1-3650)"
+    error "  --tm-thin-bytes 20GB      (snapshot size: 1-100 GB)"
+    die ""
   fi
 
   # Check minimum
   if (( value < min )); then
-    die "Invalid $name: must be at least $min (got: $value)"
+    error "Invalid $name: must be at least $min (got: $value)"
+    error ""
+    error "Try: $name $min"
+    die ""
   fi
 
   # Check maximum (if provided)
   if [[ -n "$max" ]] && (( value > max )); then
-    die "Invalid $name: must be at most $max (got: $value)"
+    error "Invalid $name: must be at most $max (got: $value)"
+    error ""
+    error "Try: $name $max"
+    die ""
   fi
 }
 
@@ -143,12 +208,62 @@ run_sudo() {
   sudo "$@"
 }
 
+run_with_progress() {
+  # Run a command with a progress spinner for long operations
+  # Usage: run_with_progress "Message" command args...
+  local message="$1"
+  shift
+
+  if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
+    warning "DRY-RUN: $*"
+    return 0
+  fi
+
+  info "RUN: $*"
+
+  # Run command in background and show spinner
+  if [[ -t 1 ]] && [[ -z "${QUIET:-}" ]]; then
+    "$@" > /tmp/run_with_progress.$$.out 2>&1 &
+    local cmd_pid=$!
+    spinner $cmd_pid "$message"
+    local exit_code=$?
+
+    # Show output if command failed
+    if [[ $exit_code -ne 0 ]]; then
+      cat /tmp/run_with_progress.$$.out
+    fi
+    rm -f /tmp/run_with_progress.$$.out
+
+    return $exit_code
+  else
+    # No spinner in non-interactive or quiet mode
+    "$@"
+  fi
+}
+
 require_macos() {
-  [[ "$(uname -s)" == "Darwin" ]] || die "This script supports macOS only."
+  if [[ "$(uname -s)" != "Darwin" ]]; then
+    error "This script supports macOS only."
+    error "Detected OS: $(uname -s)"
+    error ""
+    error "Try this instead:"
+    error "  - For Linux: Use apt/dnf/pacman package managers"
+    error "  - For Windows: Use WSL2 or native Windows tools"
+    die ""
+  fi
 }
 
 refuse_root() {
-  [[ ${EUID} -ne 0 ]] || die "Do not run as root. Use a normal user; script will sudo when needed."
+  if [[ ${EUID} -eq 0 ]]; then
+    error "Do not run as root. Use a normal user; script will sudo when needed."
+    error ""
+    error "Try this instead:"
+    error "  1. Exit the root shell: exit"
+    error "  2. Run as your normal user: ./maintain.sh [options]"
+    error ""
+    error "Why? Running as root can cause permission issues and is a security risk."
+    die "The script will request sudo when needed for specific operations."
+  fi
 }
 
 check_minimum_space() {
@@ -167,11 +282,21 @@ check_minimum_space() {
   if (( free_kb < min_kb )); then
     local free_mb=$(( free_kb / 1024 ))
     error "Insufficient disk space: ${free_mb}MB free (need ~100MB minimum)"
+    error ""
+    error "Maintenance operations need temporary space for:"
+    error "  - Downloading updates"
+    error "  - Creating backups"
+    error "  - Log rotation"
+    error ""
     error "Free up space before running maintenance:"
-    error "  1. Empty Trash"
-    error "  2. Remove large downloads"
-    error "  3. Delete old Time Machine local snapshots"
-    die "Cannot proceed with critically low disk space"
+    error "  1. Empty Trash:          Finder → Empty Trash"
+    error "  2. Remove downloads:     ~/Downloads folder"
+    error "  3. Clean browser caches: Safari/Chrome settings"
+    error "  4. Delete old snapshots: ./maintain.sh --thin-tm-snapshots"
+    error "  5. Check large files:    du -sh ~/* | sort -h"
+    error ""
+    error "Or use: ./maintain.sh --space-report  (to find what's using space)"
+    die ""
   fi
 
   return 0
@@ -204,13 +329,25 @@ check_sudo_security() {
   fi
 
   if ! version_compare "$sudo_version" "1.9.17"; then
-    error "CRITICAL: sudo version $sudo_version has known privilege escalation vulnerabilities:"
+    error "CRITICAL: sudo version $sudo_version has known privilege escalation vulnerabilities"
+    error ""
+    error "Vulnerabilities:"
     error "  - CVE-2025-32462: Policy-check flaw with -h/--host option"
     error "  - CVE-2025-32463: Chroot option flaw allowing arbitrary code as root"
     error ""
-    error "Update to macOS 26.1 or later to patch these vulnerabilities."
-    error "macOS version: $(macos_version)"
-    die "Security check failed. Cannot proceed with vulnerable sudo."
+    error "Current system:"
+    error "  macOS version: $(macos_version)"
+    error "  sudo version:  $sudo_version (need: 1.9.17 or later)"
+    error ""
+    error "How to fix:"
+    error "  1. Update to macOS 26.1 or later:"
+    error "     System Settings → General → Software Update"
+    error "  2. Or run: softwareupdate --install --all"
+    error "  3. Then run this script again"
+    error ""
+    error "Learn more:"
+    error "  https://www.sudo.ws/security/advisories/"
+    die ""
   fi
 
   success "Sudo version $sudo_version - security checks passed"
@@ -256,6 +393,134 @@ quick_net_check() {
 ########################################
 # Reporting / Posture
 ########################################
+status_dashboard() {
+  # Quick at-a-glance system health dashboard
+  section "System Health Dashboard"
+
+  # Get system info
+  local macos_ver
+  local macos_bld
+  macos_ver="$(macos_version)"
+  macos_bld="$(macos_build)"
+
+  # Disk usage with visual bar
+  local disk_pct
+  disk_pct="$(percent_used_root)"
+  local disk_free
+  disk_free=$(df -h / 2>/dev/null | awk 'NR==2{print $4}')
+
+  # Create visual bar for disk usage
+  local bar_width=30
+  local filled=$(( disk_pct * bar_width / 100 ))
+  local empty=$(( bar_width - filled ))
+  local bar=""
+
+  # Color bar based on usage
+  local bar_color="$GREEN"
+  if (( disk_pct >= 90 )); then
+    bar_color="$RED"
+  elif (( disk_pct >= 75 )); then
+    bar_color="$YELLOW"
+  fi
+
+  for ((i=0; i<filled; i++)); do bar+="█"; done
+  for ((i=0; i<empty; i++)); do bar+="░"; done
+
+  # Security checks
+  local sip_status="Unknown"
+  local sip_icon="${WARN}"
+  if command_exists csrutil; then
+    local sip_output
+    sip_output="$(csrutil status 2>/dev/null || echo "unknown")"
+    if echo "$sip_output" | grep -qi "enabled"; then
+      sip_status="Enabled"
+      sip_icon="${OK}"
+    elif echo "$sip_output" | grep -qi "disabled"; then
+      sip_status="DISABLED"
+      sip_icon="${FAIL}"
+    fi
+  fi
+
+  local fv_status="Unknown"
+  local fv_icon="${WARN}"
+  if command_exists fdesetup; then
+    local fv_output
+    fv_output="$(fdesetup status 2>/dev/null || echo "unknown")"
+    if echo "$fv_output" | grep -qi "On"; then
+      fv_status="On"
+      fv_icon="${OK}"
+    else
+      fv_status="Off"
+      fv_icon="${FAIL}"
+    fi
+  fi
+
+  # Time Machine snapshots
+  local tm_count="0"
+  if command_exists tmutil; then
+    tm_count=$(tmutil listlocalsnapshots / 2>/dev/null | grep -c "com.apple" 2>/dev/null || true)
+    [[ -z "$tm_count" || "$tm_count" == "0" ]] && tm_count="0"
+  fi
+
+  # Homebrew status
+  local brew_status="Not installed"
+  local brew_icon="${INFO}"
+  if command_exists brew; then
+    brew_status="Installed"
+    brew_icon="${OK}"
+  fi
+
+  # Last maintenance run (check for log files)
+  local last_run="Never"
+  if [[ -d "${HOME}/Library/Logs" ]]; then
+    local latest_log
+    latest_log=$(ls -t "${HOME}/Library/Logs"/mac-maintenance-*.log 2>/dev/null | head -n2 | tail -n1)
+    if [[ -n "$latest_log" ]]; then
+      local log_date
+      log_date=$(basename "$latest_log" | sed 's/mac-maintenance-//;s/\.log//;s/-\([0-9][0-9]\)\([0-9][0-9]\)\([0-9][0-9]\)/T\1:\2:\3/')
+      if [[ "$log_date" =~ ^[0-9]{8}T[0-9]{2}:[0-9]{2}:[0-9]{2}$ ]]; then
+        last_run=$(date -j -f "%Y%m%dT%H:%M:%S" "$log_date" "+%Y-%m-%d %H:%M" 2>/dev/null || echo "$log_date")
+      fi
+    fi
+  fi
+
+  # Display dashboard
+  echo ""
+  log "${BOLD}┌─────────────────────────────────────────────────────────┐${NC}"
+  log "${BOLD}│  macOS: ${NC}$macos_ver (build $macos_bld)"
+  log "${BOLD}├─────────────────────────────────────────────────────────┤${NC}"
+  log "${BOLD}│  ${NC}Disk Usage:  ${bar_color}${bar}${NC} ${disk_pct}% (${disk_free} free)"
+  log "${BOLD}│  ${NC}Security:"
+  log "${BOLD}│    ${NC}${sip_icon} SIP:       ${sip_status}"
+  log "${BOLD}│    ${NC}${fv_icon} FileVault: ${fv_status}"
+  log "${BOLD}│  ${NC}Maintenance:"
+  log "${BOLD}│    ${NC}${brew_icon} Homebrew:  ${brew_status}"
+  log "${BOLD}│    ${INFO}  TM Snapshots: ${tm_count}"
+  log "${BOLD}│    ${INFO}  Last Run: ${last_run}"
+  log "${BOLD}└─────────────────────────────────────────────────────────┘${NC}"
+  echo ""
+
+  # Overall health assessment
+  local health_score=100
+  (( disk_pct >= 90 )) && health_score=$((health_score - 30))
+  (( disk_pct >= 75 )) && health_score=$((health_score - 10))
+  [[ "$sip_status" == "DISABLED" ]] && health_score=$((health_score - 40))
+  [[ "$fv_status" == "Off" ]] && health_score=$((health_score - 20))
+
+  if (( health_score >= 90 )); then
+    success "Overall Health: Excellent (${health_score}/100)"
+  elif (( health_score >= 70 )); then
+    info "Overall Health: Good (${health_score}/100)"
+  elif (( health_score >= 50 )); then
+    warning "Overall Health: Fair (${health_score}/100) - Consider maintenance"
+  else
+    error "Overall Health: Poor (${health_score}/100) - Action required!"
+  fi
+
+  info "Run './maintain.sh --all-safe' for safe maintenance"
+  info "Run './maintain.sh --security-audit' for detailed security check"
+}
+
 report_system_posture() {
   section "System Posture Report"
 
@@ -451,7 +716,8 @@ list_macos_updates() {
     return 0
   fi
   # List only (safe)
-  softwareupdate -l || true
+  info "RUN: softwareupdate -l"
+  run_with_progress "Checking for macOS updates" softwareupdate -l || true
   success "macOS update listing complete."
 }
 
@@ -465,7 +731,16 @@ install_macos_updates() {
     warning "Skipped installing macOS updates."
     return 0
   fi
-  run_sudo softwareupdate --install --all --verbose || warning "softwareupdate reported issues."
+
+  info "RUN (sudo): softwareupdate --install --all --verbose"
+  warning "This may take a while and may require a restart..."
+
+  if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
+    warning "DRY-RUN (sudo): softwareupdate --install --all --verbose"
+  else
+    sudo softwareupdate --install --all --verbose || warning "softwareupdate reported issues."
+  fi
+
   success "macOS updates install pass complete."
 }
 
@@ -476,9 +751,9 @@ brew_maintenance() {
     return 0
   fi
 
-  run brew update || warning "brew update reported issues."
-  run brew upgrade || warning "brew upgrade reported issues."
-  run brew cleanup || true
+  run_with_progress "Updating Homebrew" brew update || warning "brew update reported issues."
+  run_with_progress "Upgrading Homebrew packages" brew upgrade || warning "brew upgrade reported issues."
+  run_with_progress "Cleaning up Homebrew" brew cleanup || true
 
   # Doctor is helpful but noisy; keep it as info
   info "brew doctor (summary):"
@@ -727,6 +1002,7 @@ run_all_deep() {
 ########################################
 ASSUME_YES=0
 DRY_RUN=0
+QUIET=0
 
 ALL_SAFE=0
 ALL_DEEP=0
@@ -734,6 +1010,7 @@ ALL_DEEP=0
 DO_REPORT=0
 DO_PREFLIGHT=0
 DO_SECURITY_AUDIT=0
+DO_STATUS=0
 
 DO_LIST_MACOS_UPDATES=0
 DO_INSTALL_MACOS_UPDATES=0
@@ -777,6 +1054,11 @@ Quick presets:
 Common options:
   --assume-yes               Non-interactive (auto-yes where possible; still avoids unsafe defaults)
   --dry-run                  Print what would run, do not change system
+  --quiet, -q                Quiet mode (suppress output except errors, useful for cron)
+  --no-emoji                 Disable emoji symbols (use text symbols instead)
+
+Display:
+  --status                   Show system health dashboard (disk, updates, security, etc.)
 
 Security:
   --security-audit           Comprehensive security posture check (SIP, FileVault, Gatekeeper, sudo vulnerabilities)
@@ -824,7 +1106,10 @@ while [[ $# -gt 0 ]]; do
 
     --assume-yes) ASSUME_YES=1; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
+    --quiet|-q) QUIET=1; shift ;;
+    --no-emoji) NO_EMOJI=1; shift ;;
 
+    --status) DO_STATUS=1; shift ;;
     --preflight) DO_PREFLIGHT=1; shift ;;
     --report) DO_REPORT=1; shift ;;
     --security-audit) DO_SECURITY_AUDIT=1; shift ;;
@@ -910,6 +1195,7 @@ elif (( ALL_SAFE )); then
   run_all_safe
 else
   # Explicit modules (only what user asked)
+  (( DO_STATUS )) && status_dashboard
   (( DO_PREFLIGHT )) && preflight
   (( DO_REPORT )) && report_system_posture
   (( DO_SECURITY_AUDIT )) && security_posture_check
