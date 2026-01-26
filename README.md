@@ -80,6 +80,85 @@ Run with help output:
 ./maintain.sh --help
 ```
 
+## Permissions & Requirements
+
+### TCC (Transparency, Consent, and Control) Permissions
+
+This script accesses protected system areas and requires certain macOS permissions to function properly.
+
+**Required Permissions:**
+
+1. **Full Disk Access** (for Terminal.app or your terminal emulator)
+   - **Why**: Access to `~/Library/Caches`, `~/Library/Logs`, and system directories
+   - **How to grant**:
+     1. Open System Settings → Privacy & Security → Full Disk Access
+     2. Click the + button
+     3. Add Terminal.app (or your terminal app: iTerm2, etc.)
+     4. Toggle the switch to enable
+
+2. **Administrator Password** (for sudo operations)
+   - **Why**: System operations like `diskutil`, `softwareupdate`, `tmutil` require elevated privileges
+   - **When prompted**: The script uses `sudo` explicitly and will prompt you
+   - **Safety**: Script refuses to run AS root, only requests sudo when needed
+
+**What This Script Can Access:**
+
+✅ **User-level directories**:
+- `~/Library/Logs` (log file trimming)
+- `~/Library/Caches` (cache cleanup)
+- User documents and downloads (disk space analysis)
+
+✅ **System commands** (read-only status checks):
+- Disk utilities (`diskutil`, `df`)
+- Security status (`fdesetup`, `spctl`, `csrutil`)
+- Update management (`softwareupdate`, `brew`, `mas`)
+- Time Machine (`tmutil`)
+- Spotlight (`mdutil`)
+
+✅ **System modifications** (with your explicit consent):
+- Install macOS updates
+- Repair disk volumes
+- Rebuild indexes
+- Clean caches (age-based, not destructive)
+
+**What This Script NEVER Does:**
+
+❌ Accesses your personal files (photos, documents, messages) unless scanning disk usage
+❌ Sends data over the network (except checking for updates)
+❌ Disables security features (SIP, Gatekeeper, FileVault)
+❌ Modifies system files outside `/Library` paths
+❌ Runs without your confirmation for risky operations
+
+### Security Verification
+
+Before running maintenance, the script checks:
+
+- ✅ System Integrity Protection (SIP) is enabled
+- ✅ sudo version >= 1.9.17 (patched for CVE-2025-32462/32463)
+- ✅ macOS version (warns if outdated)
+- ✅ FileVault status (recommends if disabled)
+- ✅ Gatekeeper and Firewall status
+
+Run a standalone security audit:
+```bash
+./maintain.sh --security-audit
+```
+
+### First-Time Setup
+
+1. Grant Full Disk Access to Terminal (see above)
+2. Run a dry-run to see what would happen:
+   ```bash
+   ./maintain.sh --all-safe --dry-run
+   ```
+3. Review the output and verify permissions
+4. Run for real:
+   ```bash
+   ./maintain.sh --all-safe
+   ```
+
+---
+
 ## Recommended Usage (OnyX-Equivalent Guidance)
 
 ### Daily / Regular Maintenance (Sane Default)
