@@ -20,6 +20,7 @@ TEST_SUITES=(
   "test_security.sh"
   "test_validation.sh"
   "test_integration.sh"
+  "test_edge_cases.sh"
 )
 
 # Overall results

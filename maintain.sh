@@ -151,6 +151,32 @@ refuse_root() {
   [[ ${EUID} -ne 0 ]] || die "Do not run as root. Use a normal user; script will sudo when needed."
 }
 
+check_minimum_space() {
+  # Ensure minimum free disk space before running operations
+  # Require ~100MB minimum to safely create logs and perform operations
+  local free_kb
+  free_kb=$(df -Pk / 2>/dev/null | awk 'NR==2{print $4+0}')
+
+  # Validate we got a number
+  if ! [[ "$free_kb" =~ ^[0-9]+$ ]]; then
+    warning "Could not determine free disk space"
+    return 0  # Continue anyway (fail open)
+  fi
+
+  local min_kb=102400  # 100MB minimum
+  if (( free_kb < min_kb )); then
+    local free_mb=$(( free_kb / 1024 ))
+    error "Insufficient disk space: ${free_mb}MB free (need ~100MB minimum)"
+    error "Free up space before running maintenance:"
+    error "  1. Empty Trash"
+    error "  2. Remove large downloads"
+    error "  3. Delete old Time Machine local snapshots"
+    die "Cannot proceed with critically low disk space"
+  fi
+
+  return 0
+}
+
 version_compare() {
   # Compare two version strings (e.g., "1.9.17" vs "1.9.16")
   # Returns 0 if $1 >= $2, 1 otherwise
@@ -193,7 +219,29 @@ check_sudo_security() {
 macos_version() { sw_vers -productVersion 2>/dev/null || echo "unknown"; }
 macos_build()   { sw_vers -buildVersion 2>/dev/null || echo "unknown"; }
 
-percent_used_root() { df -P / | awk 'NR==2{gsub("%","",$5); print $5+0}'; }
+percent_used_root() {
+  # Returns percentage of root filesystem used (0-100)
+  # Returns 0 with error message if unable to determine
+  local output
+  output=$(df -P / 2>/dev/null | awk 'NR==2{gsub("%","",$5); print $5+0}')
+
+  # Validate we got a valid number
+  if ! [[ "$output" =~ ^[0-9]+$ ]]; then
+    warning "Could not determine disk usage percentage (invalid df output)"
+    echo "0"
+    return 1
+  fi
+
+  # Validate reasonable range (0-100)
+  if (( output < 0 || output > 100 )); then
+    warning "Disk usage percentage out of range: $output%"
+    echo "0"
+    return 1
+  fi
+
+  echo "$output"
+  return 0
+}
 
 is_on_ac_power() {
   # pmset -g batt prints "AC Power" or "Battery Power"
@@ -511,9 +559,26 @@ thin_tm_localsnapshots() {
   section "Thin Time Machine Local Snapshots"
   if ! command_exists tmutil; then return 0; fi
 
+  # Check if any snapshots exist before attempting to thin
+  local snapshot_count
+  snapshot_count=$(tmutil listlocalsnapshots / 2>/dev/null | grep -c "com.apple" || echo "0")
+
+  if [[ "$snapshot_count" -eq 0 ]]; then
+    info "No local snapshots found - nothing to thin."
+    return 0
+  fi
+
   local used
   used="$(percent_used_root)"
+
+  # Validate disk usage percentage (percent_used_root returns 0 on error)
+  if ! [[ "$used" =~ ^[0-9]+$ ]] || [[ "$used" -eq 0 ]]; then
+    warning "Could not determine disk usage - skipping snapshot thinning"
+    return 0
+  fi
+
   info "Disk used: ${used}% (thin threshold is ${TM_THIN_THRESHOLD}%)"
+  info "Found $snapshot_count local snapshot(s)"
 
   if (( used < TM_THIN_THRESHOLD )); then
     info "Disk pressure below threshold - not thinning snapshots."
@@ -832,6 +897,7 @@ START_TIME=$(date +%s)
 require_macos
 refuse_root
 check_sudo_security
+check_minimum_space
 
 info "Log file: $LOG_FILE"
 info "Dry run: ${DRY_RUN}"
