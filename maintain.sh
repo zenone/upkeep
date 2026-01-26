@@ -37,7 +37,10 @@ INFO="ℹ️"; OK="✅"; WARN="⚠️"; FAIL="❌"
 
 LOG_DIR="${HOME}/Library/Logs"
 mkdir -p "${LOG_DIR}"
+chmod 700 "${LOG_DIR}"  # Restrict directory access to owner only
 LOG_FILE="${LOG_DIR}/mac-maintenance-$(date +%Y%m%d-%H%M%S).log"
+touch "${LOG_FILE}"
+chmod 600 "${LOG_FILE}"  # Restrict log file access to owner only (security: may contain sensitive command output)
 exec > >(tee -a "${LOG_FILE}") 2>&1
 
 ts() { date +"%Y-%m-%d %H:%M:%S"; }
@@ -58,6 +61,61 @@ trap on_interrupt SIGINT SIGTERM SIGHUP SIGQUIT
 # Guards / Helpers
 ########################################
 command_exists() { command -v "$1" >/dev/null 2>&1; }
+
+validate_numeric() {
+  # Validates that a value is numeric and within an optional range
+  # Usage: validate_numeric VALUE NAME [MIN] [MAX]
+  local value="$1"
+  local name="$2"
+  local min="${3:-0}"
+  local max="${4:-}"
+
+  # Check if value is numeric
+  if ! [[ "$value" =~ ^[0-9]+$ ]]; then
+    die "Invalid $name: must be a positive integer (got: '$value')"
+  fi
+
+  # Check minimum
+  if (( value < min )); then
+    die "Invalid $name: must be at least $min (got: $value)"
+  fi
+
+  # Check maximum (if provided)
+  if [[ -n "$max" ]] && (( value > max )); then
+    die "Invalid $name: must be at most $max (got: $value)"
+  fi
+}
+
+validate_safe_path() {
+  # Validates that a path resolves to an expected location (prevents symlink attacks)
+  # Usage: validate_safe_path ACTUAL_PATH EXPECTED_PATH DESCRIPTION
+  local actual="$1"
+  local expected="$2"
+  local description="$3"
+
+  # Check directory exists
+  if [[ ! -d "$actual" ]]; then
+    warning "Directory does not exist: $actual"
+    return 1
+  fi
+
+  # Resolve to absolute path (following symlinks)
+  local resolved
+  resolved="$(cd "$actual" && pwd -P 2>/dev/null)" || die "Failed to resolve path: $actual"
+
+  # Verify resolved path matches expected
+  if [[ "$resolved" != "$expected" ]]; then
+    error "SECURITY: Path resolution mismatch for $description"
+    error "  Expected: $expected"
+    error "  Got:      $resolved"
+    error "  Original: $actual"
+    error ""
+    error "This could indicate a symlink attack. Refusing to proceed."
+    die "Path validation failed"
+  fi
+
+  return 0
+}
 
 confirm() {
   local msg="$1"
@@ -91,6 +149,45 @@ require_macos() {
 
 refuse_root() {
   [[ ${EUID} -ne 0 ]] || die "Do not run as root. Use a normal user; script will sudo when needed."
+}
+
+version_compare() {
+  # Compare two version strings (e.g., "1.9.17" vs "1.9.16")
+  # Returns 0 if $1 >= $2, 1 otherwise
+  # Usage: version_compare "1.9.17" "1.9.16" && echo "newer or equal"
+  local ver1="$1"
+  local ver2="$2"
+
+  # Use sort -V (version sort) to compare
+  local sorted
+  sorted="$(printf '%s\n%s\n' "$ver1" "$ver2" | sort -V | head -n1)"
+
+  [[ "$sorted" == "$ver2" ]]
+}
+
+check_sudo_security() {
+  # Check for critical sudo vulnerabilities (CVE-2025-32462, CVE-2025-32463)
+  # These 12-year-old flaws allow privilege escalation
+  # Fixed in sudo 1.9.17p1, included in macOS 26.1+
+  local sudo_version
+  sudo_version=$(sudo -V 2>/dev/null | head -n1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1)
+
+  if [[ -z "$sudo_version" ]]; then
+    warning "Could not determine sudo version. Proceed with caution."
+    return 0
+  fi
+
+  if ! version_compare "$sudo_version" "1.9.17"; then
+    error "CRITICAL: sudo version $sudo_version has known privilege escalation vulnerabilities:"
+    error "  - CVE-2025-32462: Policy-check flaw with -h/--host option"
+    error "  - CVE-2025-32463: Chroot option flaw allowing arbitrary code as root"
+    error ""
+    error "Update to macOS 26.1 or later to patch these vulnerabilities."
+    error "macOS version: $(macos_version)"
+    die "Security check failed. Cannot proceed with vulnerable sudo."
+  fi
+
+  success "Sudo version $sudo_version - security checks passed"
 }
 
 macos_version() { sw_vers -productVersion 2>/dev/null || echo "unknown"; }
@@ -136,6 +233,119 @@ report_system_posture() {
   fi
 
   success "System posture report complete."
+}
+
+security_posture_check() {
+  # Comprehensive security audit before running maintenance
+  # This function checks critical security settings and fails if system is unsafe
+  section "Security Posture Check"
+
+  local security_issues=0
+  local security_warnings=0
+
+  # 1. Check macOS version (warn if outdated)
+  local macos_ver
+  macos_ver="$(macos_version)"
+  info "macOS version: $macos_ver (build $(macos_build))"
+
+  # Parse version to check if >= 26.1 (has sudo patches)
+  local major minor
+  major=$(echo "$macos_ver" | cut -d. -f1)
+  minor=$(echo "$macos_ver" | cut -d. -f2)
+
+  if [[ "$major" -lt 26 ]] || [[ "$major" -eq 26 && "$minor" -lt 1 ]]; then
+    warning "macOS $macos_ver may have unpatched security vulnerabilities"
+    warning "Upgrade to macOS 26.1 or later is recommended for sudo patches (CVE-2025-32462/32463)"
+    ((security_warnings++))
+  else
+    success "macOS version is up to date"
+  fi
+
+  # 2. System Integrity Protection (CRITICAL - must be enabled)
+  if command_exists csrutil; then
+    local sip_status
+    sip_status="$(csrutil status 2>/dev/null || echo "unknown")"
+
+    if echo "$sip_status" | grep -qi "disabled"; then
+      error "System Integrity Protection is DISABLED"
+      error "SIP protects critical system files from modification"
+      error "Running maintenance on a system with SIP disabled is dangerous"
+      error "Enable SIP by booting to Recovery Mode (Cmd+R) and running: csrutil enable"
+      ((security_issues++))
+    elif echo "$sip_status" | grep -qi "enabled"; then
+      success "System Integrity Protection: enabled"
+    else
+      warning "System Integrity Protection status unknown"
+      ((security_warnings++))
+    fi
+  fi
+
+  # 3. FileVault (encryption - strongly recommended)
+  if command_exists fdesetup; then
+    local fv_status
+    fv_status="$(fdesetup status 2>/dev/null || echo "unknown")"
+
+    if echo "$fv_status" | grep -qi "On"; then
+      success "FileVault disk encryption: enabled"
+    else
+      warning "FileVault is not enabled - disk encryption strongly recommended"
+      warning "Enable in: System Settings > Privacy & Security > FileVault"
+      ((security_warnings++))
+    fi
+  fi
+
+  # 4. Gatekeeper (app verification)
+  if command_exists spctl; then
+    local gk_status
+    gk_status="$(spctl --status 2>/dev/null || echo "unknown")"
+
+    if echo "$gk_status" | grep -qi "enabled"; then
+      success "Gatekeeper app verification: enabled"
+    else
+      warning "Gatekeeper is not enabled - malware protection reduced"
+      ((security_warnings++))
+    fi
+  fi
+
+  # 5. Firewall status
+  if command_exists /usr/libexec/ApplicationFirewall/socketfilterfw; then
+    local fw_status
+    fw_status="$(/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 2>/dev/null || echo "unknown")"
+
+    if echo "$fw_status" | grep -qi "enabled"; then
+      success "Application Firewall: enabled"
+    else
+      warning "Application Firewall is not enabled"
+      warning "Enable in: System Settings > Network > Firewall"
+      ((security_warnings++))
+    fi
+  fi
+
+  # 6. Sudo version check (already done in check_sudo_security, but report here)
+  local sudo_version
+  sudo_version=$(sudo -V 2>/dev/null | head -n1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1)
+  if [[ -n "$sudo_version" ]]; then
+    if version_compare "$sudo_version" "1.9.17"; then
+      success "sudo version $sudo_version (patched)"
+    else
+      error "sudo version $sudo_version (vulnerable to CVE-2025-32462/32463)"
+      ((security_issues++))
+    fi
+  fi
+
+  # Summary
+  echo ""
+  if (( security_issues > 0 )); then
+    error "Security check FAILED: $security_issues critical issue(s) found"
+    error "Cannot proceed with system maintenance on an insecure system"
+    die "Security posture check failed"
+  elif (( security_warnings > 0 )); then
+    warning "Security check passed with $security_warnings warning(s)"
+    warning "Consider addressing these warnings to improve security posture"
+    success "Proceeding with maintenance (warnings are non-blocking)"
+  else
+    success "Security posture check PASSED - all checks OK ✓"
+  fi
 }
 
 report_big_space_users() {
@@ -383,7 +593,12 @@ flush_dns() {
 trim_user_logs() {
   section "Trim User Logs"
   local path="${HOME}/Library/Logs"
+  local expected="${HOME}/Library/Logs"
+
   [[ -d "$path" ]] || { warning "No logs dir: $path"; return 0; }
+
+  # Security: Validate path resolution to prevent symlink attacks
+  validate_safe_path "$path" "$expected" "user logs directory" || return 1
 
   info "Deleting *.log older than ${LOG_TRIM_DAYS} days in: $path"
   [[ "${DRY_RUN:-0}" -eq 1 ]] && { warning "DRY-RUN: no deletions performed."; return 0; }
@@ -395,10 +610,12 @@ trim_user_logs() {
 trim_user_caches() {
   section "Trim User Caches (age-based)"
   local target="${HOME}/Library/Caches"
+  local expected="${HOME}/Library/Caches"
+
   [[ -d "$target" ]] || { warning "No caches dir: $target"; return 0; }
 
-  # Hard assertion to avoid catastrophic deletes
-  [[ "$target" == "${HOME}/Library/Caches" ]] || die "Refusing to operate on unexpected cache path: $target"
+  # Security: Validate path resolution to prevent symlink attacks (replaces string comparison)
+  validate_safe_path "$target" "$expected" "user caches directory" || return 1
 
   warning "This is NOT a full cache wipe. It trims files older than ${CACHE_TRIM_DAYS} days."
   if ! confirm "Proceed trimming user cache files older than ${CACHE_TRIM_DAYS} days?"; then
@@ -418,6 +635,7 @@ trim_user_caches() {
 ########################################
 run_all_safe() {
   preflight
+  security_posture_check
   report_system_posture
   list_macos_updates
   verify_root_volume
@@ -450,6 +668,7 @@ ALL_DEEP=0
 
 DO_REPORT=0
 DO_PREFLIGHT=0
+DO_SECURITY_AUDIT=0
 
 DO_LIST_MACOS_UPDATES=0
 DO_INSTALL_MACOS_UPDATES=0
@@ -493,6 +712,9 @@ Quick presets:
 Common options:
   --assume-yes               Non-interactive (auto-yes where possible; still avoids unsafe defaults)
   --dry-run                  Print what would run, do not change system
+
+Security:
+  --security-audit           Comprehensive security posture check (SIP, FileVault, Gatekeeper, sudo vulnerabilities)
 
 Updates:
   --list-macos-updates
@@ -540,6 +762,7 @@ while [[ $# -gt 0 ]]; do
 
     --preflight) DO_PREFLIGHT=1; shift ;;
     --report) DO_REPORT=1; shift ;;
+    --security-audit) DO_SECURITY_AUDIT=1; shift ;;
     --list-macos-updates) DO_LIST_MACOS_UPDATES=1; shift ;;
     --install-macos-updates) DO_INSTALL_MACOS_UPDATES=1; shift ;;
     --brew) DO_BREW=1; shift ;;
@@ -561,16 +784,40 @@ while [[ $# -gt 0 ]]; do
 
     --trim-logs)
       DO_TRIM_LOGS=1
-      if [[ -n "${2:-}" && "$2" =~ ^[0-9]+$ ]]; then LOG_TRIM_DAYS="$2"; shift 2; else shift; fi
+      if [[ -n "${2:-}" ]]; then
+        validate_numeric "$2" "--trim-logs days" 1 3650  # 1 day to 10 years
+        LOG_TRIM_DAYS="$2"
+        shift 2
+      else
+        shift
+      fi
       ;;
     --trim-caches)
       DO_TRIM_CACHES=1
-      if [[ -n "${2:-}" && "$2" =~ ^[0-9]+$ ]]; then CACHE_TRIM_DAYS="$2"; shift 2; else shift; fi
+      if [[ -n "${2:-}" ]]; then
+        validate_numeric "$2" "--trim-caches days" 1 3650  # 1 day to 10 years
+        CACHE_TRIM_DAYS="$2"
+        shift 2
+      else
+        shift
+      fi
       ;;
 
-    --space-threshold) SPACE_THRESHOLD="${2:-85}"; shift 2 ;;
-    --tm-thin-threshold) TM_THIN_THRESHOLD="${2:-88}"; shift 2 ;;
-    --tm-thin-bytes) TM_THIN_BYTES="${2:-20000000000}"; shift 2 ;;
+    --space-threshold)
+      validate_numeric "${2:-85}" "--space-threshold" 50 99  # Reasonable disk usage range
+      SPACE_THRESHOLD="$2"
+      shift 2
+      ;;
+    --tm-thin-threshold)
+      validate_numeric "${2:-88}" "--tm-thin-threshold" 50 99  # Reasonable disk usage range
+      TM_THIN_THRESHOLD="$2"
+      shift 2
+      ;;
+    --tm-thin-bytes)
+      validate_numeric "${2:-20000000000}" "--tm-thin-bytes" 1000000000 100000000000  # 1GB to 100GB
+      TM_THIN_BYTES="$2"
+      shift 2
+      ;;
 
     -h|--help) usage; exit 0 ;;
     *) warning "Unknown option: $1"; shift ;;
@@ -584,6 +831,7 @@ START_TIME=$(date +%s)
 
 require_macos
 refuse_root
+check_sudo_security
 
 info "Log file: $LOG_FILE"
 info "Dry run: ${DRY_RUN}"
@@ -598,6 +846,7 @@ else
   # Explicit modules (only what user asked)
   (( DO_PREFLIGHT )) && preflight
   (( DO_REPORT )) && report_system_posture
+  (( DO_SECURITY_AUDIT )) && security_posture_check
 
   (( DO_LIST_MACOS_UPDATES )) && list_macos_updates
   (( DO_INSTALL_MACOS_UPDATES )) && install_macos_updates
