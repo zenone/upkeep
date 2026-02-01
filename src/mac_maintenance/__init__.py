@@ -14,7 +14,7 @@ basic maintenance operations. Python components extend functionality
 for more complex analysis and interactive features.
 """
 
-__version__ = "3.0.0-alpha"
+__version__ = "3.0.0"
 __author__ = "mac-maintenance contributors"
 
 # Version info accessible from Python

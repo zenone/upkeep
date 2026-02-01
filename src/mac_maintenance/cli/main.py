@@ -1,6 +1,11 @@
 """
 Main CLI entry point for mac-maintenance.
 
+API-First Architecture:
+- All commands use the API layer (SystemAPI, StorageAPI, MaintenanceAPI)
+- No direct imports from core/ or storage/ modules
+- Command implementations in cli/commands/ modules
+
 Provides unified command-line interface for all features.
 """
 
@@ -9,6 +14,7 @@ from pathlib import Path
 
 from .. import __version__
 from ..tui import run as run_tui
+from .commands import status_command, analyze_command
 
 
 @click.group()
@@ -30,7 +36,73 @@ def tui() -> None:
     A beautiful, interactive terminal interface for system maintenance
     and analysis.
     """
+    # Simply launch TUI - sudo is handled by run-tui.sh wrapper script
+    # or users can run 'sudo -v' before running 'mac-maintenance tui' directly
     run_tui()
+
+
+@main.command()
+def web() -> None:
+    """
+    Launch the Web Interface.
+
+    Starts a local web server (default port 8080, auto-fallback to 8081-8089).
+    Best way to use: ./run-web.sh (handles sudo automatically)
+    """
+    import subprocess
+    import sys
+    from pathlib import Path
+    from rich.console import Console
+
+    console = Console()
+
+    # Find run-web.sh script
+    script_path = Path.cwd() / "run-web.sh"
+
+    if script_path.exists():
+        console.print("\n[yellow]Launching web interface...[/yellow]")
+        console.print("[dim]Use ./run-web.sh for best experience[/dim]\n")
+        try:
+            subprocess.run([str(script_path)], check=True)
+        except KeyboardInterrupt:
+            console.print("\n[dim]Web server stopped.[/dim]")
+        except subprocess.CalledProcessError:
+            console.print("\n[red]Error launching web interface.[/red]")
+            sys.exit(1)
+    else:
+        console.print("\n[yellow]Starting web server directly...[/yellow]")
+        console.print("[dim]For sudo support, use: ./run-web.sh[/dim]\n")
+        try:
+            import uvicorn
+            from mac_maintenance.web.server import app
+            from mac_maintenance.web.port_utils import find_available_port
+
+            # Find available port (8080-8089)
+            port = find_available_port(8080, 8089)
+
+            if port is None:
+                console.print("\n[red]Error: No available ports in range 8080-8089[/red]")
+                console.print("[yellow]Close other applications or specify a different port[/yellow]\n")
+                sys.exit(1)
+
+            if port != 8080:
+                console.print(f"[yellow]Port 8080 in use, using port {port} instead[/yellow]")
+
+            console.print(f"\n[bold green]Starting server on http://127.0.0.1:{port}[/bold green]\n")
+
+            uvicorn.run(app, host="127.0.0.1", port=port)
+        except KeyboardInterrupt:
+            console.print("\n[dim]Web server stopped.[/dim]")
+        except ImportError as e:
+            if "uvicorn" in str(e):
+                console.print("\n[red]Error: uvicorn not installed.[/red]")
+                console.print("[yellow]Install with: pip install uvicorn[/yellow]\n")
+            else:
+                console.print(f"\n[red]Import error: {e}[/red]\n")
+            sys.exit(1)
+        except OSError as e:
+            console.print(f"\n[red]Server error: {e}[/red]\n")
+            sys.exit(1)
 
 
 @main.command()
@@ -39,40 +111,11 @@ def status() -> None:
     Show system status (quick check).
 
     Displays disk usage, security status, and system health.
+
+    Uses API layer for system information (API-first architecture).
     """
-    from rich.console import Console
-    from rich.table import Table
-    import psutil
-    from ..core.system import get_system_info
-
-    console = Console()
-
-    console.print("\n[bold cyan]System Status[/bold cyan]\n")
-
-    # Disk usage
-    disk = psutil.disk_usage("/")
-    disk_color = "green" if disk.percent < 75 else "yellow" if disk.percent < 90 else "red"
-    console.print(f"[bold]Disk Usage:[/bold] [{disk_color}]{disk.percent:.1f}%[/{disk_color}]")
-    console.print(f"  Free: {disk.free / (1024**3):.1f} GB")
-    console.print(f"  Total: {disk.total / (1024**3):.1f} GB\n")
-
-    # System info
-    try:
-        info = get_system_info()
-        console.print(f"[bold]System:[/bold] macOS {info['version']} ({info['architecture']})")
-        console.print(f"[bold]Build:[/bold] {info['build']}\n")
-    except Exception as e:
-        console.print(f"[yellow]Could not get system info: {e}[/yellow]\n")
-
-    # Memory
-    memory = psutil.virtual_memory()
-    mem_color = "green" if memory.percent < 75 else "yellow" if memory.percent < 90 else "red"
-    console.print(
-        f"[bold]Memory:[/bold] [{mem_color}]{memory.percent:.1f}% used[/{mem_color}]"
-    )
-    console.print(f"  Available: {memory.available / (1024**3):.1f} GB\n")
-
-    console.print("[dim]Run 'mac-maintenance tui' for detailed analysis[/dim]\n")
+    # Delegate to command module (uses SystemAPI)
+    status_command()
 
 
 @main.command()
@@ -83,33 +126,11 @@ def analyze(path: Path) -> None:
 
     Quick storage analysis from the command line.
     Use --help for more options.
+
+    Uses API layer for storage analysis (API-first architecture).
     """
-    from ..storage.analyzer import DiskAnalyzer
-    from rich.console import Console
-    from rich.table import Table
-
-    console = Console()
-
-    with console.status(f"[bold green]Analyzing {path}..."):
-        analyzer = DiskAnalyzer(path, max_depth=3)
-        result = analyzer.analyze()
-
-    console.print(f"\n[bold]Storage Analysis: {path}[/bold]\n")
-    console.print(f"Total: [green]{result.total_size_gb:.2f} GB[/green]")
-    console.print(f"Files: {result.file_count:,}")
-    console.print(f"Directories: {result.dir_count:,}\n")
-
-    # Largest items
-    table = Table(title="Largest Items")
-    table.add_column("Path", style="cyan")
-    table.add_column("Size", justify="right", style="green")
-
-    for entry in result.get_largest_entries(10):
-        size_str = f"{entry.size_mb:.1f} MB" if entry.size_mb < 1024 else f"{entry.size_gb:.2f} GB"
-        table.add_row(entry.path.name, size_str)
-
-    console.print(table)
-    console.print("\n[dim]Run 'mac-maintenance tui' for detailed analysis[/dim]\n")
+    # Delegate to command module (uses StorageAPI)
+    analyze_command(path)
 
 
 if __name__ == "__main__":

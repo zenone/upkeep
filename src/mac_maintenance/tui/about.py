@@ -25,15 +25,16 @@ class AboutView(Container):
                 yield Static("\n[bold]Description[/bold]")
                 yield Static(
                     "A modern, safe-by-default maintenance toolkit for macOS.\n"
-                    "Built with Michelin Star quality and Netflix-level polish."
+                    "Comprehensive system health monitoring and maintenance operations."
                 )
 
                 yield Static("\n[bold]Features[/bold]")
                 yield Static("• [cyan]System Health Dashboard[/cyan] - At-a-glance status")
+                yield Static("• [cyan]Maintenance Operations[/cyan] - Run updates, cleanup, verification")
                 yield Static("• [cyan]Storage Analysis[/cyan] - Visualize disk usage")
                 yield Static("• [cyan]Security Checks[/cyan] - SIP, FileVault, sudo patches")
-                yield Static("• [cyan]Maintenance Tools[/cyan] - Updates, cleanup, optimization")
-                yield Static("• [cyan]TUI & CLI[/cyan] - Beautiful interfaces")
+                yield Static("• [cyan]Interactive TUI[/cyan] - Complete system management")
+                yield Static("• [cyan]Command-line Tools[/cyan] - Scriptable automation")
 
                 yield Static("\n[bold]Technology Stack[/bold]")
                 yield Static("• [green]Bash[/green] - Core maintenance operations")
@@ -43,8 +44,8 @@ class AboutView(Container):
                 yield Static("• [green]pytest[/green] - Comprehensive testing")
 
                 yield Static("\n[bold]Quality Metrics[/bold]")
-                yield Static("• [yellow]91 tests[/yellow] - 100% passing")
-                yield Static("• [yellow]Zero bugs[/yellow] - Production ready")
+                yield Static("• [yellow]127 tests[/yellow] - 100% passing")
+                yield Static("• [yellow]Production ready[/yellow] - v3.0.0")
                 yield Static("• [yellow]Type safe[/yellow] - mypy strict mode")
                 yield Static("• [yellow]Linted[/yellow] - ruff + black")
                 yield Static("• [yellow]Documented[/yellow] - Complete guides")
@@ -53,6 +54,7 @@ class AboutView(Container):
 
                 yield Static("\n[bold]Keyboard Shortcuts[/bold]")
                 yield Static("• [cyan]d[/cyan] - Dashboard")
+                yield Static("• [cyan]m[/cyan] - Maintenance Operations")
                 yield Static("• [cyan]s[/cyan] - Storage Analysis")
                 yield Static("• [cyan]a[/cyan] - About (this screen)")
                 yield Static("• [cyan]r[/cyan] - Refresh current view")
@@ -66,19 +68,15 @@ class AboutView(Container):
                 yield Rule()
 
                 yield Static(
-                    "\n[dim]Built with ❤️  for macOS | "
+                    "\n[dim]Built for macOS | "
                     "© 2026 mac-maintenance contributors[/dim]"
-                )
-                yield Static(
-                    "[dim]Powered by Claude Sonnet 4.5 | "
-                    "Michelin Star ⭐⭐⭐ Quality[/dim]"
                 )
 
 
 AboutView.DEFAULT_CSS = """
 AboutView {
     align: center middle;
-    height: 100%;
+    height: 1fr;
 }
 
 AboutView Vertical {

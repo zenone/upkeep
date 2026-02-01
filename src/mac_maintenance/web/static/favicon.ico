@@ -1,0 +1,5 @@
+This is a placeholder. To generate a proper .ico file:
+1. Use the favicon.svg file
+2. Convert with: convert favicon.svg -define icon:auto-resize=16,32,48 favicon.ico
+   (requires ImageMagick: brew install imagemagick)
+3. Or use an online converter: https://favicon.io/favicon-converter/

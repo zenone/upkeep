@@ -4,6 +4,7 @@ System information and utilities.
 This module provides functions for gathering system information on macOS.
 """
 
+import os
 import platform
 import subprocess
 from typing import Dict, Optional
@@ -59,6 +60,32 @@ def get_macos_build() -> str:
         raise RuntimeError(f"Could not determine macOS build: {e}")
 
 
+def get_username() -> str:
+    """
+    Get the current username.
+
+    Returns:
+        Username string (e.g., "szenone")
+    """
+    # Try environment variables first
+    username = os.environ.get('USER') or os.environ.get('LOGNAME')
+
+    # Fallback to whoami command
+    if not username:
+        try:
+            result = subprocess.run(
+                ["whoami"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            username = result.stdout.strip()
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            username = "unknown"
+
+    return username
+
+
 def get_system_info() -> Dict[str, str]:
     """
     Get comprehensive system information.
@@ -70,6 +97,7 @@ def get_system_info() -> Dict[str, str]:
         - build: macOS build string
         - hostname: System hostname
         - architecture: CPU architecture
+        - username: Current username
 
     Raises:
         RuntimeError: If not running on macOS
@@ -83,6 +111,7 @@ def get_system_info() -> Dict[str, str]:
         "build": get_macos_build(),
         "hostname": platform.node(),
         "architecture": platform.machine(),
+        "username": get_username(),
     }
 
 

@@ -1,1 +1,0 @@
-./maintain.sh --install-macos-updates --brew --mas --assume-yes

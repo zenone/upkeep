@@ -32,8 +32,10 @@ logs/
 *.swo
 *~
 
-# Backup directory (if used)
+# Backup directory and backup files
 .backup/
+*.backup
+pre-github-backup.tar.gz
 
 # IDE
 .vscode/
@@ -68,3 +70,72 @@ dmypy.json
 # Coverage reports
 coverage.xml
 .coverage.*
+
+# Claude Code / AI assistant files
+.claude/
+
+# Internal documentation (development phase tracking)
+PHASE*.md
+ANALYSIS*.md
+CODE_REVIEW.md
+EXECUTIVE_SUMMARY.md
+MAINTENANCE_TAB_COMPLETE.md
+PYTHON_DEVELOPMENT.md
+RELEASE_NOTES_v*.md
+TESTING_GUIDE_v*.md
+TUI_ENHANCEMENT_PLAN.md
+BASH_PYTHON_BRIDGE.md
+
+# Session summaries and completion markers (development artifacts)
+*COMPLETE*.md
+*SUMMARY*.md
+*FIXES*.md
+*FIX.md
+*IMPLEMENTATION*.md
+*CHECKLIST*.md
+*DEBUGGING*.md
+*READY*.md
+SESSION*.md
+TESTING_INSTRUCTIONS.md
+PRE_GITHUB_CHECKLIST.md
+PRIORITY*.md
+ISSUES_RESOLVED.md
+OPERATION_INFO*.md
+
+# Research and naming documents (archived in .claude/)
+*RESEARCH*.md
+*RECOMMENDATIONS*.md
+*NAMING*.md
+NAMING*.md
+MARKET_RESEARCH*.md
+REBRAND*.md
+*GUIDE*.md
+*ENHANCEMENTS.md
+*SETUP*.md
+*PLAN*.md
+*PRACTICES*.md
+*IMPROVEMENTS*.md
+*TEST*.md
+*PRIORITY*.md
+TASK_*.md
+SUDO_*.md
+API_*.md
+UX_*.md
+QUICK_START.md
+SECURE_*.md
+
+# Test and helper scripts (temporary)
+test-*.sh
+test-*.html
+test_*.py
+fix-*.sh
+setup-*.sh
+check_*.sh
+find_*.py
+stop-all.sh
+install-*.sh
+
+# Example and test files
+example-*.txt
+full_upgrade.txt
+test-*.md

@@ -1,0 +1,68 @@
+{
+  "compilerOptions": {
+    // Type Checking
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+
+    // Module Resolution
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+
+    // JavaScript Support
+    "allowJs": true,
+    "checkJs": true,
+    "maxNodeModuleJsDepth": 1,
+
+    // Emit
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+
+    // Interop Constraints
+    "isolatedModules": false,
+    "allowUmdGlobalAccess": true,
+
+    // Language and Environment
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+
+    // Projects
+    "composite": false,
+    "incremental": true,
+
+    // Completeness
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+
+    // Additional Checks
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false
+  },
+  "include": [
+    "src/mac_maintenance/web/static/**/*.js",
+    "src/mac_maintenance/web/static/**/*.ts",
+    "types/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "**/*.min.js"
+  ]
+}

@@ -1,401 +1,642 @@
-# macOS Tahoe Maintenance Toolkit
+# 🧹 macOS Maintenance Toolkit
 
-A **safe-by-default, guardrailed maintenance script for macOS Tahoe** (and recent macOS versions).
+**Your Mac's Personal Health Coach** – Keep your macOS system running smoothly without the snake oil.
 
-This tool covers the same territory as OnyX - updates, disk verification, cleanup, indexing, and system checks - but with a different philosophy:
-
-> Audit first. Fix intentionally. Avoid ritual “optimization.”
-> 
-
-Modern macOS already performs a lot of self-maintenance. This script focuses on the things that *actually matter* while avoiding risky or unnecessary actions unless you explicitly ask for them.
+[![macOS](https://img.shields.io/badge/macOS-Sequoia%20%7C%20Sonoma%20%7C%20Ventura-blue.svg)](https://www.apple.com/macos/)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-245%20passing-brightgreen.svg)](tests/)
 
 ---
 
-## Why This Exists
+## 🎯 What Is This?
 
-Traditional “optimizer” tools often:
+Think of this as a **tune-up for your Mac** – but smart about it. Unlike those "optimizer" apps that promise to make your Mac run like new by deleting everything in sight, this toolkit takes a measured, informed approach.
 
-- Aggressively delete caches
-- Rebuild indexes without context
-- Encourage maintenance as a ritual instead of a response to symptoms
+**The Philosophy:**
+- 🩺 **Diagnose before you prescribe** – See what's actually wrong first
+- 🛡️ **Safe by default** – Nothing destructive happens without your explicit permission
+- 🎓 **Educate, don't obfuscate** – Understand what's happening and why
+- 🚫 **No snake oil** – Modern macOS is pretty good at maintaining itself; we focus on what actually matters
 
-That can:
-
-- Slow down your next reboot or login
-- Cause massive cache/index rebuild churn
-- Mask real root causes (disk pressure, updates, failing storage)
-
-This toolkit takes a **systems-first approach**:
-
-- Safe defaults
-- Explicit opt-in for heavy actions
-- Clear reporting so you understand *why* something is happening
+**Perfect For:**
+- 💼 Professionals who want their Mac to "just work"
+- 🔧 Power users who like to understand what's happening under the hood
+- 👨‍💻 Developers maintaining multiple Macs
+- 🏢 IT admins managing fleets of macOS devices
+- 🤔 Anyone who's ever wondered "should I really be running CleanMyMac every week?"
 
 ---
 
-## What It Does
+## ✨ What Makes This Different?
 
-### Always Safe (Default / Audit-Oriented)
+### Traditional "Optimizer" Apps Do This:
+```
+🚨 DANGER! Your Mac is 97% dirty!
+💥 Click here to clean 47 GB of "junk"!
+✨ Speed up your Mac by 300%!*
 
-- Preflight checks (disk space, power, network)
-- System posture report (OS, hardware, storage, security status)
-- Lists available macOS updates (does not install unless asked)
-- Verifies root filesystem
-- SMART status (best-effort)
-- Disk usage hotspot reporting
-- Lists Time Machine local snapshots
-- Spotlight status check
-- Light log trimming (age-based)
+*Results not guaranteed, may slow down your Mac temporarily,
+ could break things, definitely wants your credit card.
+```
 
-### Optional / Guarded Maintenance
+### This Toolkit Does This:
+```
+📊 Your Mac is healthy (score: 87/100)
 
-- Install macOS updates
-- Homebrew update / upgrade / cleanup
-- App Store updates via `mas`
-- Time Machine snapshot thinning (threshold-based)
-- User cache trimming (age-based, not scorched-earth)
-- Run macOS periodic scripts
-- Flush DNS cache
-- Rebuild Spotlight index
+Disk: 92% used (low on space - worth investigating)
+Security: ✓ SIP enabled, ✓ FileVault on
+Updates: 2 macOS updates available
+Homebrew: 12 packages outdated
 
-Every potentially disruptive action:
+Want to:
+  • See what's using all that disk space? (Storage analyzer)
+  • Update your software? (Safe, guided process)
+  • Get a detailed health report? (No scary warnings)
+```
 
-- Is **opt-in**
-- Explains what it does
-- Asks for confirmation (unless you explicitly disable prompts)
+**The Difference:** We show you the data, explain what it means, and let *you* decide what to do. No scare tactics, no mysterious "optimization," no subscription fees.
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
-Make the script executable:
+### Option 1: The Easy Button (Visual Interface)
+
+If you prefer clicking buttons to typing commands:
 
 ```bash
+# 1. Download and make executable
+chmod +x maintain.sh
+
+# 2. Launch the interactive interface
+./maintain.sh --tui
+```
+
+You'll get a beautiful terminal dashboard with:
+- 📊 System health at a glance
+- 💾 Visual storage analyzer (see what's eating your disk space)
+- 🔧 One-click maintenance operations
+- ⌨️ Keyboard shortcuts (because mice are for quitters)
+
+### Option 2: Quick Status Check (One Command)
+
+Want to know if your Mac is okay right now?
+
+```bash
+./maintain.sh --status
+```
+
+This gives you a health dashboard in seconds. No changes, just information.
+
+### Option 3: The "I'm Feeling Lucky" Button
+
+Run safe maintenance operations that almost everyone should do regularly:
+
+```bash
+./maintain.sh --all-safe
+```
+
+This will:
+- ✅ Check your disk health
+- ✅ See if updates are available
+- ✅ Verify system security settings
+- ✅ Generate a report you can actually understand
+- ❌ Won't delete anything without asking
+- ❌ Won't rebuild indexes or caches (unless things are actually broken)
+
+---
+
+## 💡 Core Features
+
+### 1. 📊 Interactive Dashboard (TUI)
+
+A beautiful terminal interface that puts system health at your fingertips:
+
+- **Real-time monitoring**: Disk usage, memory, CPU, security status
+- **Storage analyzer**: See exactly what's using your disk space (categorized by images, videos, documents, code, etc.)
+- **One-click operations**: Run maintenance tasks with visual feedback
+- **Keyboard-driven**: Navigate like a pro with intuitive shortcuts
+
+**Launch it:** `./maintain.sh --tui` or `mac-maintenance tui`
+
+### 2. 🔍 Smart Storage Analysis
+
+Ever wondered where all your disk space went?
+
+```bash
+mac-maintenance analyze ~/Documents
+```
+
+**What you'll see:**
+- Total size breakdown
+- Categorized files (images: 25 GB, videos: 142 GB, etc.)
+- Top 15 largest files and directories
+- Visual bar charts
+- Option to export as JSON for automation
+
+**The Smart Part:** It knows what file types actually matter and shows you patterns, not just raw file lists.
+
+### 3. 🩺 System Health Checks
+
+Get a **real** assessment of your Mac's health:
+
+```bash
+./maintain.sh --status
+```
+
+**Checks:**
+- 💾 Disk space and usage patterns
+- 🔐 Security status (SIP, FileVault, Gatekeeper, Firewall)
+- 📦 Software updates available
+- ⏰ Time Machine snapshot count
+- 🔧 Homebrew installation health
+- 📊 Overall health score (0-100)
+
+**What Makes It Smart:** Contextual warnings only when things actually matter. 75% disk usage? That's worth mentioning. 45%? You're fine.
+
+### 4. 🛡️ Safe Maintenance Operations
+
+All the maintenance tasks you'd want, with guardrails:
+
+**Updates:**
+- List/install macOS updates
+- Update Homebrew packages
+- Update Mac App Store apps
+
+**Disk Operations:**
+- Verify disk integrity
+- SMART status checks
+- Repair volumes (when needed)
+
+**Cleanup (age-based, not destructive):**
+- Trim old log files (30+ days old)
+- Clean old caches (30+ days old)
+- Thin Time Machine snapshots (when space is low)
+
+**System Maintenance:**
+- Run macOS periodic scripts
+- Flush DNS cache
+- Rebuild Spotlight index (only when needed)
+
+**Safety Features:**
+- 🔒 Preview mode: See what would be deleted before deleting
+- 🚨 File count limits: Warns if >10,000 files would be affected
+- ✋ Confirmation prompts: No surprises
+- 📝 Detailed logging: Every action recorded
+
+### 5. 🤖 Automation-Friendly
+
+Perfect for scheduled maintenance or remote systems:
+
+```bash
+# Silent mode (for cron jobs)
+./maintain.sh --all-safe --quiet
+
+# Machine-readable output
+./maintain.sh --all-safe --output-json
+
+# See what would happen without doing it
+./maintain.sh --all-deep --dry-run
+```
+
+---
+
+## 📦 Installation
+
+### Prerequisites
+
+**Required:**
+- macOS Sequoia, Sonoma, or Ventura (might work on older versions)
+- Admin password (for system operations)
+- Terminal app with Full Disk Access permission
+
+**Optional (for interactive TUI and storage analyzer):**
+- Python 3.10 or newer
+- 5 minutes for setup
+
+### Step 1: Get the Script
+
+```bash
+# Clone the repository
+git clone https://github.com/zenone/mac-maintenance.git
+cd mac-maintenance
+
+# Make it executable
 chmod +x maintain.sh
 ```
 
-Run with help output:
+### Step 2: Grant Permissions
+
+The script needs "Full Disk Access" to read log files and cache directories.
+
+**How to grant it:**
+1. Open **System Settings** → **Privacy & Security** → **Full Disk Access**
+2. Click the **+** button
+3. Navigate to `/Applications/Utilities/` and select **Terminal.app** (or your terminal app)
+4. Toggle the switch to **ON**
+5. Restart your terminal
+
+**Why this is safe:** This lets the script *read* your logs and caches to analyze them. It doesn't give access to your personal files (photos, messages, etc.) and can't make changes without your permission.
+
+### Step 3 (Optional): Enable Python Features
+
+Want the interactive TUI and enhanced storage analyzer? Install Python components:
 
 ```bash
-./maintain.sh --help
+# Install uv (modern Python package manager - crazy fast)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Create isolated environment
+uv venv
+
+# Activate it
+source .venv/bin/activate
+
+# Install the toolkit
+uv pip install -e .
+
+# Test it
+mac-maintenance --version
+mac-maintenance tui
 ```
 
-**Quick Status Check:**
+**What if I skip this?** The bash script works perfectly fine standalone. You just won't get the fancy TUI or color-coded storage reports. Everything else works.
 
+---
+
+## 📖 Usage Guide
+
+### For Beginners: Start Here
+
+**1. Check if everything is okay:**
 ```bash
 ./maintain.sh --status
 ```
 
-This shows an at-a-glance dashboard of your system health including disk usage, security posture, and maintenance status.
-
----
-
-## Display & Output Options
-
-### System Health Dashboard
-
-Get a quick overview of your system status:
-
+**2. If you see issues, launch the interactive interface:**
 ```bash
-./maintain.sh --status
+./maintain.sh --tui
 ```
+Navigate with keyboard (press `?` for help), click around, see what's what.
 
-Shows:
-- Disk usage with visual progress bar
-- Security status (SIP, FileVault)
-- Homebrew installation status
-- Time Machine snapshot count
-- Last maintenance run timestamp
-- Overall health score (0-100)
-
-### Quiet Mode (for Automation)
-
-Run maintenance silently, only showing errors:
-
+**3. Run safe maintenance when you're ready:**
 ```bash
-./maintain.sh --all-safe --quiet
-# or
-./maintain.sh --all-safe -q
+./maintain.sh --all-safe
 ```
 
-Perfect for cron jobs or scheduled tasks. All output still goes to the log file.
+**That's it.** You don't need to run this every day. Once a week or when something feels off is plenty.
 
-### Progress Indicators
+### For Intermediate Users: Common Tasks
 
-Long-running operations (brew updates, software updates, etc.) now show progress spinners so you know the script is working.
-
-### Enhanced Error Messages
-
-Error messages now include:
-- Clear explanation of what went wrong
-- Step-by-step instructions to fix the issue
-- Related documentation links where helpful
-
-Example:
-```
-✗ Invalid --space-threshold: must be at least 50 (got: 30)
-
-Try: --space-threshold 50
-```
-
-### Terminal Compatibility
-
-**Emoji Support:**
-By default, the script uses emoji symbols (✅ ✗ ⚠️  ℹ️) for better visual feedback.
-
-If your terminal doesn't support emojis, use:
+**See what's using disk space:**
 ```bash
-./maintain.sh --no-emoji
+mac-maintenance analyze ~/
 ```
 
-This falls back to text symbols: `[✓] [✗] [!] [i]`
-
-**Color Support:**
-Colors are automatically disabled when:
-- `NO_COLOR` environment variable is set
-- Terminal doesn't support colors
-- Output is piped or redirected
-
----
-
-## Permissions & Requirements
-
-### TCC (Transparency, Consent, and Control) Permissions
-
-This script accesses protected system areas and requires certain macOS permissions to function properly.
-
-**Required Permissions:**
-
-1. **Full Disk Access** (for Terminal.app or your terminal emulator)
-   - **Why**: Access to `~/Library/Caches`, `~/Library/Logs`, and system directories
-   - **How to grant**:
-     1. Open System Settings → Privacy & Security → Full Disk Access
-     2. Click the + button
-     3. Add Terminal.app (or your terminal app: iTerm2, etc.)
-     4. Toggle the switch to enable
-
-2. **Administrator Password** (for sudo operations)
-   - **Why**: System operations like `diskutil`, `softwareupdate`, `tmutil` require elevated privileges
-   - **When prompted**: The script uses `sudo` explicitly and will prompt you
-   - **Safety**: Script refuses to run AS root, only requests sudo when needed
-
-**What This Script Can Access:**
-
-✅ **User-level directories**:
-- `~/Library/Logs` (log file trimming)
-- `~/Library/Caches` (cache cleanup)
-- User documents and downloads (disk space analysis)
-
-✅ **System commands** (read-only status checks):
-- Disk utilities (`diskutil`, `df`)
-- Security status (`fdesetup`, `spctl`, `csrutil`)
-- Update management (`softwareupdate`, `brew`, `mas`)
-- Time Machine (`tmutil`)
-- Spotlight (`mdutil`)
-
-✅ **System modifications** (with your explicit consent):
-- Install macOS updates
-- Repair disk volumes
-- Rebuild indexes
-- Clean caches (age-based, not destructive)
-
-**What This Script NEVER Does:**
-
-❌ Accesses your personal files (photos, documents, messages) unless scanning disk usage
-❌ Sends data over the network (except checking for updates)
-❌ Disables security features (SIP, Gatekeeper, FileVault)
-❌ Modifies system files outside `/Library` paths
-❌ Runs without your confirmation for risky operations
-
-### Security Verification
-
-Before running maintenance, the script checks:
-
-- ✅ System Integrity Protection (SIP) is enabled
-- ✅ sudo version >= 1.9.17 (patched for CVE-2025-32462/32463)
-- ✅ macOS version (warns if outdated)
-- ✅ FileVault status (recommends if disabled)
-- ✅ Gatekeeper and Firewall status
-
-Run a standalone security audit:
+**Update everything safely:**
 ```bash
-./maintain.sh --security-audit
+./maintain.sh --install-macos-updates --brew --mas
 ```
 
-### First-Time Setup
-
-1. Grant Full Disk Access to Terminal (see above)
-2. Run a dry-run to see what would happen:
-   ```bash
-   ./maintain.sh --all-safe --dry-run
-   ```
-3. Review the output and verify permissions
-4. Run for real:
-   ```bash
-   ./maintain.sh --all-safe
-   ```
-
----
-
-## Recommended Usage (OnyX-Equivalent Guidance)
-
-### Daily / Regular Maintenance (Sane Default)
-
-If you want the closest **“OnyX one-click equivalent” while staying sane**, this is the run I’d actually use day-to-day on Tahoe:
-
+**Clean up old files (preview first):**
 ```bash
-./maintain.sh --all-safe --install-macos-updates --brew
-
+./maintain.sh --preview --trim-logs 30
+./maintain.sh --preview --trim-caches 30
+# Looks good? Run for real:
+./maintain.sh --trim-logs 30 --trim-caches 30
 ```
 
-This:
+**Check if disk is healthy:**
+```bash
+./maintain.sh --verify-disk --smart
+```
 
-- Runs preflight checks
-- Generates a system posture report
-- Verifies disk health
-- Lists and installs macOS updates
-- Updates Homebrew packages
-- Avoids heavy rebuilds and cache nukes
+### For Advanced Users: Power Features
 
-### When Something Is Actually Off
+**Automated weekly maintenance (cron job):**
+```bash
+0 3 * * 0 /path/to/maintain.sh --all-safe --assume-yes --quiet
+```
 
-Only when something feels wrong (search weird, Mac crawling, disk pressure, unexplained lag):
+**CI/CD health check with JSON output:**
+```bash
+./maintain.sh --status --output-json | jq '.summary.health_score'
+```
 
+**Deep clean when something's actually wrong:**
 ```bash
 ./maintain.sh --all-deep
+```
+(includes snapshot thinning, cache cleaning, index rebuilding – use sparingly)
 
+**Combine operations:**
+```bash
+./maintain.sh --verify-disk --space-report --security-audit --trim-logs 30
 ```
 
-This includes deeper actions like:
+### TUI Keyboard Shortcuts
 
-- Snapshot thinning
-- Cache trimming
-- Periodic scripts
-- DNS flush
-- Spotlight reindex
+Once you launch `mac-maintenance tui`:
 
-All still guarded and confirmable.
+- `d` – Dashboard view
+- `m` – Maintenance operations
+- `s` – Storage analyzer
+- `a` – About / help
+- `r` – Refresh current view
+- `?` – Show help
+- `q` – Quit
+
+**Mouse works too** – click tabs, buttons, checkboxes.
 
 ---
 
-## Common Task Examples
+## 🤔 FAQ
 
-List available macOS updates (no changes):
+### "Do I really need this? Doesn't macOS handle its own maintenance?"
 
+**Short answer:** Modern macOS is pretty good at self-maintenance. You probably don't need to run maintenance tools constantly.
+
+**When this is useful:**
+- Your Mac feels sluggish and you want to diagnose why
+- You're low on disk space and want to see what's using it
+- You want to verify system health before a big project
+- You manage multiple Macs and want consistent maintenance
+- You're curious about your system's health
+
+**When you don't need it:**
+- Your Mac runs fine
+- You have plenty of free space
+- Nothing seems broken
+
+**Bottom line:** Use this as a diagnostic and maintenance tool when needed, not a daily ritual.
+
+### "Is this safe? Will it break my Mac?"
+
+**Safety features:**
+- ✅ Nothing destructive happens by default
+- ✅ Every risky operation asks for confirmation
+- ✅ Preview mode lets you see what would happen
+- ✅ File count limits prevent accidental mass deletions
+- ✅ Dry-run mode for testing
+- ✅ All actions logged to `~/Library/Logs/`
+- ✅ Script refuses to run as root (only uses sudo when necessary)
+- ✅ Validates input parameters
+- ✅ 245 automated tests ensure it works correctly
+
+**What it won't do:**
+- ❌ Delete files you're actively using
+- ❌ Disable security features
+- ❌ Modify system files recklessly
+- ❌ Install anything without your permission
+
+### "How often should I run this?"
+
+**Recommended schedule:**
+- **Weekly:** Quick status check (`./maintain.sh --status`)
+- **Monthly:** Safe maintenance (`./maintain.sh --all-safe`)
+- **When something feels off:** Deep maintenance (`./maintain.sh --all-deep`)
+- **Never just because:** Don't run maintenance as a ritual
+
+### "What's the difference between --all-safe and --all-deep?"
+
+**`--all-safe`** (recommended for regular use):
+- Health checks and reporting
+- Disk verification
+- List available updates
+- Light log trimming
+- **Zero destructive actions**
+
+**`--all-deep`** (only when something's actually wrong):
+- Everything in `--all-safe` PLUS:
+- Time Machine snapshot thinning
+- Cache cleanup (age-based, 30+ days)
+- Periodic maintenance scripts
+- DNS cache flush
+- **Spotlight reindex (heavy operation)**
+
+**Rule of thumb:** Use `--all-safe` regularly, `--all-deep` rarely.
+
+### "Do I need Python installed?"
+
+**No.** The core bash script works standalone and includes all essential maintenance features.
+
+**Python is optional** and adds:
+- 🎨 Interactive TUI with visual interface
+- 📊 Enhanced storage analysis with categorization
+- 🎯 Better visualizations and progress indicators
+
+If you're comfortable with the command line, you don't need Python. If you want pretty interfaces, install Python.
+
+### "Can I use this on macOS Ventura / Sonoma / older versions?"
+
+Developed and tested on macOS Sequoia. Should work fine on Ventura and Sonoma.
+
+Older versions (Monterey, Big Sur, Catalina) might work but are untested. Some features may behave differently.
+
+### "What's the difference between this and CleanMyMac / OnyX / etc.?"
+
+**CleanMyMac:**
+- ➕ Pretty GUI, easy to use
+- ➖ Subscription cost ($40/year)
+- ➖ Aggressive deletion defaults
+- ➖ Marketing encourages unnecessary "optimization"
+
+**OnyX:**
+- ➕ Free, powerful, trusted
+- ➕ Lots of options
+- ➖ Complex interface (easy to enable things you don't understand)
+- ➖ Some operations are unnecessarily heavy
+
+**This Toolkit:**
+- ➕ Free and open source
+- ➕ Safe defaults (nothing scary happens by default)
+- ➕ Educational (explains what everything does)
+- ➕ Automation-friendly (scriptable, JSON output)
+- ➖ Requires terminal comfort (or Python for TUI)
+- ➖ Less hand-holding for beginners (but we're working on it!)
+
+### "I'm getting a permissions error. What do I do?"
+
+**Most common issue:** Terminal doesn't have Full Disk Access.
+
+**Fix:**
+1. System Settings → Privacy & Security → Full Disk Access
+2. Add Terminal.app (or iTerm2, etc.)
+3. Restart terminal
+4. Try again
+
+**Still not working?**
 ```bash
-./maintain.sh --list-macos-updates
+# Check if you have permission to read logs
+ls ~/Library/Logs
 
+# If that fails, Full Disk Access isn't granted correctly
 ```
 
-Install macOS updates only:
+### "Can I run this in a cron job or automation?"
+
+**Absolutely.** Designed for it:
 
 ```bash
-./maintain.sh --install-macos-updates
+# Silent mode (only errors shown, everything still logged)
+./maintain.sh --all-safe --quiet
 
-```
-
-Run Homebrew maintenance:
-
-```bash
-./maintain.sh --brew
-
-```
-
-Verify disk health:
-
-```bash
-./maintain.sh --verify-disk
-
-```
-
-Generate disk space hotspot report:
-
-```bash
-./maintain.sh --space-report
-
-```
-
-Rebuild Spotlight index (heavy):
-
-```bash
-./maintain.sh --spotlight-reindex
-
-```
-
----
-
-## Non-Interactive / Automation
-
-For scripting or remote execution:
-
-```bash
+# Non-interactive (auto-confirm prompts with safe defaults)
 ./maintain.sh --all-safe --assume-yes
 
+# Machine-readable output
+./maintain.sh --all-safe --output-json
 ```
 
-Preview actions without changing anything:
+**Cron job example** (weekly Sunday at 3 AM):
+```cron
+0 3 * * 0 /path/to/mac-maintenance/maintain.sh --all-safe --assume-yes --quiet
+```
+
+### "I found a bug / have a feature request. Where do I report it?"
+
+Open an issue on GitHub: [https://github.com/zenone/mac-maintenance/issues](https://github.com/zenone/mac-maintenance/issues)
+
+**When reporting bugs, please include:**
+- macOS version (`sw_vers`)
+- Script version (`./maintain.sh --version`)
+- Full command you ran
+- Log file from `~/Library/Logs/mac-maintenance-*.log`
+
+---
+
+## 🏗️ Architecture
+
+### The Stack
+
+**Bash Script (maintain.sh):**
+- Core maintenance operations
+- System checks and reporting
+- Works standalone, no dependencies
+- 1,350 lines of careful bash scripting
+
+**Python Package (optional):**
+- Interactive TUI (powered by [Textual](https://textual.textualize.io/))
+- Enhanced storage analyzer
+- Rich terminal output
+- Tested with 245 automated tests
+
+**Bridge:**
+- Seamless integration between bash and Python
+- Graceful fallback when Python unavailable
+- Zero dependencies on Python for core functionality
+
+### Testing
+
+- ✅ 245 automated tests (100% passing)
+- ✅ Integration tests (bash + Python)
+- ✅ Safety tests (file count limits, input validation)
+- ✅ Platform tests (Apple Silicon + Intel)
+- ✅ Manual testing on multiple macOS versions
+
+---
+
+## 🛠️ Development
+
+### Running Tests
 
 ```bash
-./maintain.sh --all-safe --dry-run
+# Python tests
+source .venv/bin/activate
+pytest tests/ -v
 
+# Quick test
+pytest tests/ -q
+```
+
+### Project Structure
+
+```
+mac-maintenance/
+├── maintain.sh              # Main bash script
+├── pyproject.toml           # Python package configuration
+├── src/
+│   └── mac_maintenance/
+│       ├── cli/             # Command-line interface
+│       ├── core/            # System information gathering
+│       ├── storage/         # Disk usage analyzer
+│       └── tui/             # Interactive terminal UI
+└── tests/                   # Automated test suite
 ```
 
 ---
 
-## Safety & Design Principles
+## 📜 License
 
-- ❌ Refuses to run as root
-- ✅ Uses `sudo` only when required
-- ❌ No `rm -rf` on broad directories
-- ✅ Cache cleanup is **age-based**, not destructive
-- ❌ No sourcing of shell rc files
-- ✅ Strict bash mode (`set -Eeuo pipefail`)
-- ✅ Hard path assertions before deletion
-- ✅ Full logging to `~/Library/Logs/`
+MIT License – see [LICENSE](LICENSE) file for details.
+
+**TL;DR:** Use it, modify it, share it. Just don't blame us if something goes wrong (though we've done our best to prevent that).
 
 ---
 
-## Logs
+## 🙏 Credits
 
-Each run produces a timestamped log file:
+**Built with:**
+- [Textual](https://textual.textualize.io/) – Amazing Python TUI framework
+- [Rich](https://rich.readthedocs.io/) – Beautiful terminal formatting
+- [Click](https://click.palletsprojects.com/) – CLI framework
+- [psutil](https://psutil.readthedocs.io/) – System monitoring
 
-```
-~/Library/Logs/mac-maintenance-YYYYMMDD-HHMMSS.log
-
-```
-
-Useful for:
-
-- Troubleshooting
-- Comparing system state over time
-- Verifying what actually ran
+**Philosophy inspired by:**
+- macOS's own maintenance philosophy (let the system do its job)
+- The [OnyX](https://www.titanium-software.fr/en/onyx.html) approach (power with safety)
+- Years of "why is my Mac slow?" support requests
 
 ---
 
-## Compatibility
+## 🚦 Status & Roadmap
 
-- macOS Tahoe
-- Likely compatible with recent macOS versions (Sonoma, Ventura)
-- Apple Silicon & Intel
-- Requires standard macOS CLI tools
-- Optional integrations:
-    - Homebrew (`brew`)
-    - App Store CLI (`mas`)
+**Current Version:** 3.0.0
 
----
+**Recent Updates:**
+- ✅ Interactive TUI with Dashboard, Storage, Maintenance views
+- ✅ Enhanced storage analyzer with file categorization
+- ✅ Preview mode for cleanup operations
+- ✅ File count safety limits
+- ✅ JSON output for automation
+- ✅ 245 automated tests
 
-## Final Thought
-
-This script is not about “optimizing” macOS.
-
-It’s about:
-
-- Knowing what state your system is in
-- Applying maintenance **only when it’s justified**
-- Letting macOS do its job the rest of the time
-
-Use it as a **tool**, not a ritual.
+**Coming Soon:**
+- 📊 Historical trend tracking
+- 🔔 Scheduled maintenance notifications
+- 📱 Status bar widget (maybe)
+- 🌐 Web dashboard (considering)
 
 ---
 
-Enjoy. Stay intentional.
+## 💬 Final Thoughts
+
+**This tool exists because:**
+
+Modern Macs don't need constant "optimization." They need **informed maintenance** when something's actually wrong.
+
+**Use this toolkit when:**
+- You want to understand your Mac's health
+- Something feels off and you want to diagnose it
+- You need to free up space and want to know where it went
+- You want to keep software updated safely
+
+**Don't use it:**
+- As a daily ritual
+- To chase that last 0.3% of performance
+- Because some app told you your Mac is "infected with junk"
+
+**Remember:** Your Mac is a tool. This toolkit helps you maintain it. But the best maintenance is usually letting macOS do its thing and only intervening when there's a real reason.
+
+---
+
+**Stay informed. Stay intentional. Keep your Mac healthy.**
+
+🍎✨
+
+---
+
+**Repository:** [https://github.com/zenone/mac-maintenance](https://github.com/zenone/mac-maintenance)
+
+**Issues/Suggestions:** [https://github.com/zenone/mac-maintenance/issues](https://github.com/zenone/mac-maintenance/issues)
