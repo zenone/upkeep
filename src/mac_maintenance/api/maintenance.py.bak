@@ -24,22 +24,15 @@ from mac_maintenance.core.exceptions import (
 def clean_output_line(text: str) -> str:
     """Clean control characters from output text.
 
-    Removes all terminal control characters that can cause text truncation
-    or corruption when displayed in web UI.
+    Removes carriage returns and ANSI escape codes that can cause text
+    truncation or corruption when displayed in web UI.
 
     Business logic:
-    - Terminal output often contains ANSI codes for colors, cursor movement,
-      carriage returns for progress updates, backspaces, etc.
+    - Terminal output often contains ANSI codes for colors, carriage returns
+      for progress updates, etc.
     - These control characters corrupt text when displayed in HTML
     - Example: "Installing...\rInstalled" becomes "Installed..." (carriage return overwrites)
     - Example: "\x1b[32mSuccess\x1b[0m" becomes "Success" (removes color codes)
-    - Example: "abc\b\bxy" becomes "abxy" (removes backspaces that delete chars)
-    - Example: "\x1b[2K" (clear line command) is removed
-
-    Root cause investigation (Task #140):
-    - Truncation like "Logmaintenance" (missing "file: /var/root/Library/Logs/mac-")
-      was caused by terminal control codes (backspace, cursor positioning)
-      that work in terminals but corrupt HTML text display
 
     Args:
         text: Raw output text that may contain control characters
@@ -53,32 +46,11 @@ def clean_output_line(text: str) -> str:
     # Remove carriage returns (they cause text to overwrite itself)
     text = text.replace('\r', '')
 
-    # Remove backspaces (they delete previous characters in terminals)
-    text = text.replace('\b', '')
-
-    # Remove ALL ANSI escape sequences (not just colors)
-    # This includes: colors, cursor movement, clear screen/line, etc.
-    # Pattern 1: CSI sequences (Control Sequence Introducer)
-    #   \x1b\[ - ESC[ sequence start
-    #   [0-9;?]* - zero or more digits, semicolons, or question marks (parameters)
-    #   [a-zA-Z] - command letter (m=SGR/color, K=EL/erase line, H=CUP/cursor pos, etc.)
-    ansi_escape = re.compile(r'\x1b\[[0-9;?]*[a-zA-Z]')
+    # Remove ANSI escape codes (color, cursor movement, etc.)
+    # Pattern: \x1b[ followed by any characters until m
+    # Example: \x1b[32m (green), \x1b[0m (reset), \x1b[2K (clear line)
+    ansi_escape = re.compile(r'\x1b\[[0-9;]*[a-zA-Z]')
     text = ansi_escape.sub('', text)
-
-    # Pattern 2: OSC sequences (Operating System Command)
-    #   \x1b\] - ESC] sequence start (used for window title, etc.)
-    #   [^\x07\x1b]* - any chars except BEL or ESC
-    #   (\x07|\x1b\\) - terminated by BEL or ESC\
-    osc_escape = re.compile(r'\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)')
-    text = osc_escape.sub('', text)
-
-    # Remove other control characters (except newline \n and tab \t which we want to keep)
-    # \x00-\x08: NULL through backspace
-    # \x0B-\x0C: vertical tab, form feed
-    # \x0E-\x1F: shift out through unit separator
-    # \x7F: DEL
-    control_chars = re.compile(r'[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]')
-    text = control_chars.sub('', text)
 
     return text
 
@@ -125,15 +97,6 @@ class MaintenanceAPI(BaseAPI):
             "category": "System Updates",
             "safe": True,
             "recommended": True,
-        },
-        "brew-cleanup": {
-            "id": "brew-cleanup",
-            "name": "Cleanup Homebrew",
-            "description": "Remove old versions and link packages",
-            "guidance": "Why: Homebrew keeps old versions of packages which waste disk space. Unlinked packages aren't accessible via PATH. When: Run monthly to free disk space, when 'brew doctor' shows warnings about unlinked kegs, or when commands aren't found after installing via brew. After: Old package versions removed, unused dependencies deleted, all packages linked. Frees 1-5GB typically. Takes 2-5 minutes.",
-            "category": "System Maintenance",
-            "safe": True,
-            "recommended": False,
         },
         "mas-update": {
             "id": "mas-update",
@@ -449,7 +412,7 @@ class MaintenanceAPI(BaseAPI):
             # Check if result exists
             if result_file.exists():
                 try:
-                    with open(result_file, "r", encoding='utf-8') as f:
+                    with open(result_file, "r") as f:
                         result = json.load(f)
 
                     # Clean up result file
@@ -636,7 +599,7 @@ class MaintenanceAPI(BaseAPI):
                         # Write back to file
                         history_file.write_text(json.dumps(history, indent=2))
                     except Exception as e:
-                        self.logger.warning(f"Failed to write operation history: {e}")
+                        self._logger.warning(f"Failed to write operation history: {e}")
 
                 results.append({
                     "operation_id": op_id,
@@ -684,7 +647,7 @@ class MaintenanceAPI(BaseAPI):
             timestamp_file = log_dir / "last_run_timestamp.txt"
             timestamp_file.write_text(datetime.now().isoformat())
         except Exception as e:
-            self.logger.warning(f"Failed to write timestamp file: {e}")
+            self._logger.warning(f"Failed to write timestamp file: {e}")
 
         yield {
             "type": "complete",
@@ -768,7 +731,7 @@ class MaintenanceAPI(BaseAPI):
                         "timeout_seconds": status_data.get("timeout_seconds", 0),
                     }
                 except Exception as e:
-                    self.logger.warning(f"Failed to read status file: {e}")
+                    self._logger.warning(f"Failed to read status file: {e}")
 
             # Count queued jobs
             job_files = list(self.QUEUE_DIR.glob("*.job.json"))
@@ -781,7 +744,7 @@ class MaintenanceAPI(BaseAPI):
             }
 
         except Exception as e:
-            self.logger.error(f"Error getting queue status: {e}")
+            self._logger.error(f"Error getting queue status: {e}")
             return {
                 "daemon_running": False,
                 "current_operation": None,

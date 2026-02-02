@@ -548,7 +548,54 @@ pytest tests/ -v
 
 # Quick test
 pytest tests/ -q
+
+# TypeScript type checking
+npm run type-check
 ```
+
+### Web Frontend Development
+
+The web interface uses **TypeScript** compiled with **ESBuild** for type safety and fast builds.
+
+**Development workflow:**
+
+```bash
+# Install Node.js dependencies (one-time)
+npm install
+
+# Option 1: Auto-rebuild on file changes (recommended)
+npm run watch:web    # Terminal 1: Watch mode
+./run-web.sh         # Terminal 2: Start server
+
+# Option 2: Single build + server start
+./run-web.sh         # Builds automatically before starting
+
+# Type checking (zero errors required)
+npm run type-check
+
+# Production build
+npm run build:web
+```
+
+**File structure:**
+
+```
+src/mac_maintenance/web/static/
+├── ts/                      # TypeScript source
+│   ├── app.ts              # Entry point
+│   ├── types.ts            # Type definitions
+│   └── modules/
+│       ├── dashboard.ts    # System metrics
+│       ├── maintenance.ts  # Operations
+│       ├── storage.ts      # Storage analysis
+│       ├── schedule.ts     # Scheduling
+│       ├── ui.ts           # Theme, toast, modals
+│       └── utils.ts        # Utilities
+├── app.js                  # ESBuild output (45KB minified)
+└── index.html              # HTML template
+```
+
+**See [WEB_DEVELOPMENT.md](WEB_DEVELOPMENT.md) for detailed frontend development guide.**
 
 ### Project Structure
 
@@ -556,13 +603,23 @@ pytest tests/ -q
 mac-maintenance/
 ├── maintain.sh              # Main bash script
 ├── pyproject.toml           # Python package configuration
+├── package.json             # Node.js dependencies (web frontend)
+├── tsconfig.json            # TypeScript configuration
 ├── src/
 │   └── mac_maintenance/
 │       ├── cli/             # Command-line interface
 │       ├── core/            # System information gathering
 │       ├── storage/         # Disk usage analyzer
-│       └── tui/             # Interactive terminal UI
-└── tests/                   # Automated test suite
+│       ├── tui/             # Interactive terminal UI
+│       └── web/
+│           ├── api/         # FastAPI REST endpoints
+│           ├── static/      # Web frontend (TypeScript)
+│           └── server.py    # Web server (uvicorn)
+├── scripts/
+│   ├── build-web.sh         # Build TypeScript frontend
+│   └── watch-web.sh         # Watch mode for development
+├── tests/                   # Python test suite
+└── types/                   # TypeScript API type definitions
 ```
 
 ---

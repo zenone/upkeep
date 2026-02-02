@@ -23,13 +23,13 @@
     "maxNodeModuleJsDepth": 1,
 
     // Emit
-    "noEmit": true,
+    "noEmit": false,
     "declaration": false,
     "declarationMap": false,
-    "sourceMap": false,
+    "sourceMap": true,
 
     // Interop Constraints
-    "isolatedModules": false,
+    "isolatedModules": true,
     "allowUmdGlobalAccess": true,
 
     // Language and Environment
@@ -63,6 +63,9 @@
     "node_modules",
     "dist",
     "build",
-    "**/*.min.js"
+    "**/*.min.js",
+    "src/mac_maintenance/web/static/app.js",
+    "src/mac_maintenance/web/static/**/*.js",
+    "src/mac_maintenance/web/static/**/*.js.map"
   ]
 }

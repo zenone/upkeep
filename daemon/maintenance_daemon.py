@@ -35,13 +35,14 @@ SKIP_FLAG_FILE = QUEUE_DIR / "skip.flag"  # Skip current operation flag
 # Timeouts based on expected duration (Task #132 fix):
 # - Quick operations: 300s (5 min)
 # - Homebrew: 900s (15 min) - can download large packages
-# - mas: 600s (10 min) - App Store downloads can be slow
+# - mas: 1200s (20 min) - App Store downloads can be slow (WhatsApp, etc.)
 # - macOS updates: 1800s (30 min) - system updates take time
 ALLOWED_OPERATIONS = {
     "macos-check": (["--list-macos-updates"], 300),
     "macos-install": (["--install-macos-updates", "--assume-yes"], 1800),
     "brew-update": (["--brew", "--assume-yes"], 900),
-    "mas-update": (["--mas", "--assume-yes"], 600),
+    "brew-cleanup": (["--brew-cleanup", "--assume-yes"], 600),
+    "mas-update": (["--mas", "--assume-yes"], 1200),
     "disk-verify": (["--verify-disk"], 300),
     "disk-repair": (["--repair-disk", "--assume-yes"], 600),
     "smart-check": (["--smart"], 300),
@@ -278,6 +279,9 @@ def run_operation(operation_id: str, job_id: str = "") -> Dict[str, Any]:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            encoding='utf-8',
+            errors='replace',  # Replace invalid chars instead of crashing
+            bufsize=-1,  # Use system default buffering (fully buffered)
             cwd=MAINTAIN_SH.parent,
             env=env,
         )
@@ -433,8 +437,8 @@ def process_job_file(job_file: Path) -> None:
         result["job_id"] = job_id
 
         # Write result
-        with open(result_file, "w") as f:
-            json.dump(result, f, indent=2)
+        with open(result_file, "w", encoding='utf-8') as f:
+            json.dump(result, f, indent=2, ensure_ascii=False)
 
         # Set permissions so web backend can read
         os.chmod(result_file, 0o644)

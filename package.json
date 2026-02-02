@@ -1,0 +1,25 @@
+{
+  "name": "mac-maintenance",
+  "version": "1.0.0",
+  "description": "Mac Maintenance Tool - Web Frontend",
+  "private": true,
+  "scripts": {
+    "build:web": "./scripts/build-web.sh",
+    "watch:web": "./scripts/watch-web.sh",
+    "type-check": "tsc --noEmit",
+    "dev": "npm run watch:web",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest --coverage"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

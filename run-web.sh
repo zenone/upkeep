@@ -98,6 +98,15 @@ if [ ! -d ".venv" ] || ! .venv/bin/python -c "import mac_maintenance" 2>/dev/nul
 fi
 echo "✓ Prerequisites OK"
 
+# Build TypeScript frontend
+echo "🔨 Building TypeScript frontend..."
+if npm run build:web; then
+    echo "✓ Frontend built"
+else
+    echo "❌ Frontend build failed"
+    exit 1
+fi
+
 # Stop existing servers if any
 pids=$(pgrep -f "uvicorn mac_maintenance.web.server:app" 2>/dev/null) || true
 if [ -n "$pids" ]; then

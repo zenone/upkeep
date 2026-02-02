@@ -77,8 +77,10 @@ clean_output() {
   # Remove control characters that can cause truncation or display issues
   # Business logic:
   # - Removes carriage returns (\r) that overwrite previous text
+  # - Removes backspaces (\b) that delete characters
+  # - Removes ALL ANSI escape codes (colors, cursor movement, etc.)
+  # - Removes other control characters that corrupt web UI output
   # - Preserves newlines (\n) for proper line breaks
-  # - Removes ANSI escape codes if running non-interactively
   # - Critical for web interface output (prevents "diskutiir" truncation bug)
   local text="$*"
 
@@ -86,11 +88,24 @@ clean_output() {
     # Remove carriage returns (they overwrite text in terminals but cause truncation in logs)
     text="${text//$'\r'/}"
 
-    # If not running in terminal, also strip ANSI color codes
-    if [[ ! -t 1 ]]; then
-      # Remove ANSI escape sequences: ESC[...m
-      text=$(echo "$text" | sed 's/\x1b\[[0-9;]*m//g' 2>/dev/null || echo "$text")
-    fi
+    # Remove backspaces (they delete previous characters)
+    text="${text//$'\b'/}"
+
+    # Remove all ANSI escape sequences (not just colors)
+    # This includes: colors, cursor movement, clear screen, etc.
+    # Pattern explanation:
+    #   \x1b\[ - ESC[ sequence start
+    #   [0-9;?]* - zero or more digits, semicolons, or question marks
+    #   [a-zA-Z] - command letter (m=color, K=clear line, H=cursor pos, etc.)
+    #   \x1b\][^\x07]* - OSC sequences (Operating System Command)
+    #   \x07 - BEL character that ends OSC
+    text=$(echo "$text" | sed -E 's/\x1b\[[0-9;?]*[a-zA-Z]//g; s/\x1b\][^\x07]*\x07//g' 2>/dev/null || echo "$text")
+
+    # Remove other problematic control characters but keep newlines and tabs
+    # \x00-\x08: NULL through backspace (except \x08 already removed)
+    # \x0B-\x0C: vertical tab, form feed
+    # \x0E-\x1F: shift out through unit separator
+    text=$(echo "$text" | tr -d '\000-\010\013\014\016-\037' 2>/dev/null || echo "$text")
   fi
 
   echo -n "$text"
@@ -1744,10 +1759,190 @@ brew_maintenance() {
     fi
   fi
 
-  # Show rest of doctor output
-  echo "$doctor_output"
+  # Parse and show smart summary of issues (Task #147: Smart Homebrew warnings)
+  local unlinked_count=0
+  local missing_count=0
+  local deprecated_count=0
+
+  # Count unlinked kegs
+  if echo "$doctor_output" | grep -q "unlinked kegs"; then
+    unlinked_count=$(echo "$doctor_output" | grep -A 200 "unlinked kegs" | grep -E "^\s+[a-z]" | wc -l | tr -d ' ')
+  fi
+
+  # Count missing formulae
+  if echo "$doctor_output" | grep -q "deleted or installed manually"; then
+    missing_count=$(echo "$doctor_output" | grep -A 50 "deleted or installed manually" | grep -E "^\s+[a-z]" | wc -l | tr -d ' ')
+  fi
+
+  # Count deprecated formulae
+  if echo "$doctor_output" | grep -q "deprecated or disabled"; then
+    deprecated_count=$(echo "$doctor_output" | grep -A 50 "deprecated or disabled" | grep -E "^\s+[a-z@]" | wc -l | tr -d ' ')
+  fi
+
+  # Show smart summary
+  echo ""
+  info "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  info "📊 Homebrew Health Summary"
+  info "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  if [[ $unlinked_count -gt 0 || $missing_count -gt 0 || $deprecated_count -gt 0 ]]; then
+    if [[ $deprecated_count -gt 0 ]]; then
+      warning "  ⚠️  $deprecated_count deprecated package(s)"
+      info "      These will stop working soon"
+    fi
+
+    if [[ $missing_count -gt 0 ]]; then
+      info "  ℹ️  $missing_count manually installed package(s)"
+      info "      These were deleted or installed outside Homebrew"
+    fi
+
+    if [[ $unlinked_count -gt 0 ]]; then
+      warning "  ⚠️  $unlinked_count unlinked package(s)"
+      info "      These aren't accessible via PATH"
+    fi
+
+    echo ""
+    info "💡 Quick Fix Commands:"
+    echo ""
+
+    if [[ $unlinked_count -gt 0 ]]; then
+      info "  # Link all packages:"
+      echo "  brew list --formula | xargs -n1 brew link 2>/dev/null"
+      echo ""
+    fi
+
+    if [[ $deprecated_count -gt 0 || $missing_count -gt 0 ]]; then
+      info "  # Remove old versions and unused dependencies:"
+      echo "  brew cleanup && brew autoremove"
+      echo ""
+    fi
+
+    info "  # See full details:"
+    echo "  brew doctor"
+    echo ""
+  else
+    success "  ✅ No issues found - Homebrew is healthy!"
+  fi
+
+  info "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  # For debugging, show full doctor output only if there are warnings
+  if echo "$doctor_output" | grep -q "Warning"; then
+    info ""
+    info "Full brew doctor output (for reference):"
+    echo "$doctor_output"
+  fi
 
   success "Homebrew maintenance complete."
+}
+
+brew_cleanup() {
+  section "Homebrew Cleanup"
+
+  if ! detect_homebrew; then
+    warning "Homebrew not found - skipping cleanup"
+    return 0
+  fi
+
+  local brew="${BREW_CMD}"
+  info "✓ Using Homebrew: $brew"
+
+  info "This will:"
+  info "  • Remove old versions of packages (brew cleanup)"
+  info "  • Remove unused dependencies (brew autoremove)"
+  info "  • Link all unlinked packages (brew link)"
+  echo ""
+
+  if ! confirm "Run Homebrew cleanup?"; then
+    warning "Skipped Homebrew cleanup."
+    return 0
+  fi
+
+  # 1. Cleanup old versions
+  info "Removing old package versions..."
+  if run_as_user $brew cleanup 2>&1; then
+    success "✓ Old versions removed"
+  else
+    warning "brew cleanup reported issues (non-fatal)"
+  fi
+
+  # 2. Auto-remove unused dependencies
+  info "Removing unused dependencies..."
+  if run_as_user $brew autoremove 2>&1; then
+    success "✓ Unused dependencies removed"
+  else
+    info "No unused dependencies found"
+  fi
+
+  # 3. Link all unlinked packages (Task #147)
+  info "Linking unlinked packages..."
+  local linked_count=0
+  local failed_count=0
+
+  # Get list of all formulae and try to link each one
+  local formulae
+  formulae=$(run_as_user $brew list --formula 2>/dev/null || true)
+
+  if [ -n "$formulae" ]; then
+    while IFS= read -r formula; do
+      [ -z "$formula" ] && continue
+
+      # Try to link (suppress output, check exit code)
+      if run_as_user $brew link "$formula" >/dev/null 2>&1; then
+        ((linked_count++))
+      elif run_as_user $brew link --overwrite "$formula" >/dev/null 2>&1; then
+        ((linked_count++))
+        info "  Linked (overwrite): $formula"
+      else
+        ((failed_count++))
+      fi
+    done <<< "$formulae"
+
+    if [[ $linked_count -gt 0 ]]; then
+      success "✓ Linked $linked_count package(s)"
+    fi
+
+    if [[ $failed_count -gt 0 ]]; then
+      info "  Could not link $failed_count package(s) (conflicts/already linked)"
+    fi
+  else
+    info "No formulae found to link"
+  fi
+
+  success "Homebrew cleanup complete."
+}
+
+# ============================================================================
+# Running App Detection (Task #144 - Skip running apps during mas updates)
+# ============================================================================
+
+check_app_running() {
+  # Check if a macOS application is currently running
+  # Args: $1 = app name (e.g., "WhatsApp", "Spark Desktop")
+  # Returns: 0 if running, 1 if not running
+  local app_name="$1"
+
+  # Method 1: Check using pgrep with app name
+  # More reliable than ps aux | grep (avoids matching the grep process itself)
+  if pgrep -q -i -f "$app_name"; then
+    return 0  # App is running
+  fi
+
+  # Method 2: Check common app bundle locations
+  # Some apps have different process names than display names
+  local app_path="/Applications/${app_name}.app"
+  if [[ -d "$app_path" ]]; then
+    # Extract bundle identifier if possible
+    local bundle_id=$(defaults read "${app_path}/Contents/Info.plist" CFBundleIdentifier 2>/dev/null || echo "")
+    if [[ -n "$bundle_id" ]]; then
+      # Check if any process has this bundle identifier
+      if pgrep -q -f "$bundle_id"; then
+        return 0  # App is running
+      fi
+    fi
+  fi
+
+  return 1  # App is not running
 }
 
 mas_updates() {
@@ -1767,7 +1962,20 @@ mas_updates() {
         # Automated mode: auto-install mas via Homebrew
         # Run as actual user (not root) - Homebrew refuses to run as root
         info "Installing mas CLI via Homebrew (one-time setup)..."
-        if run_as_user $brew install mas; then
+        local install_output=$(run_as_user $brew install mas 2>&1)
+        local install_status=$?
+
+        if [[ $install_status -eq 0 ]]; then
+          # Check if mas is installed but not linked
+          if echo "$install_output" | grep -q "not linked"; then
+            info "mas is installed but not linked - linking now..."
+            if run_as_user $brew link mas 2>&1; then
+              success "✓ mas CLI linked successfully"
+            else
+              warning "Failed to link mas - trying to force link..."
+              run_as_user $brew link --overwrite mas 2>&1 || true
+            fi
+          fi
           success "✓ mas CLI installed successfully"
           export MAS_CMD="mas"
         else
@@ -1779,7 +1987,20 @@ mas_updates() {
         if confirm "Install mas CLI now via Homebrew to enable App Store updates?"; then
           info "Installing mas CLI..."
           # Run as actual user (not root) - Homebrew refuses to run as root
-          if run_as_user $brew install mas; then
+          local install_output=$(run_as_user $brew install mas 2>&1)
+          local install_status=$?
+
+          if [[ $install_status -eq 0 ]]; then
+            # Check if mas is installed but not linked
+            if echo "$install_output" | grep -q "not linked"; then
+              info "mas is installed but not linked - linking now..."
+              if run_as_user $brew link mas 2>&1; then
+                success "✓ mas CLI linked successfully"
+              else
+                warning "Failed to link mas - trying to force link..."
+                run_as_user $brew link --overwrite mas 2>&1 || true
+              fi
+            fi
             success "✓ mas CLI installed successfully"
             export MAS_CMD="mas"
           else
@@ -1802,49 +2023,183 @@ mas_updates() {
   fi
 
   # mas is now available - proceed with updates
-  if ! confirm "Install App Store app updates using 'mas upgrade'?"; then
+  local mas="${MAS_CMD:-mas}"
+
+  # Kill zombie mas processes first (Task #132 fix)
+  # mas processes can hang and accumulate over time
+  info "Checking for zombie mas processes..."
+  local zombie_count=$(pgrep -x mas 2>/dev/null | wc -l | tr -d ' ')
+  if [[ "$zombie_count" -gt 0 ]]; then
+    warning "Found $zombie_count zombie mas process(es) - cleaning up..."
+    if sudo pkill -9 mas 2>/dev/null; then
+      success "✓ Killed $zombie_count zombie mas process(es)"
+      sleep 1  # Give system time to clean up
+    else
+      info "No zombies to clean up (or unable to kill)"
+    fi
+  else
+    info "✓ No zombie mas processes found"
+  fi
+
+  # Pre-check for updates (Task #132 fix)
+  # mas upgrade can take 5-30 minutes with no output - check first if updates exist
+  info "Checking for available App Store updates..."
+  local outdated_count=0
+  if outdated_apps=$($mas outdated 2>&1); then
+    outdated_count=$(echo "$outdated_apps" | grep -c "^[0-9]" || echo "0")
+    if [[ "$outdated_count" -eq 0 ]]; then
+      success "✓ All App Store apps are up to date - no updates needed"
+      return 0
+    else
+      info "Found $outdated_count App Store app(s) with available updates:"
+      echo "$outdated_apps" | head -5  # Show first 5
+      if [[ "$outdated_count" -gt 5 ]]; then
+        info "... and $((outdated_count - 5)) more"
+      fi
+      warning "⏱️  Installing App Store updates can take 10-20 minutes"
+      info "Large apps (Final Cut, Logic Pro, Xcode) may take even longer"
+    fi
+  else
+    warning "Unable to check for updates - proceeding with upgrade attempt"
+  fi
+
+  if ! confirm "Install App Store app updates using 'mas upgrade'? (may take 10-20 minutes)"; then
     warning "Skipped mas upgrade."
     return 0
   fi
-
-  local mas="${MAS_CMD:-mas}"
 
   # Setup passwordless sudo for mas operations (one-time configuration)
   # This prevents "sudo: a terminal is required to read the password" errors
   # when daemon uses run_as_user to run mas as the actual user
   setup_mas_sudo
 
-  # 🔧 Feature Flag: USE_RUN_AS_USER_FOR_MAS (easy disable if issues found)
-  # Default: true (fixes "Failed to get sudo uid" error)
-  # Set to false to revert to old behavior (mas running as root)
-  local USE_RUN_AS_USER_FOR_MAS="${USE_RUN_AS_USER_FOR_MAS:-true}"
+  # Task #144: Check for running apps before updating (skip running apps to avoid blocking system dialogs)
+  info "Checking which apps are currently running..."
 
-  if [[ "$USE_RUN_AS_USER_FOR_MAS" == "true" ]]; then
-    # Run mas as actual user (not root) to avoid "Failed to get sudo uid" error
-    # mas operations need to run in user's GUI session context
-    # Business logic: mas accesses user's App Store credentials which are tied to GUI session
-    info "Running mas upgrade as user (fixes sudo uid error)..."
+  local -a apps_to_update=()      # Array of "app_id|app_name" strings
+  local -a apps_running=()        # Apps that are running (will be skipped)
+  local -a apps_updated=()        # Successfully updated apps
+  local -a apps_failed=()         # Failed updates
 
-    if run_as_user $mas upgrade 2>&1; then
-      success "mas updates complete (ran as user)."
-    else
-      local exit_code=$?
-      warning "mas upgrade (as user) reported issues (exit code: $exit_code)."
-      info "Falling back to root method..."
+  # Parse outdated apps: format is "123456789 App Name (1.0 -> 2.0)"
+  while IFS= read -r line; do
+    if [[ -z "$line" ]]; then continue; fi
 
-      # Fallback to old method (graceful degradation)
-      if $mas upgrade 2>&1; then
-        success "mas updates complete (fallback to root method)."
-      else
-        warning "mas upgrade reported issues in both methods."
-      fi
+    # Skip lines that don't start with a number (error messages, warnings, etc.)
+    if ! echo "$line" | grep -q "^[0-9]"; then
+      # Silently skip non-app lines (like "mas: command not found")
+      continue
     fi
+
+    # Extract app ID (first field)
+    local app_id=$(echo "$line" | awk '{print $1}')
+
+    # Validate app_id is all digits (sanity check)
+    if ! [[ "$app_id" =~ ^[0-9]+$ ]]; then
+      # Not a valid app ID, skip this line
+      continue
+    fi
+
+    # Extract app name (everything between first space and opening parenthesis)
+    # Example: "6445813049  Spark Desktop  (3.27.6  -> 3.27.8)" → "Spark Desktop"
+    local app_name=$(echo "$line" | sed -E 's/^[0-9]+[[:space:]]+//; s/[[:space:]]+\([^)]+\)[[:space:]]*$//')
+
+    # Clean up extra spaces
+    app_name=$(echo "$app_name" | xargs)
+
+    if [[ -z "$app_name" ]]; then
+      # No app name found, skip
+      continue
+    fi
+
+    # Check if app is currently running
+    if check_app_running "$app_name"; then
+      warning "  ⏭️  $app_name - app is running, will skip"
+      apps_running+=("$app_name")
+    else
+      info "  ✓ $app_name - ready to update"
+      apps_to_update+=("${app_id}|${app_name}")
+    fi
+  done <<< "$outdated_apps"
+
+  # Summary before updating
+  local total_updates=${#apps_to_update[@]}
+  local total_skipped=${#apps_running[@]}
+
+  if [[ $total_skipped -gt 0 ]]; then
+    warning "⏭️  Skipping $total_skipped running app(s): ${apps_running[*]}"
+    info "💡 Tip: Close these apps and run 'Update App Store Apps' again to update them"
+  fi
+
+  if [[ $total_updates -eq 0 ]]; then
+    if [[ $total_skipped -gt 0 ]]; then
+      warning "All apps are currently running - nothing to update now"
+      info "Close the apps and try again, or use 'mas upgrade' manually"
+    else
+      success "✓ All App Store apps are up to date"
+    fi
+    return 0
+  fi
+
+  info "Updating $total_updates app(s)..."
+
+  # Update each app individually (allows us to skip running apps)
+  for app_entry in "${apps_to_update[@]}"; do
+    local app_id="${app_entry%%|*}"
+    local app_name="${app_entry##*|}"
+
+    info "Updating $app_name (ID: $app_id)..."
+
+    # Run mas install for this specific app
+    # Use run_as_user to avoid "Failed to get sudo uid" error
+    if run_as_user $mas install "$app_id" 2>&1; then
+      success "  ✅ Updated $app_name"
+      apps_updated+=("$app_name")
+    else
+      warning "  ❌ Failed to update $app_name"
+      apps_failed+=("$app_name")
+    fi
+  done
+
+  # Final summary
+  echo ""
+  section "App Store Update Summary"
+
+  if [[ ${#apps_updated[@]} -gt 0 ]]; then
+    success "✅ Successfully Updated (${#apps_updated[@]}):"
+    for app in "${apps_updated[@]}"; do
+      echo "  • $app"
+    done
+  fi
+
+  if [[ ${#apps_running[@]} -gt 0 ]]; then
+    echo ""
+    warning "⏭️  Skipped - App Running (${#apps_running[@]}):"
+    for app in "${apps_running[@]}"; do
+      echo "  • $app"
+    done
+    echo ""
+    info "💡 To update skipped apps:"
+    info "   1. Close the apps listed above"
+    info "   2. Run 'Update App Store Apps' again"
+    info "   3. Or run: mas upgrade"
+  fi
+
+  if [[ ${#apps_failed[@]} -gt 0 ]]; then
+    echo ""
+    warning "❌ Failed Updates (${#apps_failed[@]}):"
+    for app in "${apps_failed[@]}"; do
+      echo "  • $app"
+    done
+  fi
+
+  # Overall success if at least one app was updated
+  if [[ ${#apps_updated[@]} -gt 0 ]]; then
+    success "App Store updates complete."
+  elif [[ ${#apps_running[@]} -gt 0 && ${#apps_failed[@]} -eq 0 ]]; then
+    info "No apps were updated (all were running). Close apps and try again."
   else
-    # Old behavior: Run mas as root
-    # Note: This may show "Failed to get sudo uid" error but operations still work
-    info "Running mas upgrade as root (old behavior - USE_RUN_AS_USER_FOR_MAS=false)..."
-    $mas upgrade || warning "mas upgrade reported issues."
-    success "mas updates complete."
+    warning "App Store update process completed with issues."
   fi
 }
 
@@ -2382,6 +2737,7 @@ DO_TUI=0
 DO_LIST_MACOS_UPDATES=0
 DO_INSTALL_MACOS_UPDATES=0
 DO_BREW=0
+DO_BREW_CLEANUP=0
 DO_MAS=0
 
 DO_VERIFY_DISK=0
@@ -2493,6 +2849,7 @@ while [[ $# -gt 0 ]]; do
     --list-macos-updates) DO_LIST_MACOS_UPDATES=1; shift ;;
     --install-macos-updates) DO_INSTALL_MACOS_UPDATES=1; shift ;;
     --brew) DO_BREW=1; shift ;;
+    --brew-cleanup) DO_BREW_CLEANUP=1; shift ;;
     --mas) DO_MAS=1; shift ;;
 
     --verify-disk) DO_VERIFY_DISK=1; shift ;;
@@ -2601,6 +2958,7 @@ else
   (( DO_LIST_MACOS_UPDATES )) && list_macos_updates
   (( DO_INSTALL_MACOS_UPDATES )) && install_macos_updates
   (( DO_BREW )) && brew_maintenance
+  (( DO_BREW_CLEANUP )) && brew_cleanup
   (( DO_MAS )) && mas_updates
 
   (( DO_VERIFY_DISK )) && verify_root_volume

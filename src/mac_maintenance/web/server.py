@@ -181,6 +181,32 @@ async def get_system_info() -> Dict[str, Any]:
         # Disk
         disk = psutil.disk_usage("/")
 
+        # Network I/O
+        net_io = psutil.net_io_counters()
+        current_time = time.time()
+
+        # Calculate network rates (bytes per second)
+        if hasattr(get_system_info, '_last_net_io') and hasattr(get_system_info, '_last_time'):
+            time_delta = current_time - get_system_info._last_time
+            if time_delta > 0:
+                bytes_sent_delta = net_io.bytes_sent - get_system_info._last_net_io.bytes_sent
+                bytes_recv_delta = net_io.bytes_recv - get_system_info._last_net_io.bytes_recv
+                upload_rate = bytes_sent_delta / time_delta / 1024 / 1024  # MB/s
+                download_rate = bytes_recv_delta / time_delta / 1024 / 1024  # MB/s
+            else:
+                upload_rate = 0
+                download_rate = 0
+        else:
+            upload_rate = 0
+            download_rate = 0
+
+        # Store for next calculation
+        get_system_info._last_net_io = net_io
+        get_system_info._last_time = current_time
+
+        # Swap usage
+        swap = psutil.swap_memory()
+
         # System info (includes username)
         sys_info = system_utils.get_system_info()
 
@@ -214,6 +240,18 @@ async def get_system_info() -> Dict[str, Any]:
                 "free_gb": disk.free / (1024**3),
                 "percent": disk.percent,
                 "history": disk_history,
+            },
+            "network": {
+                "upload_mbps": round(upload_rate, 2),
+                "download_mbps": round(download_rate, 2),
+                "total_sent_gb": round(net_io.bytes_sent / (1024**3), 2),
+                "total_recv_gb": round(net_io.bytes_recv / (1024**3), 2),
+            },
+            "swap": {
+                "total_gb": round(swap.total / (1024**3), 2),
+                "used_gb": round(swap.used / (1024**3), 2),
+                "free_gb": round(swap.free / (1024**3), 2),
+                "percent": swap.percent,
             },
             "system": {
                 "username": sys_info["username"],
@@ -357,6 +395,85 @@ async def get_sparkline_data() -> Dict[str, Any]:
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting sparkline data: {e}")
+
+
+# Reload scripts (copy maintain.sh to system location)
+@app.post(
+    "/api/system/reload-scripts",
+    tags=["system"],
+    response_model=SuccessResponse,
+    summary="Reload maintenance scripts",
+    description="Copies the updated maintain.sh script from source to the system location used by the daemon.",
+)
+async def reload_scripts() -> Dict[str, Any]:
+    """Copy maintain.sh from source to /usr/local/lib/mac-maintenance/."""
+    import os
+    import shutil
+    import subprocess
+
+    try:
+        # Source and destination paths
+        source_path = Path(__file__).parent.parent.parent.parent / "maintain.sh"
+        dest_path = Path("/usr/local/lib/mac-maintenance/maintain.sh")
+
+        if not source_path.exists():
+            raise HTTPException(
+                status_code=404,
+                detail=f"Source script not found at {source_path}"
+            )
+
+        # Check if destination directory exists
+        if not dest_path.parent.exists():
+            raise HTTPException(
+                status_code=404,
+                detail=f"Destination directory not found: {dest_path.parent}"
+            )
+
+        # Copy file without sudo - will work if user has write permissions
+        # If this fails, user needs to add sudoers rule or run with appropriate permissions
+        try:
+            shutil.copy2(str(source_path), str(dest_path))
+        except PermissionError:
+            # Fall back to sudo if needed
+            result = subprocess.run(
+                ["sudo", "-n", "cp", str(source_path), str(dest_path)],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if result.returncode != 0:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Permission denied. Add sudoers rule: 'sudo tee /etc/sudoers.d/mac-maintenance-reload <<< \"$(whoami) ALL=(ALL) NOPASSWD: /bin/cp {source_path} {dest_path}\"'"
+                )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to copy: {e}")
+
+        # Verify succeeded
+        result = type('obj', (object,), {'returncode': 0, 'stderr': ''})()
+
+        if result.returncode != 0:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to copy script: {result.stderr}"
+            )
+
+        # Verify the copy succeeded
+        if not dest_path.exists():
+            raise HTTPException(
+                status_code=500,
+                detail="Script copy appeared to succeed but destination file not found"
+            )
+
+        return {
+            "success": True,
+            "message": f"Scripts reloaded successfully. Changes will take effect on next operation."
+        }
+
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=500, detail="Script reload timed out")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reloading scripts: {e}")
 
 
 # Storage analysis
@@ -504,6 +621,9 @@ async def skip_current_operation() -> Dict[str, Any]:
             "message": "Skip initiated" if skipped else "No operation running",
         }
     except Exception as e:
+        import traceback
+        logger.error(f"Skip operation error: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error skipping operation: {e}")
 
 
