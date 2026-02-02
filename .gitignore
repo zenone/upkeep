@@ -81,6 +81,17 @@ dmypy.json
 # Coverage reports
 coverage.xml
 .coverage.*
+.coverage *
+
+# Build caches
+*.tsbuildinfo
+
+# Runtime pid/port files
+*.pid
+*.pid.*
+
+# Backups
+*.bak
 
 # Claude Code / AI assistant files
 .claude/
