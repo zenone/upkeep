@@ -472,6 +472,42 @@ class MaintenanceAPI(BaseAPI):
             # Wait before checking again
             await asyncio.sleep(0.5)
 
+    def execute_operation(self, operation_id: str, timeout: int = 1800) -> Dict[str, Any]:
+        """Execute a single operation via the daemon queue and wait for the result.
+
+        This is the synchronous entry point used by scheduled tasks.
+
+        Args:
+            operation_id: Operation ID to run
+            timeout: Maximum wait time in seconds
+
+        Returns:
+            Result dict from the daemon (status, stdout/stderr, exit_code, etc.)
+
+        Raises:
+            OperationNotFoundError: If operation_id is unknown
+            DaemonNotAvailableError: If the queue can't be accessed
+            TimeoutError: If the daemon doesn't return a result in time
+        """
+        self._log_call("execute_operation", operation_id=operation_id, timeout=timeout)
+
+        if operation_id not in self.OPERATIONS:
+            raise OperationNotFoundError(f"Operation not found: {operation_id}")
+
+        job_id = self._enqueue_job(operation_id)
+
+        # Wait for the daemon result synchronously
+        try:
+            return asyncio.run(self._wait_for_result(job_id, timeout=timeout))
+        except RuntimeError:
+            # If we're already inside an event loop (rare but possible),
+            # use a dedicated loop.
+            loop = asyncio.new_event_loop()
+            try:
+                return loop.run_until_complete(self._wait_for_result(job_id, timeout=timeout))
+            finally:
+                loop.close()
+
     async def run_operations(
         self,
         operation_ids: List[str],
