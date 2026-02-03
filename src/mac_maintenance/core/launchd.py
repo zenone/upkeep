@@ -72,13 +72,23 @@ class LaunchdGenerator:
         self.logger.debug(f"Generating plist for schedule: {schedule.id}")
 
         # Build program arguments.
-        # Use the current interpreter to ensure the environment has mac_maintenance installed.
-        program_arguments = [
-            sys.executable,
-            "-m",
-            "mac_maintenance.scripts.run_schedule",
-            schedule.id,
-        ]
+        # IMPORTANT: Avoid showing "python3" as a macOS Login Item / Background Item.
+        # We do this by using a small runner script as ProgramArguments[0] (named for the app),
+        # which then invokes the correct interpreter.
+        runner = self._ensure_runner_script()
+        if runner is not None:
+            program_arguments = [
+                str(runner),
+                schedule.id,
+            ]
+        else:
+            # Fallback: use the current interpreter to ensure the environment has mac_maintenance installed.
+            program_arguments = [
+                sys.executable,
+                "-m",
+                "mac_maintenance.scripts.run_schedule",
+                schedule.id,
+            ]
 
         # Build calendar interval based on frequency
         calendar_interval = self._build_calendar_interval(schedule)
@@ -102,6 +112,37 @@ class LaunchdGenerator:
             plist["Disabled"] = True
 
         return plist
+
+    def _ensure_runner_script(self) -> Optional[Path]:
+        """Ensure the schedule runner exists and is executable.
+
+        We intentionally make the runner script the *first* ProgramArguments entry so
+        macOS doesn't surface "python3" as a Background Item in Login Items.
+        """
+        bin_dir = Path.home() / ".mac-maintenance" / "bin"
+        bin_dir.mkdir(parents=True, exist_ok=True)
+
+        runner_path = bin_dir / "mac-maintenance-run-schedule"
+
+        content = """#!/bin/bash
+set -euo pipefail
+
+PYTHON={python!s}
+
+# Run the schedule by id
+exec \"$PYTHON\" -m mac_maintenance.scripts.run_schedule \"$1\"
+""".format(python=sys.executable)
+
+        try:
+            if (not runner_path.exists()) or (runner_path.read_text(encoding="utf-8") != content):
+                runner_path.write_text(content, encoding="utf-8")
+                runner_path.chmod(0o755)
+        except Exception as e:
+            # If we can't create the runner for some reason, let the caller fall back.
+            self.logger.warning(f"Failed to create runner script {runner_path}: {e}")
+            return None
+
+        return runner_path
 
     def _build_calendar_interval(self, schedule: ScheduleConfig) -> Any:
         """Build StartCalendarInterval for schedule.
