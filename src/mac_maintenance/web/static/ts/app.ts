@@ -62,6 +62,7 @@ declare global {
     deleteSchedule: (scheduleId: string) => void;
     toggleScheduleEnabled: (scheduleId: string, enabled: boolean) => Promise<void>;
     runScheduleNow: (scheduleId: string) => void;
+    applyScheduleTemplate: (template: any) => void;
 
     // Utilities
     showToast: (message: string, type?: 'success' | 'error' | 'warning' | 'info', duration?: number) => void;

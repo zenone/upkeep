@@ -27,6 +27,9 @@ export let queueStatusInterval: number | null = null;
 export let currentOperationId: string | null = null;
 export let selectedOperationIds: string[] = [];  // Track which operations were selected
 
+// Per-operation stats from server (last run + typical runtime)
+let operationStats: Record<string, any> = {};
+
 // ============================================================================
 // Load Operations
 // ============================================================================
@@ -78,6 +81,7 @@ export async function loadOperations(): Promise<void> {
       const lastRunResponse = await fetch('/api/maintenance/last-run');
       const lastRunData = await lastRunResponse.json();
       operationsHistory = lastRunData.operations || {};
+      operationStats = operationsHistory;
     } catch (error) {
       console.warn('Could not fetch per-operation history:', error);
     }
@@ -85,8 +89,8 @@ export async function loadOperations(): Promise<void> {
     const html = allOperations.map(op => {
       const opHistory = operationsHistory[op.id];
 
-      // Get typical duration from historical tracking
-      const typicalDuration = getTypicalDurationDisplay(op.id);
+      // Typical duration (server-provided preferred; fallback to localStorage)
+      const typicalDuration = opHistory?.typical_display || getTypicalDurationDisplay(op.id);
       const durationHtml = typicalDuration
         ? ` | ⏱️ Typically <strong>${typicalDuration}</strong>`
         : '';
@@ -99,8 +103,9 @@ export async function loadOperations(): Promise<void> {
           📅 Last run: <strong>${opHistory.last_run_relative}</strong> <span style="color: ${statusColor}">${statusIcon}</span>${durationHtml}
         </div>`;
       } else {
+        const typicalFallback = durationHtml || ' | ⏱️ Typically <strong>—</strong> <span style="opacity:0.7;">(first run)</span>';
         lastRunHtml = `<div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">
-          📅 Last run: <strong>Never run</strong>${durationHtml}
+          📅 Last run: <strong>Never run</strong>${durationHtml || typicalFallback}
         </div>`;
       }
 
@@ -581,8 +586,10 @@ export function handleOperationEvent(event: OperationEvent): void {
         const durationMs = Date.now() - operationStartTime;
         const durationSec = durationMs / 1000;
 
-        // Record to historical tracking
-        recordOperationTime(currentOperationId, durationSec);
+        // Record to historical tracking (successful runs only for a cleaner median)
+        if (event.success) {
+          recordOperationTime(currentOperationId, durationSec);
+        }
 
         // Also track for current batch average
         operationTimes.push(durationMs);
@@ -713,15 +720,18 @@ export function startProgressTimer(): void {
       if (timerEl) {
         const currentDuration = formatDuration(elapsed / 1000);
 
-        // Progressive enhancement: Show typical duration if available
+        // Show typical duration if available (server preferred; fallback to localStorage)
         if (currentOperationId) {
-          const medianSec = getMedianDuration(currentOperationId);
-          if (medianSec !== null) {
+          const serverTypicalSec = operationStats?.[currentOperationId]?.typical_seconds;
+          const medianSec = typeof serverTypicalSec === 'number' ? serverTypicalSec : getMedianDuration(currentOperationId);
+
+          if (medianSec !== null && typeof medianSec === 'number' && !Number.isNaN(medianSec)) {
             const typicalDuration = formatDuration(medianSec);
             timerEl.textContent = `${currentDuration} / Typically ${typicalDuration}`;
+            timerEl.setAttribute('title', 'Typical runtime (median of recent runs)');
           } else {
-            // No historical data yet - just show current time
-            timerEl.textContent = currentDuration;
+            timerEl.textContent = `${currentDuration} / Typically —`;
+            timerEl.setAttribute('title', 'No historical runtime yet (first run)');
           }
         } else {
           timerEl.textContent = currentDuration;

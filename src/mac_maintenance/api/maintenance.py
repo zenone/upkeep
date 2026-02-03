@@ -8,6 +8,7 @@ Used by Web GUI, CLI, and TUI.
 import asyncio
 import json
 import re
+import time
 import uuid
 from pathlib import Path
 from typing import Dict, List, Any, Optional, AsyncIterator
@@ -584,6 +585,8 @@ class MaintenanceAPI(BaseAPI):
                 "timestamp": datetime.now().isoformat(),
             }
 
+            op_started_ts = time.time()
+
             try:
                 # Enqueue job for daemon
                 job_id = self._enqueue_job(op_id)
@@ -656,6 +659,7 @@ class MaintenanceAPI(BaseAPI):
                 # Send completion event
                 success = result.get("status") == "success"
                 exit_code = result.get("exit_code", -1)
+                duration_seconds = max(0.0, time.time() - op_started_ts)
 
                 yield {
                     "type": "operation_complete",
@@ -665,31 +669,40 @@ class MaintenanceAPI(BaseAPI):
                     "timestamp": datetime.now().isoformat(),
                 }
 
-                # Write per-operation timestamp to history file
-                if success:
-                    try:
-                        log_dir = Path.home() / "Library" / "Logs" / "mac-maintenance"
-                        log_dir.mkdir(parents=True, exist_ok=True)
-                        history_file = log_dir / "operation_history.json"
+                # Write per-operation history (last run + rolling durations)
+                try:
+                    log_dir = Path.home() / "Library" / "Logs" / "mac-maintenance"
+                    log_dir.mkdir(parents=True, exist_ok=True)
+                    history_file = log_dir / "operation_history.json"
 
-                        # Load existing history
-                        history = {}
-                        if history_file.exists():
-                            try:
-                                history = json.loads(history_file.read_text())
-                            except json.JSONDecodeError:
-                                history = {}
+                    # Load existing history
+                    history: dict = {}
+                    if history_file.exists():
+                        try:
+                            history = json.loads(history_file.read_text())
+                        except json.JSONDecodeError:
+                            history = {}
 
-                        # Update this operation's history
-                        history[op_id] = {
-                            "last_run": datetime.now().isoformat(),
-                            "success": success,
-                        }
+                    op_hist = history.get(op_id, {}) if isinstance(history.get(op_id, {}), dict) else {}
+                    op_hist["last_run"] = datetime.now().isoformat()
+                    op_hist["success"] = success
+                    op_hist["last_duration_seconds"] = round(duration_seconds, 3)
 
-                        # Write back to file
-                        history_file.write_text(json.dumps(history, indent=2))
-                    except Exception as e:
-                        self.logger.warning(f"Failed to write operation history: {e}")
+                    # Maintain rolling window of successful runtimes
+                    if success:
+                        durations = op_hist.get("durations_seconds", [])
+                        if not isinstance(durations, list):
+                            durations = []
+                        durations.append(round(duration_seconds, 3))
+                        durations = durations[-5:]
+                        op_hist["durations_seconds"] = durations
+
+                    history[op_id] = op_hist
+
+                    # Write back to file
+                    history_file.write_text(json.dumps(history, indent=2))
+                except Exception as e:
+                    self.logger.warning(f"Failed to write operation history: {e}")
 
                 results.append({
                     "operation_id": op_id,

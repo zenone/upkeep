@@ -99,11 +99,15 @@ export function getMedianDuration(operationId: string): number | null {
 
   if (sorted.length % 2 === 0) {
     // Even number: average of two middle values
-    return (sorted[mid - 1] + sorted[mid]) / 2;
-  } else {
-    // Odd number: middle value
-    return sorted[mid];
+    const a = sorted[mid - 1];
+    const b = sorted[mid];
+    if (typeof a !== 'number' || typeof b !== 'number') return null;
+    return (a + b) / 2;
   }
+
+  // Odd number: middle value
+  const m = sorted[mid];
+  return typeof m === 'number' ? m : null;
 }
 
 /**

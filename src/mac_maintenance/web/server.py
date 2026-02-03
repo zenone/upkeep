@@ -789,6 +789,28 @@ async def get_last_run() -> Dict[str, Any]:
         if history_file.exists():
             try:
                 history_data = json.loads(history_file.read_text())
+
+                def _format_seconds(seconds: float) -> str:
+                    seconds = max(0.0, float(seconds))
+                    if seconds < 60:
+                        return f"{int(round(seconds))}s"
+                    if seconds < 3600:
+                        minutes = int(seconds // 60)
+                        rem = int(round(seconds % 60))
+                        return f"{minutes}m {rem}s" if rem else f"{minutes}m"
+                    hours = int(seconds // 3600)
+                    minutes = int(round((seconds % 3600) / 60))
+                    return f"{hours}h {minutes}m" if minutes else f"{hours}h"
+
+                def _median(nums: list[float]) -> float | None:
+                    if not nums:
+                        return None
+                    s = sorted(float(n) for n in nums)
+                    mid = len(s) // 2
+                    if len(s) % 2:
+                        return s[mid]
+                    return (s[mid - 1] + s[mid]) / 2
+
                 # Calculate relative time for each operation
                 for op_id, op_data in history_data.items():
                     try:
@@ -807,10 +829,19 @@ async def get_last_run() -> Dict[str, Any]:
                             days = op_delta // 86400
                             op_relative = f"{days} day{'s' if days != 1 else ''} ago"
 
+                        durations = op_data.get("durations_seconds", [])
+                        if not isinstance(durations, list):
+                            durations = []
+                        med = _median([d for d in durations if isinstance(d, (int, float))])
+
                         operations_history[op_id] = {
                             "last_run": op_data["last_run"],
                             "last_run_relative": op_relative,
                             "success": op_data.get("success", True),
+                            "last_duration_seconds": op_data.get("last_duration_seconds"),
+                            "typical_seconds": round(med, 3) if med is not None else None,
+                            "typical_display": _format_seconds(med) if med is not None else None,
+                            "typical_runs": len(durations),
                         }
                     except (ValueError, KeyError):
                         continue
