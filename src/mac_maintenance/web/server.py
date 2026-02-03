@@ -1111,6 +1111,49 @@ async def get_schedule(schedule_id: str):
         raise HTTPException(status_code=500, detail=f"Error getting schedule: {e}")
 
 
+def _configure_pmset_wake(schedule) -> None:
+    """Best-effort: configure macOS wake schedule via pmset.
+
+    Notes:
+    - Requires admin privileges (sudo). If the server isn't running with sufficient rights,
+      this will fail harmlessly.
+    - pmset repeat supports daily/weekly patterns but not "monthly day N".
+    """
+    import subprocess
+
+    freq = getattr(schedule, "frequency", None)
+    time_of_day = getattr(schedule, "time_of_day", None)
+    days = getattr(schedule, "days_of_week", None) or []
+
+    if not time_of_day:
+        return
+
+    hhmm = str(time_of_day)[:5]  # HH:MM
+
+    if freq == "daily":
+        # pmset uses MTWRFSU token; daily == all days.
+        day_token = "MTWRFSU"
+    elif freq == "weekly":
+        map_token = {
+            "monday": "M",
+            "tuesday": "T",
+            "wednesday": "W",
+            "thursday": "R",
+            "friday": "F",
+            "saturday": "S",
+            "sunday": "U",
+        }
+        day_token = "".join(map_token.get(str(d).lower(), "") for d in days)
+        if not day_token:
+            return
+    else:
+        # Monthly/custom not supported by pmset repeat.
+        return
+
+    cmd = ["sudo", "pmset", "repeat", "wakeorpoweron", day_token, hhmm + ":00"]
+    subprocess.run(cmd, check=False, capture_output=True, text=True, timeout=10)
+
+
 @app.post("/api/schedules", tags=["schedules"])
 async def create_schedule(request: Request):
     """Create a new schedule.
@@ -1150,6 +1193,13 @@ async def create_schedule(request: Request):
             except Exception as e:
                 # Log error but don't fail - schedule is created
                 print(f"Warning: Failed to register with launchd: {e}")
+
+            # Best-effort wake scheduling (optional)
+            try:
+                if getattr(response.schedule, "wake_mac", False):
+                    _configure_pmset_wake(response.schedule)
+            except Exception as e:
+                print(f"Warning: Failed to configure wake schedule: {e}")
 
         return response.model_dump()
 
@@ -1200,6 +1250,14 @@ async def update_schedule(schedule_id: str, request: Request):
                     launchd.register_schedule(schedule_id)
             except Exception as e:
                 print(f"Warning: Failed to update launchd: {e}")
+
+        # Best-effort wake scheduling (optional)
+        if "wake_mac" in updates or any(key in updates for key in ["frequency", "time_of_day", "days_of_week"]):
+            try:
+                if response.schedule and getattr(response.schedule, "wake_mac", False) and response.schedule.enabled:
+                    _configure_pmset_wake(response.schedule)
+            except Exception as e:
+                print(f"Warning: Failed to configure wake schedule: {e}")
 
         return response.model_dump()
 

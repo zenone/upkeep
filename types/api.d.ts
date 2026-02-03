@@ -265,11 +265,17 @@ export interface Schedule {
   id: string;
   name: string;
   description: string;
-  operation_ids: string[];
-  enabled: boolean;
-  cron?: string | null;
+  operations: string[];
+  frequency: 'daily' | 'weekly' | 'monthly' | 'custom';
+  time_of_day: string;
   days_of_week?: string[] | null;
-  time_of_day?: string | null;
+  day_of_month?: number | null;
+  enabled: boolean;
+
+  // Behavior
+  wake_mac?: boolean;
+  notify?: boolean;
+
   created_at: string;
   updated_at: string;
   last_run?: string | null;
@@ -282,11 +288,14 @@ export interface Schedule {
 export interface ScheduleCreate {
   name: string;
   description?: string;
-  operation_ids: string[];
-  enabled?: boolean;
-  cron?: string | null;
+  operations: string[];
+  frequency: 'daily' | 'weekly' | 'monthly' | 'custom';
+  time_of_day: string;
   days_of_week?: string[] | null;
-  time_of_day?: string | null;
+  day_of_month?: number | null;
+  enabled?: boolean;
+  wake_mac?: boolean;
+  notify?: boolean;
 }
 
 /**
@@ -295,11 +304,14 @@ export interface ScheduleCreate {
 export interface ScheduleUpdate {
   name?: string;
   description?: string;
-  operation_ids?: string[];
-  enabled?: boolean;
-  cron?: string | null;
+  operations?: string[];
+  frequency?: 'daily' | 'weekly' | 'monthly' | 'custom';
+  time_of_day?: string;
   days_of_week?: string[] | null;
-  time_of_day?: string | null;
+  day_of_month?: number | null;
+  enabled?: boolean;
+  wake_mac?: boolean;
+  notify?: boolean;
 }
 
 /**

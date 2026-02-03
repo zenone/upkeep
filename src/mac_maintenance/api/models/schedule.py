@@ -92,6 +92,16 @@ class ScheduleConfig(BaseModel):
         description="Whether schedule is currently active"
     )
 
+    # Scheduling behavior
+    wake_mac: bool = Field(
+        False,
+        description="Attempt to wake the Mac for this schedule (best-effort; may require admin)"
+    )
+    notify: bool = Field(
+        True,
+        description="Show a macOS notification after the schedule runs (success/fail summary)"
+    )
+
     # Metadata
     created_at: Optional[datetime] = Field(
         None,

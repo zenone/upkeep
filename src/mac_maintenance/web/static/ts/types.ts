@@ -7,8 +7,7 @@ export * from '../../../../../types/api';
 import type { Schedule as BaseSchedule } from '../../../../../types/api';
 
 export interface Schedule extends BaseSchedule {
-  frequency?: 'daily' | 'weekly' | 'monthly' | 'custom';
-  day_of_month?: number;
+  // API may return extra UI-only fields
   message?: string;
 }
 

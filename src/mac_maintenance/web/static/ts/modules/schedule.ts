@@ -407,7 +407,7 @@ async function loadScheduleForEdit(scheduleId: string): Promise<void> {
     if (enabledEl) enabledEl.checked = schedule.enabled;
 
     // Check selected operations
-    schedule.operation_ids.forEach(opId => {
+    (schedule.operations || []).forEach((opId: string) => {
       const checkbox = document.querySelector<HTMLInputElement>(`input[name="operations"][value="${opId}"]`);
       if (checkbox) checkbox.checked = true;
     });

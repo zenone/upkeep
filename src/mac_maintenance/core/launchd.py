@@ -464,11 +464,16 @@ def run_scheduled_task(schedule_id: str) -> bool:
 
     This function is called by launchd at scheduled times.
 
+    Guarantees:
+    - Non-overlap by default (global file lock). If another batch is running, we skip.
+    - Logs everything to per-schedule log paths in the LaunchAgent plist.
+    - Optional user notification for success/failure.
+
     Args:
         schedule_id: Schedule ID to execute
 
     Returns:
-        True if execution successful, False otherwise
+        True if execution successful (or skipped due to overlap), False otherwise
     """
     logger = logging.getLogger("core.run_scheduled_task")
     logger.info(f"Running scheduled task: {schedule_id}")
@@ -491,46 +496,121 @@ def run_scheduled_task(schedule_id: str) -> bool:
             logger.warning(f"Schedule is disabled: {schedule_id}")
             return False
 
-        logger.info(f"Executing operations for schedule: {schedule.name}")
+        # Prevent overlap: acquire a global lock.
+        # This protects against two schedules firing near-simultaneously.
+        import fcntl
+        import time as _time
+        from contextlib import contextmanager
 
-        # Execute operations via the daemon-backed batch runner (records history + durations)
-        from mac_maintenance.api.maintenance import MaintenanceAPI
+        locks_dir = Path.home() / ".mac-maintenance" / "locks"
+        locks_dir.mkdir(parents=True, exist_ok=True)
+        lock_path = locks_dir / "scheduler.lock"
 
-        maintenance_api = MaintenanceAPI()
-
-        async def _run_batch() -> None:
-            async for event in maintenance_api.run_operations(schedule.operations):
-                # Mirror key events to the scheduler log
-                if event.get("type") == "operation_start":
-                    logger.info(f"[{event.get('progress')}] Starting: {event.get('operation_name')}")
-                elif event.get("type") == "output":
-                    # Keep logs readable; output already cleaned by API
-                    line = event.get("line", "")
-                    if line:
-                        logger.info(line)
-                elif event.get("type") == "operation_complete":
-                    status = "SUCCESS" if event.get("success") else "FAILED"
-                    logger.info(f"Completed {event.get('operation_id')}: {status} (code {event.get('returncode')})")
-                elif event.get("type") == "summary":
-                    logger.info(
-                        f"Summary: total={event.get('total')} success={event.get('successful')} failed={event.get('failed')}"
-                    )
-
-        try:
-            asyncio.run(_run_batch())
-        except RuntimeError:
-            # If already inside an event loop, fall back to a dedicated loop.
-            loop = asyncio.new_event_loop()
+        @contextmanager
+        def _acquire_lock():
+            fh = open(lock_path, "w")
             try:
-                loop.run_until_complete(_run_batch())
+                try:
+                    fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    yield True
+                except BlockingIOError:
+                    yield False
             finally:
-                loop.close()
+                try:
+                    fcntl.flock(fh, fcntl.LOCK_UN)
+                except Exception:
+                    pass
+                fh.close()
+
+        def _notify(title: str, message: str) -> None:
+            # Best-effort macOS notification; safe no-op if osascript fails.
+            try:
+                import subprocess
+
+                subprocess.run(
+                    [
+                        "osascript",
+                        "-e",
+                        f'display notification "{message.replace("\"", "\\\"")}" with title "{title.replace("\"", "\\\"")}"',
+                    ],
+                    check=False,
+                    timeout=5,
+                )
+            except Exception:
+                pass
+
+        start_ts = _time.time()
+        successful = 0
+        failed = 0
+        total = len(schedule.operations)
+
+        with _acquire_lock() as have_lock:
+            if not have_lock:
+                msg = f"Skipped {schedule.name}: another maintenance batch is already running"
+                logger.warning(msg)
+                # Don't update last_run on a skip.
+                if getattr(schedule, "notify", True):
+                    _notify("Mac Maintenance (Skipped)", msg)
+                return True
+
+            logger.info(f"Executing operations for schedule: {schedule.name}")
+
+            # Execute operations via the daemon-backed batch runner (records history + durations)
+            from mac_maintenance.api.maintenance import MaintenanceAPI
+
+            maintenance_api = MaintenanceAPI()
+
+            async def _run_batch() -> None:
+                nonlocal successful, failed, total
+                async for event in maintenance_api.run_operations(schedule.operations):
+                    # Mirror key events to the scheduler log
+                    if event.get("type") == "operation_start":
+                        logger.info(f"[{event.get('progress')}] Starting: {event.get('operation_name')}")
+                    elif event.get("type") == "output":
+                        # Keep logs readable; output already cleaned by API
+                        line = event.get("line", "")
+                        if line:
+                            logger.info(line)
+                    elif event.get("type") == "operation_complete":
+                        status = "SUCCESS" if event.get("success") else "FAILED"
+                        logger.info(f"Completed {event.get('operation_id')}: {status} (code {event.get('returncode')})")
+                    elif event.get("type") == "summary":
+                        total = int(event.get("total") or total)
+                        successful = int(event.get("successful") or 0)
+                        failed = int(event.get("failed") or 0)
+                        logger.info(
+                            f"Summary: total={total} success={successful} failed={failed}"
+                        )
+
+            try:
+                asyncio.run(_run_batch())
+            except RuntimeError:
+                # If already inside an event loop, fall back to a dedicated loop.
+                loop = asyncio.new_event_loop()
+                try:
+                    loop.run_until_complete(_run_batch())
+                finally:
+                    loop.close()
+
+        duration_s = int(max(0, _time.time() - start_ts))
 
         # Update last_run timestamp
         schedule_api.update_schedule(schedule_id, {"last_run": datetime.now()})
 
+        if getattr(schedule, "notify", True):
+            if failed > 0:
+                _notify(
+                    "Mac Maintenance (Failed)",
+                    f"{schedule.name}: {successful}/{total} ok, {failed} failed in {duration_s}s",
+                )
+            else:
+                _notify(
+                    "Mac Maintenance (Success)",
+                    f"{schedule.name}: {successful}/{total} ok in {duration_s}s",
+                )
+
         logger.info(f"Scheduled task completed: {schedule_id}")
-        return True
+        return failed == 0
 
     except Exception as e:
         logger.error(f"Error running scheduled task: {e}", exc_info=True)
