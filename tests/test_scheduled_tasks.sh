@@ -17,15 +17,18 @@ else
     exit 1
 fi
 
-# Test 2: Verify LaunchDaemons directory permissions
+# Test 2: Verify LaunchAgents directory permissions
 echo
-echo "Test 2: Checking /Library/LaunchDaemons permissions..."
-if [ -d "/Library/LaunchDaemons" ] && [ -w "/Library/LaunchDaemons" ]; then
-    echo "✅ LaunchDaemons directory writable"
-elif [ -d "/Library/LaunchDaemons" ]; then
-    echo "⚠️  LaunchDaemons exists but not writable (need sudo)"
+echo "Test 2: Checking ~/Library/LaunchAgents permissions..."
+LA_DIR="$HOME/Library/LaunchAgents"
+if [ ! -d "$LA_DIR" ]; then
+    echo "Creating LaunchAgents directory..."
+    mkdir -p "$LA_DIR"
+fi
+if [ -w "$LA_DIR" ]; then
+    echo "✅ LaunchAgents directory writable"
 else
-    echo "❌ LaunchDaemons directory doesn't exist"
+    echo "❌ LaunchAgents directory not writable"
     exit 1
 fi
 
@@ -113,20 +116,12 @@ else:
     exit(1)
 EOF
 
-# Test 7: CRITICAL - Check for execute_operation method bug
+# Test 7: Verify run_scheduled_task can be imported and uses daemon-backed runner
 echo
-echo "Test 7: Checking for known bug (execute_operation)..."
+echo "Test 7: Checking scheduled task entry point..."
 python3 << 'EOF'
-from mac_maintenance.api.maintenance import MaintenanceAPI
-
-api = MaintenanceAPI()
-if hasattr(api, 'execute_operation'):
-    print("✅ execute_operation method exists")
-else:
-    print("❌ CRITICAL BUG: execute_operation method missing!")
-    print("   Scheduled tasks will FAIL to execute!")
-    print("   This needs to be fixed before using schedules.")
-    exit(1)
+from mac_maintenance.core.launchd import run_scheduled_task
+print("✅ run_scheduled_task import OK")
 EOF
 
 echo

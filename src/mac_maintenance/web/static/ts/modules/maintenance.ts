@@ -944,3 +944,57 @@ export async function selectWizardOption(option: string): Promise<void> {
     wizardPrompt.style.display = 'none';
   }
 }
+
+// ============================================================================
+// Keyboard Shortcuts
+// ============================================================================
+
+function isTypingInField(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+  const tag = (el.tagName || '').toLowerCase();
+  return tag === 'input' || tag === 'textarea' || tag === 'select' || el.isContentEditable;
+}
+
+export function closeShortcuts(): void {
+  const modal = document.getElementById('shortcuts-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+function openShortcuts(): void {
+  const modal = document.getElementById('shortcuts-modal');
+  if (modal) modal.classList.add('active');
+}
+
+export function initKeyboardShortcuts(): void {
+  document.addEventListener('keydown', (e: KeyboardEvent) => {
+    // Don't trigger global shortcuts while typing
+    if (isTypingInField(e.target)) return;
+
+    // "?" opens shortcuts
+    if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+      e.preventDefault();
+      openShortcuts();
+      return;
+    }
+
+    // "/" focuses operation search
+    if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      const search = document.getElementById('operation-search') as HTMLInputElement | null;
+      if (search) {
+        e.preventDefault();
+        search.focus();
+      }
+      return;
+    }
+
+    // Escape closes modals
+    if (e.key === 'Escape') {
+      closeShortcuts();
+      closeWizard();
+      const closeScheduleModalFn = (window as any).closeScheduleModal as undefined | (() => void);
+      if (closeScheduleModalFn) closeScheduleModalFn();
+    }
+  });
+}
+

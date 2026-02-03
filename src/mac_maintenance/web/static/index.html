@@ -1950,6 +1950,44 @@
             </div>
         </div>
 
+        <!-- Keyboard Shortcuts Modal (press ? anywhere) -->
+        <div class="modal" id="shortcuts-modal">
+            <div class="modal-content" style="max-width: 720px;">
+                <div class="modal-header">
+                    <h3>⌨️ Keyboard Shortcuts</h3>
+                    <button class="modal-close" onclick="closeShortcuts()">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;">
+                        <div style="display:flex; justify-content: space-between; gap: 1rem;">
+                            <div><strong>Show this help</strong></div>
+                            <div><span class="kbd">?</span></div>
+                        </div>
+                        <div style="display:flex; justify-content: space-between; gap: 1rem;">
+                            <div><strong>Close dialogs</strong></div>
+                            <div><span class="kbd">Esc</span></div>
+                        </div>
+                        <hr style="border: none; border-top: 1px solid var(--border-color); margin: 0.5rem 0;">
+                        <div style="display:flex; justify-content: space-between; gap: 1rem;">
+                            <div><strong>Run selected maintenance operations</strong></div>
+                            <div><span class="kbd">⌘</span> + <span class="kbd">Enter</span></div>
+                        </div>
+                        <div style="display:flex; justify-content: space-between; gap: 1rem;">
+                            <div><strong>Focus storage path</strong></div>
+                            <div><span class="kbd">⌘</span> + <span class="kbd">L</span></div>
+                        </div>
+                        <div style="display:flex; justify-content: space-between; gap: 1rem;">
+                            <div><strong>Focus operation search</strong></div>
+                            <div><span class="kbd">/</span></div>
+                        </div>
+                    </div>
+                    <p style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 1.25rem;">
+                        Tip: Shortcuts won’t trigger while you’re typing in a text field.
+                    </p>
+                </div>
+            </div>
+        </div>
+
         <!-- Schedule Create/Edit Modal -->
         <div class="modal" id="schedule-modal">
             <div class="modal-content">

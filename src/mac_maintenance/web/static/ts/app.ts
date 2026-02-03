@@ -5,7 +5,7 @@
 
 import { initTheme, toggleTheme, switchTab, showToast, reloadScripts } from './modules/ui';
 import { loadSystemInfo, loadHealthScore, loadTopProcesses } from './modules/dashboard';
-import { loadOperations, runSelectedOperations, cancelOperations, skipCurrentOperation, applyTemplate, selectAllOperations, deselectAllOperations, copyOutputToClipboard, showQuickStartWizard, closeWizard, selectWizardOption } from './modules/maintenance';
+import { loadOperations, runSelectedOperations, cancelOperations, skipCurrentOperation, applyTemplate, selectAllOperations, deselectAllOperations, copyOutputToClipboard, showQuickStartWizard, closeWizard, selectWizardOption, initKeyboardShortcuts, closeShortcuts } from './modules/maintenance';
 import { analyzeStorage, setPath, getUsername } from './modules/storage';
 import { onScheduleTabShow, openScheduleModal, closeScheduleModal, loadSchedules, saveSchedule, deleteSchedule, toggleScheduleEnabled, runScheduleNow, applyScheduleTemplate } from './modules/schedule';
 import type { TabName } from './types';
@@ -48,6 +48,9 @@ declare global {
     closeWizard: () => void;
     selectWizardOption: (option: string) => Promise<void>;
 
+    // Keyboard shortcuts
+    closeShortcuts: () => void;
+
     // Storage
     analyzeStorage: () => Promise<void>;
     setPath: (path: string) => void;
@@ -88,6 +91,7 @@ window.copyOutputToClipboard = copyOutputToClipboard;
 window.showQuickStartWizard = showQuickStartWizard;
 window.closeWizard = closeWizard;
 window.selectWizardOption = selectWizardOption;
+window.closeShortcuts = closeShortcuts;
 window.analyzeStorage = analyzeStorage;
 window.setPath = setPath;
 window.getUsername = getUsername;
@@ -108,6 +112,9 @@ window.showToast = showToast;
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('✓ DOM Content Loaded');
+
+  // Keyboard shortcuts ("?" for help)
+  initKeyboardShortcuts();
 
   // Initialize theme
   initTheme();

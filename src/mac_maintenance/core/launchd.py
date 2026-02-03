@@ -7,13 +7,16 @@ Key Concepts:
 - Launchd manages schedules (daemon doesn't need to run continuously)
 - Each schedule gets its own plist file
 - Plists use StartCalendarInterval for timing
-- Registration requires sudo (system-level LaunchDaemons)
+- Uses per-user LaunchAgents by default (no sudo prompts; daemon handles privileged ops)
 """
 
+import asyncio
 import logging
+import os
 import subprocess
 import plistlib
 import re
+import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from datetime import datetime
@@ -40,13 +43,13 @@ class LaunchdGenerator:
         """Initialize LaunchdGenerator.
 
         Args:
-            plist_dir: Directory for plist files (default: /Library/LaunchDaemons)
+            plist_dir: Directory for plist files (default: ~/Library/LaunchAgents)
         """
         self.logger = logging.getLogger("core.LaunchdGenerator")
 
-        # Default to system LaunchDaemons directory
+        # Default to per-user LaunchAgents directory (avoids sudo and interactive auth)
         if plist_dir is None:
-            plist_dir = Path("/Library/LaunchDaemons")
+            plist_dir = Path.home() / "Library" / "LaunchAgents"
 
         self.plist_dir = Path(plist_dir)
 
@@ -68,11 +71,13 @@ class LaunchdGenerator:
         """
         self.logger.debug(f"Generating plist for schedule: {schedule.id}")
 
-        # Build program arguments (path to scheduler script + schedule ID)
+        # Build program arguments.
+        # Use the current interpreter to ensure the environment has mac_maintenance installed.
         program_arguments = [
-            "/usr/bin/python3",
-            str(Path(__file__).parent.parent / "scripts" / "run_schedule.py"),
-            schedule.id
+            sys.executable,
+            "-m",
+            "mac_maintenance.scripts.run_schedule",
+            schedule.id,
         ]
 
         # Build calendar interval based on frequency
@@ -86,7 +91,10 @@ class LaunchdGenerator:
             "RunAtLoad": False,  # Don't run immediately when loaded
             "StandardOutPath": str(Path.home() / ".mac-maintenance" / "logs" / f"{schedule.id}.log"),
             "StandardErrorPath": str(Path.home() / ".mac-maintenance" / "logs" / f"{schedule.id}.error.log"),
-            "UserName": "root",  # Run as root for system maintenance tasks
+            # Make Homebrew and other common CLI tools available when running under launchd
+            "EnvironmentVariables": {
+                "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+            },
         }
 
         # Add disabled flag if schedule is disabled
@@ -210,15 +218,27 @@ class LaunchdGenerator:
             self.logger.error(f"Plist not found: {plist_path}")
             return False
 
-        # Register with launchctl (requires sudo)
+        # Register with launchctl (user LaunchAgent)
         try:
+            uid = os.getuid()
+            # Preferred modern API (Ventura+)
             result = subprocess.run(
-                ["sudo", "launchctl", "load", str(plist_path)],
+                ["launchctl", "bootstrap", f"gui/{uid}", str(plist_path)],
                 capture_output=True,
                 text=True,
                 check=False,
-                timeout=10
+                timeout=10,
             )
+
+            # Fallback for older systems
+            if result.returncode != 0:
+                result = subprocess.run(
+                    ["launchctl", "load", str(plist_path)],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=10,
+                )
 
             if result.returncode == 0:
                 self.logger.info(f"Successfully registered schedule: {schedule_id}")
@@ -257,15 +277,27 @@ class LaunchdGenerator:
             self.logger.debug(f"Plist not found (may already be unregistered): {plist_path}")
             return True  # Consider success if already gone
 
-        # Unregister with launchctl (requires sudo)
+        # Unregister with launchctl
         try:
+            uid = os.getuid()
+            # Preferred modern API
             result = subprocess.run(
-                ["sudo", "launchctl", "unload", str(plist_path)],
+                ["launchctl", "bootout", f"gui/{uid}", str(plist_path)],
                 capture_output=True,
                 text=True,
                 check=False,
-                timeout=10
+                timeout=10,
             )
+
+            # Fallback
+            if result.returncode != 0:
+                result = subprocess.run(
+                    ["launchctl", "unload", str(plist_path)],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=10,
+                )
 
             if result.returncode == 0:
                 self.logger.info(f"Successfully unregistered schedule: {schedule_id}")
@@ -405,28 +437,41 @@ def run_scheduled_task(schedule_id: str) -> bool:
 
         logger.info(f"Executing operations for schedule: {schedule.name}")
 
-        # Execute each operation
+        # Execute operations via the daemon-backed batch runner (records history + durations)
         from mac_maintenance.api.maintenance import MaintenanceAPI
 
         maintenance_api = MaintenanceAPI()
 
-        for operation_id in schedule.operations:
-            logger.info(f"Executing operation: {operation_id}")
-            try:
-                # Execute operation
-                # Note: This is a simplified version; actual implementation
-                # would need async handling or subprocess for operations
-                result = maintenance_api.execute_operation(operation_id)
-                logger.info(f"Operation {operation_id} completed: {result}")
+        async def _run_batch() -> None:
+            async for event in maintenance_api.run_operations(schedule.operations):
+                # Mirror key events to the scheduler log
+                if event.get("type") == "operation_start":
+                    logger.info(f"[{event.get('progress')}] Starting: {event.get('operation_name')}")
+                elif event.get("type") == "output":
+                    # Keep logs readable; output already cleaned by API
+                    line = event.get("line", "")
+                    if line:
+                        logger.info(line)
+                elif event.get("type") == "operation_complete":
+                    status = "SUCCESS" if event.get("success") else "FAILED"
+                    logger.info(f"Completed {event.get('operation_id')}: {status} (code {event.get('returncode')})")
+                elif event.get("type") == "summary":
+                    logger.info(
+                        f"Summary: total={event.get('total')} success={event.get('successful')} failed={event.get('failed')}"
+                    )
 
-            except Exception as e:
-                logger.error(f"Operation {operation_id} failed: {e}")
-                # Continue with other operations even if one fails
+        try:
+            asyncio.run(_run_batch())
+        except RuntimeError:
+            # If already inside an event loop, fall back to a dedicated loop.
+            loop = asyncio.new_event_loop()
+            try:
+                loop.run_until_complete(_run_batch())
+            finally:
+                loop.close()
 
         # Update last_run timestamp
-        schedule_api.update_schedule(schedule_id, {
-            "last_run": datetime.now()
-        })
+        schedule_api.update_schedule(schedule_id, {"last_run": datetime.now()})
 
         logger.info(f"Scheduled task completed: {schedule_id}")
         return True
