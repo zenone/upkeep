@@ -1330,9 +1330,18 @@
             align-items: center;
             justify-content: center;
             min-height: 36px;
+            line-height: 1;
+            white-space: nowrap;
             /* Override fixed dimensions from .warning and .danger */
             width: auto !important;
             height: 36px !important;
+        }
+
+        /* Icon-only schedule buttons: keep consistent square sizing */
+        .schedule-actions button.secondary {
+            width: 36px !important;
+            padding-left: 0;
+            padding-right: 0;
         }
 
         .schedule-info {

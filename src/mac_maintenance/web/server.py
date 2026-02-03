@@ -5,6 +5,7 @@ Uses secure launchd daemon for privileged operations (no password handling).
 """
 
 import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -54,8 +55,36 @@ system_history = {
     "timestamps": deque(maxlen=60)
 }
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """FastAPI lifespan handler.
+
+    Pre-populate system history for immediate sparklines on first page load.
+    """
+    try:
+        cpu = psutil.cpu_percent(interval=0.1)
+        memory = psutil.virtual_memory().percent
+        disk = psutil.disk_usage("/").percent
+        current_time = time.time()
+
+        # Pre-populate with 3 initial identical values so sparklines appear immediately
+        # (sparklines require at least 2 data points to draw)
+        for _ in range(3):
+            system_history["cpu"].append(cpu)
+            system_history["memory"].append(memory)
+            system_history["disk"].append(disk)
+            system_history["timestamps"].append(current_time)
+    except Exception as e:
+        # Don't fail startup if metrics can't be collected
+        print(f"Warning: Could not initialize system history: {e}")
+
+    yield
+
+
 # Initialize FastAPI app with comprehensive OpenAPI configuration
 app = FastAPI(
+    lifespan=lifespan,
+
     title="Mac Maintenance API",
     version=__version__,
     description="""
@@ -131,7 +160,8 @@ maintenance_api = MaintenanceAPI()
 
 
 # Startup event - pre-populate system history for immediate sparklines
-@app.on_event("startup")
+# (startup handled by lifespan)
+# @app.on_event("startup")
 async def startup_event():
     """Initialize system history with current metrics for immediate chart display."""
     try:

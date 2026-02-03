@@ -1,9 +1,10 @@
-"""
-System information models.
-"""
+"""System information models."""
 
-from pydantic import BaseModel, Field
+from __future__ import annotations
+
 from typing import List
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class CPUInfo(BaseModel):
@@ -46,13 +47,8 @@ class SystemInfo(BaseModel):
 class SystemInfoResponse(BaseModel):
     """Complete system information response."""
 
-    cpu: CPUInfo
-    memory: MemoryInfo
-    disk: DiskInfo
-    system: SystemInfo
-
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "cpu": {"percent": 15.3, "count": 8, "history": [12.1, 14.5, 15.3]},
                 "memory": {
@@ -60,57 +56,65 @@ class SystemInfoResponse(BaseModel):
                     "used_gb": 8.5,
                     "available_gb": 7.5,
                     "percent": 53.1,
-                    "history": [50.2, 52.0, 53.1]
+                    "history": [50.2, 52.0, 53.1],
                 },
                 "disk": {
                     "total_gb": 500.0,
                     "used_gb": 350.0,
                     "free_gb": 150.0,
                     "percent": 70.0,
-                    "history": [69.5, 69.8, 70.0]
+                    "history": [69.5, 69.8, 70.0],
                 },
                 "system": {
                     "username": "john",
                     "hostname": "johns-macbook",
                     "version": "14.2",
-                    "architecture": "arm64"
-                }
+                    "architecture": "arm64",
+                },
             }
         }
+    )
+
+    cpu: CPUInfo
+    memory: MemoryInfo
+    disk: DiskInfo
+    system: SystemInfo
 
 
 class SystemHealthResponse(BaseModel):
     """System health assessment."""
 
-    overall: str = Field(..., description="Overall health status", pattern="^(good|warning|critical)$")
-    score: int = Field(..., description="Health score 0-100", ge=0, le=100)
-    issues: List[str] = Field(default_factory=list, description="List of health issues")
-
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "overall": "warning",
                 "score": 65,
-                "issues": ["High disk usage (85%)", "Memory usage above 80%"]
+                "issues": ["High disk usage (85%)", "Memory usage above 80%"],
             }
         }
+    )
+
+    overall: str = Field(..., description="Overall health status", pattern="^(good|warning|critical)$")
+    score: int = Field(..., description="Health score 0-100", ge=0, le=100)
+    issues: List[str] = Field(default_factory=list, description="List of health issues")
 
 
 class SparklineResponse(BaseModel):
     """Sparkline data for dashboard charts."""
 
-    cpu: List[float] = Field(..., description="CPU usage history")
-    memory: List[float] = Field(..., description="Memory usage history")
-    disk: List[float] = Field(..., description="Disk usage history")
-
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "cpu": [10.5, 15.2, 12.8, 18.3, 14.1],
                 "memory": [55.0, 56.2, 54.8, 57.1, 55.9],
-                "disk": [70.0, 70.1, 70.1, 70.2, 70.2]
+                "disk": [70.0, 70.1, 70.1, 70.2, 70.2],
             }
         }
+    )
+
+    cpu: List[float] = Field(..., description="CPU usage history")
+    memory: List[float] = Field(..., description="Memory usage history")
+    disk: List[float] = Field(..., description="Disk usage history")
 
 
 class ProcessInfo(BaseModel):
@@ -124,11 +128,8 @@ class ProcessInfo(BaseModel):
 class ProcessesResponse(BaseModel):
     """Top resource-consuming processes."""
 
-    top_cpu: List[ProcessInfo] = Field(..., description="Top CPU consumers")
-    top_memory: List[ProcessInfo] = Field(..., description="Top memory consumers")
-
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "top_cpu": [
                     {"name": "Chrome", "cpu_percent": 25.3, "memory_mb": 1024.5},
@@ -137,6 +138,10 @@ class ProcessesResponse(BaseModel):
                 "top_memory": [
                     {"name": "Chrome", "cpu_percent": 25.3, "memory_mb": 2048.0},
                     {"name": "Docker", "cpu_percent": 5.0, "memory_mb": 1536.5},
-                ]
+                ],
             }
         }
+    )
+
+    top_cpu: List[ProcessInfo] = Field(..., description="Top CPU consumers")
+    top_memory: List[ProcessInfo] = Field(..., description="Top memory consumers")

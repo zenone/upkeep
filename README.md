@@ -241,10 +241,12 @@ The script needs "Full Disk Access" to read log files and cache directories.
 
 ### Step 3 (Optional): Enable Python Features
 
-Want the interactive TUI and enhanced storage analyzer? Install Python components:
+Want the interactive TUI and enhanced storage analyzer? Install Python components.
+
+#### Recommended: `uv`
 
 ```bash
-# Install uv (modern Python package manager - crazy fast)
+# Install uv (modern Python package manager)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Create isolated environment
@@ -257,6 +259,18 @@ source .venv/bin/activate
 uv pip install -e .
 
 # Test it
+mac-maintenance --version
+mac-maintenance tui
+```
+
+#### Fallback: stdlib `venv` + `pip`
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip
+python -m pip install -e .
+
 mac-maintenance --version
 mac-maintenance tui
 ```

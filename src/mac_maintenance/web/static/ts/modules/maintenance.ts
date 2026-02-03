@@ -54,19 +54,6 @@ export async function loadOperations(): Promise<void> {
 
     allOperations = data.operations;
 
-    console.log('=== WHY/WHAT DEBUG ===');
-    console.log('Total operations loaded:', allOperations.length);
-    console.log('First operation full data:', allOperations[0]);
-
-    const opsWithData = allOperations.filter(op => op.why && op.what);
-    const opsWithoutData = allOperations.filter(op => !op.why || !op.what);
-    console.log(`Operations WITH why/what: ${opsWithData.length}`);
-    console.log(`Operations WITHOUT why/what: ${opsWithoutData.length}`);
-    if (opsWithoutData.length > 0) {
-      console.log('Operations missing why/what:', opsWithoutData.map(op => op.id));
-    }
-    console.log('=== END DEBUG ===');
-
     // Sort by category
     allOperations.sort((a, b) => {
       if (a.category === b.category) {
@@ -112,67 +99,75 @@ export async function loadOperations(): Promise<void> {
         </div>`;
       }
 
-      // Build WHY/WHAT accordion if data is available
+      // Build WHY/WHAT accordion if meaningful data is available
       let whyWhatHtml = '';
-      console.log(`Operation ${op.id}: has why=${!!op.why}, has what=${!!op.what}`);
-      if (op.why && op.what) {
-        let whenToRunHtml = '';
-        if (op.when_to_run && op.when_to_run.length > 0) {
-          whenToRunHtml = `
-            <div class="operation-when">
-              <h5>📅 When to Run This</h5>
-              <ul>
-                ${op.when_to_run.map(when => `<li>${when}</li>`).join('')}
-              </ul>
-            </div>
+      if (op.why || op.what || (op.when_to_run && op.when_to_run.length > 0)) {
+        const hasWhen = Array.isArray(op.when_to_run) && op.when_to_run.length > 0;
+        const hasContext = !!op.why?.context;
+        const hasProblems = Array.isArray(op.why?.problems) && op.why!.problems.length > 0;
+        const hasOutcomes = Array.isArray(op.what?.outcomes) && op.what!.outcomes.length > 0;
+        const hasTimeline = !!op.what?.timeline;
+
+        // Only render the accordion if it will contain something useful.
+        const hasAnyDetails = hasWhen || hasContext || hasProblems || hasOutcomes || hasTimeline;
+
+        if (hasAnyDetails) {
+          const whenToRunHtml = hasWhen
+            ? `
+              <div class="operation-when">
+                <h5>📅 When to Run This</h5>
+                <ul>
+                  ${op.when_to_run!.map((when) => `<li>${escapeHtml(String(when))}</li>`).join('')}
+                </ul>
+              </div>
+            `
+            : '';
+
+          const contextHtml = hasContext
+            ? `<p class="operation-context">${escapeHtml(String(op.why!.context))}</p>`
+            : '';
+
+          const problemsHtml = hasProblems
+            ? op.why!.problems
+                .map(
+                  (problem: any) =>
+                    `<li><strong>${escapeHtml(String(problem.symptom))}</strong><br>${escapeHtml(String(problem.description))}</li>`
+                )
+                .join('')
+            : '';
+
+          const outcomesHtml = hasOutcomes
+            ? op.what!.outcomes
+                .map((outcome: any) => {
+                  const icon =
+                    outcome.type === 'positive'
+                      ? '✅'
+                      : outcome.type === 'warning'
+                        ? '⚠️'
+                        : outcome.type === 'temporary'
+                          ? '⏱️'
+                          : 'ℹ️';
+                  return `<li>${icon} ${escapeHtml(String(outcome.description))}</li>`;
+                })
+                .join('')
+            : '';
+
+          const timelineHtml = hasTimeline
+            ? `<p class="operation-timeline"><strong>⏱️ How Long:</strong> ${escapeHtml(String(op.what!.timeline))}</p>`
+            : '';
+
+          whyWhatHtml = `
+            <details class="operation-details">
+              <summary>ℹ️ Why run this & What to expect</summary>
+              <div class="operation-details-content">
+                ${whenToRunHtml}
+                ${contextHtml}
+                ${hasProblems ? `<div class="operation-why"><h5>🔍 Problems This Solves</h5><ul>${problemsHtml}</ul></div>` : ''}
+                ${hasOutcomes || hasTimeline ? `<div class="operation-what"><h5>✨ What Happens After Running</h5>${hasOutcomes ? `<ul>${outcomesHtml}</ul>` : ''}${timelineHtml}</div>` : ''}
+              </div>
+            </details>
           `;
         }
-
-        let contextHtml = '';
-        if (op.why.context) {
-          contextHtml = `<p class="operation-context">${op.why.context}</p>`;
-        }
-
-        let problemsHtml = '';
-        if (op.why.problems && op.why.problems.length > 0) {
-          problemsHtml = op.why.problems.map(problem =>
-            `<li><strong>${problem.symptom}</strong><br>${problem.description}</li>`
-          ).join('');
-        }
-
-        let outcomesHtml = '';
-        if (op.what.outcomes && op.what.outcomes.length > 0) {
-          outcomesHtml = op.what.outcomes.map(outcome => {
-            const icon = outcome.type === 'positive' ? '✅' :
-                        outcome.type === 'warning' ? '⚠️' :
-                        outcome.type === 'temporary' ? '⏱️' : 'ℹ️';
-            return `<li>${icon} ${outcome.description}</li>`;
-          }).join('');
-        }
-
-        let timelineHtml = '';
-        if (op.what.timeline) {
-          timelineHtml = `<p class="operation-timeline"><strong>⏱️ How Long:</strong> ${op.what.timeline}</p>`;
-        }
-
-        whyWhatHtml = `
-          <details class="operation-details">
-            <summary>ℹ️ Why run this & What to expect</summary>
-            <div class="operation-details-content">
-              ${whenToRunHtml}
-              ${contextHtml}
-              <div class="operation-why">
-                <h5>🔍 Problems This Solves</h5>
-                <ul>${problemsHtml}</ul>
-              </div>
-              <div class="operation-what">
-                <h5>✨ What Happens After Running</h5>
-                <ul>${outcomesHtml}</ul>
-                ${timelineHtml}
-              </div>
-            </div>
-          </details>
-        `;
       }
 
       return `

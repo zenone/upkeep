@@ -65,6 +65,9 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+markers = [
+    "integration: marks tests as integration (may be slower / touch system boundaries)",
+]
 addopts = [
     "--strict-markers",
     "--strict-config",

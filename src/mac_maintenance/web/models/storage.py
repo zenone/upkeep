@@ -1,9 +1,10 @@
-"""
-Storage analysis and management models.
-"""
+"""Storage analysis and management models."""
 
-from pydantic import BaseModel, Field
+from __future__ import annotations
+
 from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class StorageEntry(BaseModel):
@@ -23,20 +24,8 @@ class StorageAnalyzeRequest(BaseModel):
 class StorageAnalyzeResponse(BaseModel):
     """Storage analysis results."""
 
-    success: bool = Field(True, description="Analysis succeeded")
-    path: str = Field(..., description="Analyzed path")
-    total_size_gb: float = Field(..., description="Total size in GB", ge=0)
-    file_count: int = Field(..., description="Number of files", ge=0)
-    dir_count: int = Field(..., description="Number of directories", ge=0)
-    largest_entries: List[StorageEntry] = Field(
-        ...,
-        description="Largest files/directories (up to 50)",
-        max_length=50
-    )
-    error: Optional[str] = Field(None, description="Error message if analysis failed")
-
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "success": True,
                 "path": "/Users/john/Downloads",
@@ -45,10 +34,21 @@ class StorageAnalyzeResponse(BaseModel):
                 "dir_count": 137,
                 "largest_entries": [
                     {"path": "/Users/john/Downloads/BigFile.dmg", "size_gb": 5.2, "is_dir": False},
-                    {"path": "/Users/john/Downloads/OldProject", "size_gb": 3.8, "is_dir": True}
-                ]
+                    {"path": "/Users/john/Downloads/OldProject", "size_gb": 3.8, "is_dir": True},
+                ],
             }
         }
+    )
+
+    success: bool = Field(True, description="Analysis succeeded")
+    path: str = Field(..., description="Analyzed path")
+    total_size_gb: float = Field(..., description="Total size in GB", ge=0)
+    file_count: int = Field(..., description="Number of files", ge=0)
+    dir_count: int = Field(..., description="Number of directories", ge=0)
+    largest_entries: List[StorageEntry] = Field(
+        ..., description="Largest files/directories (up to 50)", max_length=50
+    )
+    error: Optional[str] = Field(None, description="Error message if analysis failed")
 
 
 class DeleteRequest(BaseModel):
@@ -61,15 +61,12 @@ class DeleteRequest(BaseModel):
 class DeleteResponse(BaseModel):
     """Result of delete operation."""
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {"success": True, "path": "/Users/john/Downloads/file.txt", "error": None}
+        }
+    )
+
     success: bool = Field(..., description="Delete succeeded")
     path: str = Field(..., description="Deleted path")
     error: Optional[str] = Field(None, description="Error message if delete failed")
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "success": True,
-                "path": "/Users/john/Downloads/file.txt",
-                "error": None
-            }
-        }
