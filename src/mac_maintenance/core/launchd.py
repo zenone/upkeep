@@ -459,7 +459,7 @@ exec \"$PYTHON\" -m mac_maintenance.scripts.run_schedule \"$1\"
         return schedule_ids
 
 
-def run_scheduled_task(schedule_id: str) -> bool:
+async def run_scheduled_task_async(schedule_id: str) -> bool:
     """Entry point for scheduled task execution.
 
     This function is called by launchd at scheduled times.
@@ -582,15 +582,7 @@ def run_scheduled_task(schedule_id: str) -> bool:
                             f"Summary: total={total} success={successful} failed={failed}"
                         )
 
-            try:
-                asyncio.run(_run_batch())
-            except RuntimeError:
-                # If already inside an event loop, fall back to a dedicated loop.
-                loop = asyncio.new_event_loop()
-                try:
-                    loop.run_until_complete(_run_batch())
-                finally:
-                    loop.close()
+            await _run_batch()
 
         duration_s = int(max(0, _time.time() - start_ts))
 
@@ -615,6 +607,17 @@ def run_scheduled_task(schedule_id: str) -> bool:
     except Exception as e:
         logger.error(f"Error running scheduled task: {e}", exc_info=True)
         return False
+
+
+def run_scheduled_task(schedule_id: str) -> bool:
+    """Synchronous wrapper.
+
+    - Used by launchd / CLI entrypoints (no running event loop)
+    - Safe to call from non-async contexts.
+
+    For FastAPI endpoints (already in an event loop), call `await run_scheduled_task_async(...)`.
+    """
+    return asyncio.run(run_scheduled_task_async(schedule_id))
 
 
 if __name__ == "__main__":

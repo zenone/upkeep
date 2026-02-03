@@ -1376,9 +1376,9 @@ async def run_schedule_now(schedule_id: str):
             raise HTTPException(status_code=404, detail=response.error)
 
         # Execute operations
-        from mac_maintenance.core.launchd import run_scheduled_task
+        from mac_maintenance.core.launchd import run_scheduled_task_async
 
-        success = run_scheduled_task(schedule_id)
+        success = await run_scheduled_task_async(schedule_id)
 
         if success:
             return {
