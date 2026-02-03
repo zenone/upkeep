@@ -1778,6 +1778,18 @@
                            oninput="filterOperations()" onkeyup="handleSearchKey(event)">
                 </div>
 
+                <!-- Doctor / Preflight -->
+                <div id="doctor-panel" style="display:none; margin: 1rem 0; padding: 1rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px;">
+                    <div style="display:flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                        <div>
+                            <h3 style="margin: 0; font-size: 1rem;">🩺 System Check</h3>
+                            <p style="margin: 0.35rem 0 0 0; color: var(--text-secondary); font-size: 0.875rem;">Fix missing tools before running operations</p>
+                        </div>
+                        <button class="secondary" onclick="runDoctor()">Re-check</button>
+                    </div>
+                    <div id="doctor-results" style="margin-top: 0.75rem;"></div>
+                </div>
+
                 <!-- Quick Actions -->
                 <div class="quick-actions" style="margin: 1.5rem 0; padding: 1rem; background: linear-gradient(135deg, var(--accent-color) 0%, #0051d5 100%); border-radius: 12px; display: flex; justify-content: space-between; align-items: center; color: white;">
                     <div>

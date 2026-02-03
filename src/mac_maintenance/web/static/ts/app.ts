@@ -5,7 +5,7 @@
 
 import { initTheme, toggleTheme, switchTab, showToast, reloadScripts } from './modules/ui';
 import { loadSystemInfo, loadHealthScore, loadTopProcesses } from './modules/dashboard';
-import { loadOperations, runSelectedOperations, cancelOperations, skipCurrentOperation, applyTemplate, selectAllOperations, deselectAllOperations, copyOutputToClipboard, showQuickStartWizard, closeWizard, selectWizardOption, initKeyboardShortcuts, closeShortcuts } from './modules/maintenance';
+import { loadOperations, runDoctor, fixDoctorIssue, runSelectedOperations, cancelOperations, skipCurrentOperation, applyTemplate, selectAllOperations, deselectAllOperations, copyOutputToClipboard, showQuickStartWizard, closeWizard, selectWizardOption, initKeyboardShortcuts, closeShortcuts } from './modules/maintenance';
 import { analyzeStorage, setPath, getUsername } from './modules/storage';
 import { onScheduleTabShow, openScheduleModal, closeScheduleModal, loadSchedules, saveSchedule, deleteSchedule, toggleScheduleEnabled, runScheduleNow, applyScheduleTemplate } from './modules/schedule';
 import type { TabName } from './types';
@@ -37,6 +37,8 @@ declare global {
 
     // Maintenance
     loadOperations: () => Promise<void>;
+    runDoctor: () => Promise<void>;
+    fixDoctorIssue: (action: string) => Promise<void>;
     runSelectedOperations: () => Promise<void>;
     cancelOperations: () => void;
     skipCurrentOperation: () => void;
@@ -81,6 +83,8 @@ window.loadSystemInfo = loadSystemInfo;
 window.loadHealthScore = loadHealthScore;
 window.loadTopProcesses = loadTopProcesses;
 window.loadOperations = loadOperations;
+window.runDoctor = runDoctor;
+window.fixDoctorIssue = fixDoctorIssue;
 window.runSelectedOperations = runSelectedOperations;
 window.cancelOperations = cancelOperations;
 window.skipCurrentOperation = skipCurrentOperation;

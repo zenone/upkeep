@@ -86,6 +86,9 @@ export async function loadOperations(): Promise<void> {
       console.warn('Could not fetch per-operation history:', error);
     }
 
+    // Run preflight checks (Doctor)
+    runDoctor().catch(() => {});
+
     const html = allOperations.map(op => {
       const opHistory = operationsHistory[op.id];
 
@@ -954,6 +957,81 @@ function isTypingInField(target: EventTarget | null): boolean {
   if (!el) return false;
   const tag = (el.tagName || '').toLowerCase();
   return tag === 'input' || tag === 'textarea' || tag === 'select' || el.isContentEditable;
+}
+
+export async function runDoctor(): Promise<void> {
+  const panel = document.getElementById('doctor-panel');
+  const results = document.getElementById('doctor-results');
+  if (!panel || !results) return;
+
+  try {
+    const res = await fetch('/api/maintenance/doctor');
+    const data = await res.json();
+
+    if (!data.success) {
+      panel.style.display = 'block';
+      results.innerHTML = `<div style="color: var(--danger);">Doctor check failed.</div>`;
+      return;
+    }
+
+    const issues: any[] = data.issues || [];
+    if (issues.length === 0) {
+      panel.style.display = 'none';
+      results.innerHTML = '';
+      return;
+    }
+
+    panel.style.display = 'block';
+
+    const rows = issues.map((i) => {
+      const severityColor = i.severity === 'error' ? 'var(--danger)' : (i.severity === 'warning' ? 'var(--warning)' : 'var(--text-secondary)');
+      const affects = Array.isArray(i.affects_operations) && i.affects_operations.length
+        ? `<div style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 0.25rem;">Affects: ${i.affects_operations.join(', ')}</div>`
+        : '';
+
+      const button = i.fix_action
+        ? `<button class="secondary" style="white-space: nowrap;" onclick="fixDoctorIssue('${i.fix_action}')">${i.fix_label || 'Fix'}</button>`
+        : '';
+
+      return `
+        <div style="display:flex; justify-content: space-between; gap: 1rem; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-secondary);">
+          <div>
+            <div style="font-weight: 600; color: ${severityColor};">${escapeHtml(i.title || 'Issue')}</div>
+            <div style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.15rem;">${escapeHtml(i.detail || '')}</div>
+            ${affects}
+          </div>
+          <div style="display:flex; align-items:center; gap: 0.5rem;">
+            ${button}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    results.innerHTML = `<div style="display:grid; gap: 0.75rem;">${rows}</div>`;
+  } catch (e) {
+    panel.style.display = 'block';
+    results.innerHTML = `<div style="color: var(--danger);">Doctor check failed.</div>`;
+  }
+}
+
+// Called from HTML via window.fixDoctorIssue
+export async function fixDoctorIssue(action: string): Promise<void> {
+  try {
+    const res = await fetch('/api/maintenance/doctor/fix', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.detail || data.error || 'Failed');
+    }
+    showToast(data.message || 'Fix started', 'success', 4000);
+    // Re-check after a short delay
+    setTimeout(() => runDoctor().catch(() => {}), 1500);
+  } catch (e: any) {
+    showToast(e?.message || 'Fix failed', 'error', 5000);
+  }
 }
 
 export function closeShortcuts(): void {

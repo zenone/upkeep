@@ -672,6 +672,105 @@ async def get_queue_status() -> Dict[str, Any]:
 
 
 @app.get(
+    "/api/maintenance/doctor",
+    tags=["maintenance"],
+    summary="Doctor / preflight checks",
+    description="""
+Runs a quick preflight to detect missing tools and common issues that would cause maintenance operations to fail.
+
+Returns a list of issues with optional guided fixes.
+    """,
+)
+async def maintenance_doctor() -> Dict[str, Any]:
+    import shutil
+    import subprocess
+
+    def _has(cmd: str) -> bool:
+        return shutil.which(cmd) is not None
+
+    issues: list[dict[str, Any]] = []
+
+    # Homebrew
+    if not _has("brew") and not Path("/opt/homebrew/bin/brew").exists() and not Path("/usr/local/bin/brew").exists():
+        issues.append({
+            "id": "missing_brew",
+            "severity": "warning",
+            "title": "Homebrew not installed",
+            "detail": "Homebrew is required for Homebrew and mas-based update operations.",
+            "affects_operations": ["brew-update", "brew-cleanup", "mas-update"],
+            "fix_action": "install_homebrew",
+            "fix_label": "Install Homebrew",
+        })
+
+    # mas (Mac App Store CLI)
+    if not _has("mas") and not Path("/opt/homebrew/bin/mas").exists() and not Path("/usr/local/bin/mas").exists():
+        issues.append({
+            "id": "missing_mas",
+            "severity": "warning",
+            "title": "mas (App Store CLI) not installed",
+            "detail": "mas is used to update Mac App Store applications.",
+            "affects_operations": ["mas-update"],
+            "fix_action": "install_mas",
+            "fix_label": "Install mas",
+        })
+
+    # Xcode Command Line Tools (common Homebrew prerequisite)
+    try:
+        res = subprocess.run(["xcode-select", "-p"], capture_output=True, text=True, timeout=3)
+        if res.returncode != 0:
+            issues.append({
+                "id": "missing_xcode_clt",
+                "severity": "warning",
+                "title": "Xcode Command Line Tools not installed",
+                "detail": "Some tools (especially Homebrew) require Xcode Command Line Tools.",
+                "affects_operations": ["brew-update", "brew-cleanup", "mas-update"],
+                "fix_action": "install_xcode_clt",
+                "fix_label": "Install Xcode CLT",
+            })
+    except Exception:
+        pass
+
+    return {"success": True, "issues": issues}
+
+
+@app.post(
+    "/api/maintenance/doctor/fix",
+    tags=["maintenance"],
+    summary="Start a guided fix for a doctor issue",
+)
+async def maintenance_doctor_fix(request: Request) -> Dict[str, Any]:
+    data = await request.json()
+    action = data.get("action")
+
+    allowed = {"install_homebrew", "install_mas", "install_xcode_clt"}
+    if action not in allowed:
+        raise HTTPException(status_code=400, detail="Unknown fix action")
+
+    # Open Terminal for interactive installers (avoids hanging the web server)
+    def open_terminal(command: str) -> None:
+        script = f'''tell application "Terminal"
+  activate
+  do script "{command.replace('\\', '\\\\').replace('"', '\\"')}"
+end tell'''
+        subprocess.Popen(["osascript", "-e", script])
+
+    if action == "install_homebrew":
+        open_terminal('/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"')
+        return {"success": True, "message": "Opened Terminal to install Homebrew"}
+
+    if action == "install_mas":
+        # Requires brew; if brew is missing the user should run Homebrew install first.
+        open_terminal('brew install mas')
+        return {"success": True, "message": "Opened Terminal to install mas"}
+
+    if action == "install_xcode_clt":
+        open_terminal('xcode-select --install')
+        return {"success": True, "message": "Opened the Xcode Command Line Tools installer"}
+
+    return {"success": False, "message": "No action taken"}
+
+
+@app.get(
     "/api/maintenance/last-run",
     tags=["maintenance"],
     response_model=LastRunResponse,
