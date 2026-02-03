@@ -55,7 +55,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatchling.build]
-packages = ["src/mac_maintenance"]
+# Hatch expects importable package names; the sources live under src/
+packages = ["mac_maintenance"]
 
 [tool.hatchling.build.targets.wheel]
 
