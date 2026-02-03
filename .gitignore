@@ -151,7 +151,8 @@ SECURE_*.md
 # Test and helper scripts (temporary)
 test-*.sh
 test-*.html
-test_*.py
+# NOTE: do not ignore unit/integration tests under tests/
+# (we keep test_*.py in version control)
 fix-*.sh
 setup-*.sh
 check_*.sh

@@ -221,6 +221,21 @@ class LaunchdGenerator:
         # Register with launchctl (user LaunchAgent)
         try:
             uid = os.getuid()
+
+            # Hygiene: make registration idempotent.
+            # If a job with this label already exists, boot it out first (best effort).
+            # This avoids accumulating stale launchd state during rapid create/update cycles.
+            try:
+                subprocess.run(
+                    ["launchctl", "bootout", f"gui/{uid}", str(plist_path)],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=10,
+                )
+            except Exception:
+                pass
+
             # Preferred modern API (Ventura+)
             result = subprocess.run(
                 ["launchctl", "bootstrap", f"gui/{uid}", str(plist_path)],

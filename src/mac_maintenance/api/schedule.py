@@ -162,6 +162,39 @@ class ScheduleAPI(BaseAPI):
             # Load existing schedules
             schedules = self._load_schedules()
 
+            # 80/20 hygiene: make schedule creation idempotent by name.
+            # If a schedule with the same name already exists, update it instead of creating a new UUID.
+            # This prevents schedule-spam (dozens of LaunchAgents showing up as "python3" login items).
+            existing_by_name = next(
+                (s for s in schedules if (s.name or "").strip().lower() == (schedule.name or "").strip().lower()),
+                None,
+            )
+
+            if existing_by_name is not None:
+                # Preserve ID + created_at; treat as update.
+                schedule.id = existing_by_name.id
+                schedule.created_at = existing_by_name.created_at
+                schedule.set_timestamps(is_new=False)
+                schedule.next_run = self.calculate_next_run(schedule)
+
+                # Replace in-place
+                schedules = [schedule if s.id == existing_by_name.id else s for s in schedules]
+
+                # Check for conflicts (against the updated set, excluding self)
+                conflict_message = self._check_conflicts(
+                    schedule,
+                    [s for s in schedules if s.id != schedule.id],
+                )
+
+                self._save_schedules(schedules)
+
+                return ScheduleResponse(
+                    success=True,
+                    schedule=schedule,
+                    error=None,
+                    message=(conflict_message or "Updated existing schedule (same name)")
+                )
+
             # Check for conflicts
             conflict_message = self._check_conflicts(schedule, schedules)
 
