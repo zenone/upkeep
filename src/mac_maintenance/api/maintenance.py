@@ -397,6 +397,28 @@ class MaintenanceAPI(BaseAPI):
 
         return operation
 
+    def _ensure_queue_dir(self) -> None:
+        """Ensure the daemon queue directory exists and is writable.
+
+        This prevents common 500s when the web UI/API is used before the daemon
+        has had a chance to create/chmod the queue directory.
+
+        Safety:
+        - Creates the directory if missing
+        - Best-effort chmod to 0777 to match daemon expectations (local machine queue)
+        """
+        try:
+            self.QUEUE_DIR.mkdir(parents=True, exist_ok=True)
+            try:
+                # World-writable is intentional here: the root daemon reads/validates jobs,
+                # while the unprivileged web process needs to write job/flag files.
+                self.QUEUE_DIR.chmod(0o777)
+            except Exception:
+                pass
+        except Exception:
+            # If we can't ensure it, downstream will raise a DaemonNotAvailableError
+            pass
+
     def _enqueue_job(self, operation_id: str) -> str:
         """Enqueue a job for the daemon to process.
 
@@ -409,6 +431,9 @@ class MaintenanceAPI(BaseAPI):
         Raises:
             DaemonNotAvailableError: If job queue is not accessible
         """
+        # Ensure queue exists before writing
+        self._ensure_queue_dir()
+
         job_id = str(uuid.uuid4())
         job = {
             "job_id": job_id,
@@ -783,6 +808,7 @@ class MaintenanceAPI(BaseAPI):
 
         # Task #133: Write skip flag file so daemon can kill subprocess
         try:
+            self._ensure_queue_dir()
             skip_flag = self.QUEUE_DIR / "skip.flag"
             skip_flag.write_text("skip")
             self.logger.info("Skip flag written, daemon will kill current subprocess")
