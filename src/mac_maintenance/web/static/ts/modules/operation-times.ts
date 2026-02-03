@@ -60,8 +60,9 @@ export function recordOperationTime(operationId: string, durationSeconds: number
     data.runs = data.runs.slice(-MAX_STORED_RUNS);
   }
 
-  // Calculate average
-  data.average = data.runs.reduce((sum, time) => sum + time, 0) / data.runs.length;
+  // Calculate average (round to 2 decimals for stable display/testing)
+  const avg = data.runs.reduce((sum, time) => sum + time, 0) / data.runs.length;
+  data.average = Math.round(avg * 100) / 100;
 
   times[operationId] = data;
   saveOperationTimes(times);
@@ -148,7 +149,11 @@ export function calculateETA(
   // Add remaining time for current operation
   if (currentOperationId) {
     const avgDuration = getAverageDuration(currentOperationId);
-    const remainingProgress = 1 - currentOperationProgress;
+
+    // Defensive: clamp progress to [0, 1] so weird UI states don't inflate ETA
+    const progress = Math.max(0, Math.min(1, currentOperationProgress));
+    const remainingProgress = 1 - progress;
+
     eta += avgDuration * remainingProgress;
   }
 
