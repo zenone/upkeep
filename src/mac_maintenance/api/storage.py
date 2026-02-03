@@ -129,15 +129,43 @@ class StorageAPI(BaseAPI):
                 error=None
             )
 
-        except PermissionError as e:
-            raise PathNotReadableError(f"Permission denied: {path}")
-        except PathNotFoundError:
-            raise
-        except FileNotFoundError as e:
-            # DiskAnalyzer raises FileNotFoundError, convert to PathNotFoundError
-            raise PathNotFoundError(f"Path not found: {path}")
+        except PermissionError:
+            return StorageAnalysisResult(
+                success=False,
+                path=str(path),
+                total_size_bytes=0,
+                total_size_gb=0.0,
+                file_count=0,
+                dir_count=0,
+                category_sizes={},
+                largest_entries=[],
+                error=f"Permission denied: {path}",
+            )
+        except (PathNotFoundError, FileNotFoundError):
+            return StorageAnalysisResult(
+                success=False,
+                path=str(path),
+                total_size_bytes=0,
+                total_size_gb=0.0,
+                file_count=0,
+                dir_count=0,
+                category_sizes={},
+                largest_entries=[],
+                error=f"Path not found: {path}",
+            )
         except Exception as e:
-            raise self._handle_error(e)
+            handled = self._handle_error(e)
+            return StorageAnalysisResult(
+                success=False,
+                path=str(path),
+                total_size_bytes=0,
+                total_size_gb=0.0,
+                file_count=0,
+                dir_count=0,
+                category_sizes={},
+                largest_entries=[],
+                error=str(handled),
+            )
 
     def get_largest_files(
         self,
@@ -270,7 +298,7 @@ class StorageAPI(BaseAPI):
 
         # Now check if path exists (allow tests to mock this)
         if hasattr(path_obj, 'exists') and callable(path_obj.exists) and not path_obj.exists():
-            raise PathNotFoundError(f"Path not found: {path}")
+            return {"success": False, "error": f"Path not found: {path}", "mode": mode}
 
         # Perform deletion
         if mode == 'trash':

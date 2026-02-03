@@ -104,7 +104,7 @@ class MaintenanceAPI(BaseAPI):
             "name": "Check macOS Updates",
             "description": "Check for available macOS system updates",
             "guidance": "Why: Apple releases security patches, bug fixes, and feature updates regularly. Staying informed helps plan maintenance. When: Run weekly to check for critical security updates, before planning major projects, or when Apple announces important fixes. After: Shows list of available updates instantly. No changes made (read-only check). You can then decide whether to install.",
-            "category": "System Updates",
+            "category": "Update Operations",
             "safe": True,
             "recommended": True,
         },
@@ -113,7 +113,7 @@ class MaintenanceAPI(BaseAPI):
             "name": "Install macOS Updates",
             "description": "Install available macOS system updates",
             "guidance": "Why: macOS updates fix critical security vulnerabilities, patch bugs, and improve stability. Delayed updates leave your Mac vulnerable. When: Run when Check Updates shows critical security patches, during planned maintenance (not before important work), or when experiencing bugs that updates might fix. After: Mac will update (15-60 min) and may require restart. Backup first. Some apps may need updating if compatibility changes.",
-            "category": "System Updates",
+            "category": "Update Operations",
             "safe": False,
             "recommended": False,
         },
@@ -122,7 +122,7 @@ class MaintenanceAPI(BaseAPI):
             "name": "Update Homebrew",
             "description": "Update Homebrew packages",
             "guidance": "Why: Homebrew packages receive security fixes, bug fixes, and new features regularly. Outdated packages have known vulnerabilities. When: Run weekly for security, before installing new packages (to avoid conflicts), or when brew commands fail. After: All Homebrew packages updated to latest versions. Takes 5-15 minutes depending on number of packages. Some apps may look slightly different with new versions.",
-            "category": "System Updates",
+            "category": "Update Operations",
             "safe": True,
             "recommended": True,
         },
@@ -131,7 +131,7 @@ class MaintenanceAPI(BaseAPI):
             "name": "Cleanup Homebrew",
             "description": "Remove old versions and link packages",
             "guidance": "Why: Homebrew keeps old versions of packages which waste disk space. Unlinked packages aren't accessible via PATH. When: Run monthly to free disk space, when 'brew doctor' shows warnings about unlinked kegs, or when commands aren't found after installing via brew. After: Old package versions removed, unused dependencies deleted, all packages linked. Frees 1-5GB typically. Takes 2-5 minutes.",
-            "category": "System Maintenance",
+            "category": "Cleanup Operations",
             "safe": True,
             "recommended": False,
         },
@@ -140,7 +140,7 @@ class MaintenanceAPI(BaseAPI):
             "name": "Update App Store Apps",
             "description": "Update Mac App Store applications",
             "guidance": "Why: App Store apps receive bug fixes, security patches, and new features through updates. Outdated apps may crash or have vulnerabilities. When: Run weekly, when you see update notifications, or before important work (to ensure apps are stable). After: All App Store apps updated to latest versions. Takes 5-20 minutes depending on update sizes. Some apps may require reopening to see changes.",
-            "category": "System Updates",
+            "category": "Update Operations",
             "safe": True,
             "recommended": True,
         },
@@ -151,7 +151,7 @@ class MaintenanceAPI(BaseAPI):
             "name": "Verify Disk",
             "description": "Verify disk health and integrity",
             "guidance": "Why: Disks can develop file system errors from crashes, power loss, or hardware issues. Early detection prevents data loss. When: Run monthly for prevention, before major system updates, when Mac crashes frequently, files won't open, or system feels slow. After: Shows if disk is healthy or has errors. Takes 5-10 minutes. If errors found, run Repair Disk. No changes made to disk (read-only check).",
-            "category": "Disk Operations",
+            "category": "Disk / Filesystem",
             "safe": True,
             "recommended": True,
         },
@@ -160,7 +160,7 @@ class MaintenanceAPI(BaseAPI):
             "name": "Repair Disk",
             "description": "Repair disk errors if found",
             "guidance": "Why: Disk errors corrupt files and cause crashes if left unfixed. First Aid repairs file system issues. When: Run ONLY after Verify Disk shows errors, when Mac crashes frequently, apps won't open, or files become corrupted. Don't run preventively. After: Attempts to fix file system errors (15-30 min). May require Recovery Mode for boot disk. Backup critical files first. If repair fails repeatedly, disk may be failing physically.",
-            "category": "Disk Operations",
+            "category": "Disk / Filesystem",
             "safe": False,
             "recommended": False,
         },
@@ -169,7 +169,7 @@ class MaintenanceAPI(BaseAPI):
             "name": "Check SMART Status",
             "description": "Check disk SMART health status",
             "guidance": "Why: SMART (Self-Monitoring, Analysis and Reporting Technology) monitors disk health and predicts failures before they happen. When: Run monthly for early warning, when disk makes unusual noises, feels slow, or shows strange behavior. After: Shows disk health status instantly. If \"Verified\" = healthy. If \"Failing\" = backup immediately and replace disk soon. No changes made (read-only check).",
-            "category": "Disk Operations",
+            "category": "Disk / Filesystem",
             "safe": True,
             "recommended": False,
         },
@@ -291,7 +291,12 @@ class MaintenanceAPI(BaseAPI):
         self._log_call("get_operations")
 
         # Load operation details (WHY/WHAT) from JSON
-        operation_details = self._load_operation_details()
+        try:
+            operation_details = self._load_operation_details()
+        except Exception as e:
+            # Defensive: never fail listing operations due to metadata issues
+            self.logger.error(f"Failed to load operation details: {e}")
+            operation_details = {}
 
         # Debug: Log what keys are in operation_details
         self.logger.info(f"Operation details keys: {list(operation_details.keys())}")
@@ -312,6 +317,11 @@ class MaintenanceAPI(BaseAPI):
                 merged_count += 1
                 self.logger.info(f"Merged WHY/WHAT for operation: {op['id']}")
             else:
+                # Always provide keys so downstream consumers don't branch on missing fields
+                op_dict['why'] = {}
+                op_dict['what'] = {}
+                op_dict['when_to_run'] = []
+                op_dict['safety'] = None
                 self.logger.warning(f"No WHY/WHAT data found for operation: {op['id']}")
 
             operations.append(op_dict)
@@ -346,11 +356,18 @@ class MaintenanceAPI(BaseAPI):
                     return {}
 
             self.logger.info(f"Loading operation details from: {details_file}")
-            with open(details_file, 'r') as f:
-                data = json.load(f)
-                operations = data.get('operations', {})
-                self.logger.info(f"Loaded WHY/WHAT data for {len(operations)} operations")
-                return operations
+            raw = details_file.read_text(encoding="utf-8").strip()
+            if not raw:
+                return {}
+
+            data = json.loads(raw)
+
+            # Support both formats:
+            # 1) {"operations": { ... }}
+            # 2) { ... } (direct mapping)
+            operations = data.get('operations', data) if isinstance(data, dict) else {}
+            self.logger.info(f"Loaded WHY/WHAT data for {len(operations)} operations")
+            return operations
 
         except json.JSONDecodeError as e:
             self._log_error(f"Invalid JSON in operation_details.json: {e}")

@@ -2520,6 +2520,16 @@ trim_user_logs() {
   # Security: Validate path resolution to prevent symlink attacks
   validate_safe_path "$path" "$expected" "user logs directory" || return 1
 
+  # File count guardrail (pre-check)
+  # Business logic: very large log directories can indicate runaway logging.
+  # We surface a warning before doing any deletion work.
+  local file_count
+  file_count=$(find "$path" -type f -name "*.log" 2>/dev/null | wc -l | tr -d " ")
+  local MAX_DELETE_FILES=5000
+  if [[ -n "$file_count" ]] && [[ "$file_count" -gt "$MAX_DELETE_FILES" ]]; then
+    warning "Log file count exceeds MAX_DELETE_FILES threshold: ${file_count} files in ${path}"
+  fi
+
   # Preview mode: show what would be deleted
   if [[ "${PREVIEW:-0}" -eq 1 ]]; then
     info "PREVIEW: Files that would be deleted (*.log older than ${effective_log_trim_days} days):"
