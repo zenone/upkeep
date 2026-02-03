@@ -137,7 +137,7 @@ export async function loadSchedules(): Promise<void> {
             </div>
             <div class="schedule-info-item">
               <div class="schedule-info-label">Operations</div>
-              <div class="schedule-info-value">${schedule.operation_ids.length} selected</div>
+              <div class="schedule-info-value">${(schedule as any).operations?.length ?? (schedule as any).operation_ids?.length ?? 0} selected</div>
             </div>
           </div>
           ${schedule.message ? `
