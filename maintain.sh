@@ -1744,6 +1744,8 @@ brew_maintenance() {
     # Extract which path is missing (sbin, bin, etc.)
     local missing_path
     missing_path=$(echo "$doctor_output" | grep -o '"/[^"]*"' | tr -d '"' | head -1)
+    # Homebrew sometimes prints suggestions like /opt/homebrew/sbin:$PATH. Keep only the real prefix.
+    missing_path=${missing_path%%:\$PATH}
 
     if [ -n "$missing_path" ]; then
       info "Missing from PATH: $missing_path"
@@ -1756,10 +1758,12 @@ brew_maintenance() {
 
         # Determine correct profile file
         if echo "$user_shell" | grep -q "zsh"; then
-          profile_file="$(get_actual_user_home)/.zshrc"
+          # Prefer .zprofile for PATH changes so login shells are correct and we avoid repeated edits in .zshrc
+          profile_file="$(get_actual_user_home)/.zprofile"
         elif echo "$user_shell" | grep -q "bash"; then
           profile_file="$(get_actual_user_home)/.bash_profile"
         else
+          # Last resort only; avoid editing .profile unless we truly don't know the user's shell.
           profile_file="$(get_actual_user_home)/.profile"
         fi
 

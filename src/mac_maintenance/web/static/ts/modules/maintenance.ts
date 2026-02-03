@@ -447,9 +447,11 @@ export async function runSelectedOperations(): Promise<void> {
  * Skip the current operation
  */
 export async function skipCurrentOperation(): Promise<void> {
-  // No confirmation needed - skipping is a routine, reversible action
-  // UX Research: https://www.nngroup.com/articles/confirmation-dialog/
-  // "Confirmatory dialogs for routine actions cause habituation"
+  // Skipping is often safe, but accidental clicks are costly/confusing.
+  // Use a lightweight confirmation to avoid surprise skips.
+  if (!confirm('Skip the current operation?')) {
+    return;
+  }
 
   try {
     const response = await fetch('/api/maintenance/skip', {

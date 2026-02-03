@@ -8,7 +8,7 @@
     "watch:web": "./scripts/watch-web.sh",
     "type-check": "tsc --noEmit",
     "dev": "npm run watch:web",
-    "test": "vitest",
+    "test": "vitest run",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest --coverage"

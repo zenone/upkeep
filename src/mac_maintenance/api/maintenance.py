@@ -299,12 +299,10 @@ class MaintenanceAPI(BaseAPI):
             self.logger.error(f"Failed to load operation details: {e}")
             operation_details = {}
 
-        # Debug: Log what keys are in operation_details
-        self.logger.info(f"Operation details keys: {list(operation_details.keys())}")
-
         # Merge operation details into operations list
         operations = []
         merged_count = 0
+        guidance_fallback_count = 0
         for op in self.OPERATIONS.values():
             op_dict = dict(op)  # Create a copy
 
@@ -318,17 +316,82 @@ class MaintenanceAPI(BaseAPI):
                 merged_count += 1
                 self.logger.info(f"Merged WHY/WHAT for operation: {op['id']}")
             else:
-                # Always provide keys so downstream consumers don't branch on missing fields
-                op_dict['why'] = {}
-                op_dict['what'] = {}
-                op_dict['when_to_run'] = []
-                op_dict['safety'] = None
-                self.logger.warning(f"No WHY/WHAT data found for operation: {op['id']}")
+                # Fallback: derive a consistent WHY/WHAT/WHEN structure from the legacy guidance string.
+                # This keeps the UI consistent even when operation_details.json is incomplete.
+                details = self._guidance_to_details(op.get("guidance"))
+                if details is not None:
+                    op_dict["why"] = details.get("why", {})
+                    op_dict["what"] = details.get("what", {})
+                    op_dict["when_to_run"] = details.get("when_to_run", [])
+                    op_dict["safety"] = details.get("safety")
+                    guidance_fallback_count += 1
+                else:
+                    # Always provide keys so downstream consumers don't branch on missing fields
+                    op_dict['why'] = {}
+                    op_dict['what'] = {}
+                    op_dict['when_to_run'] = []
+                    op_dict['safety'] = None
 
             operations.append(op_dict)
 
-        self.logger.info(f"Successfully merged WHY/WHAT data for {merged_count}/{len(operations)} operations")
+        self.logger.info(
+            f"Merged operation details: file={merged_count} guidance_fallback={guidance_fallback_count} total={len(operations)}"
+        )
         return operations
+
+    def _guidance_to_details(self, guidance: Optional[str]) -> Optional[Dict[str, Any]]:
+        """Convert legacy one-line guidance into the structured WHY/WHAT/WHEN format.
+
+        Guidance strings follow the pattern:
+          "Why: ... When: ... After: ..."
+
+        This fallback ensures *all* operations can render the same accordion layout
+        even if operation_details.json is incomplete.
+        """
+        if not guidance or not isinstance(guidance, str):
+            return None
+
+        text = " ".join(guidance.strip().split())
+
+        def _slice(label: str, next_labels: list[str]) -> Optional[str]:
+            i = text.find(label)
+            if i < 0:
+                return None
+            start = i + len(label)
+            end = None
+            for nl in next_labels:
+                j = text.find(nl, start)
+                if j >= 0:
+                    end = j if end is None else min(end, j)
+            chunk = text[start:end].strip() if end is not None else text[start:].strip()
+            return chunk or None
+
+        why = _slice("Why:", ["When:", "After:"])
+        when = _slice("When:", ["After:"])
+        after = _slice("After:", [])
+
+        # If nothing matched, don't fabricate structure.
+        if not (why or when or after):
+            return None
+
+        details: Dict[str, Any] = {
+            "why": {"context": why} if why else {},
+            "when_to_run": [when] if when else [],
+            "what": {},
+            "safety": None,
+        }
+
+        if after:
+            details["what"] = {
+                "outcomes": [
+                    {
+                        "type": "positive",
+                        "description": after,
+                    }
+                ]
+            }
+
+        return details
 
     def _load_operation_details(self) -> Dict[str, Any]:
         """Load operation details from operation_details.json.
