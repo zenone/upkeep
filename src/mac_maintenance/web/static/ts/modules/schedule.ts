@@ -37,7 +37,7 @@ export async function loadScheduleTemplates(): Promise<void> {
       const templateJson = JSON.stringify(template).replace(/'/g, "\\'");
       return `
         <div class="template-card ${template.recommended ? 'recommended' : ''}"
-             onclick='applyTemplate(${templateJson})'>
+             onclick='applyScheduleTemplate(${templateJson})'>
           <div class="template-icon">${template.icon}</div>
           <div class="template-name">${escapeHtml(template.name)}</div>
           <div class="template-desc">${escapeHtml(template.description)}</div>

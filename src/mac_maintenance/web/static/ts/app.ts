@@ -7,7 +7,7 @@ import { initTheme, toggleTheme, switchTab, showToast, reloadScripts } from './m
 import { loadSystemInfo, loadHealthScore, loadTopProcesses } from './modules/dashboard';
 import { loadOperations, runSelectedOperations, cancelOperations, skipCurrentOperation, applyTemplate, selectAllOperations, deselectAllOperations, copyOutputToClipboard, showQuickStartWizard, closeWizard, selectWizardOption } from './modules/maintenance';
 import { analyzeStorage, setPath, getUsername } from './modules/storage';
-import { onScheduleTabShow, openScheduleModal, closeScheduleModal, loadSchedules, saveSchedule, deleteSchedule, toggleScheduleEnabled, runScheduleNow } from './modules/schedule';
+import { onScheduleTabShow, openScheduleModal, closeScheduleModal, loadSchedules, saveSchedule, deleteSchedule, toggleScheduleEnabled, runScheduleNow, applyScheduleTemplate } from './modules/schedule';
 import type { TabName } from './types';
 
 console.log('╔════════════════════════════════════════════════╗');
@@ -98,6 +98,7 @@ window.saveSchedule = saveSchedule;
 window.deleteSchedule = deleteSchedule;
 window.toggleScheduleEnabled = toggleScheduleEnabled;
 window.runScheduleNow = runScheduleNow;
+window.applyScheduleTemplate = applyScheduleTemplate;
 window.showToast = showToast;
 
 // ============================================================================
