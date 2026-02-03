@@ -1628,13 +1628,39 @@ brew_maintenance() {
 
   # Intelligent Homebrew detection
   if ! detect_homebrew; then
-    warning "⚠️  Homebrew not found. Skipping."
-    info ""
-    info "To install Homebrew, run:"
-    info "  /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
-    info ""
-    info "Or visit: https://brew.sh"
-    return 0
+    warning "⚠️  Homebrew not found."
+
+    # Offer opt-in auto-install when interactive. In non-interactive contexts (daemon/launchd),
+    # show the command instead of hanging on prompts.
+    if [[ -t 0 ]] && [[ -z "${MAC_MAINTENANCE_DAEMON:-}" ]]; then
+      if confirm "Install Homebrew now?"; then
+        if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
+          warning "DRY-RUN: skipping Homebrew install"
+          return 0
+        fi
+        run_with_progress "Installing Homebrew" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || {
+          warning "Homebrew install failed; skipping Homebrew operations"
+          return 0
+        }
+        # Re-detect after install
+        detect_homebrew || {
+          warning "Homebrew install completed but brew not found in PATH; skipping"
+          return 0
+        }
+      else
+        warning "Skipped Homebrew installation"
+        info "To install Homebrew manually:"
+        info "  /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+        info "Or visit: https://brew.sh"
+        return 0
+      fi
+    else
+      warning "Non-interactive mode: cannot auto-install Homebrew"
+      info "To install Homebrew manually:"
+      info "  /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+      info "Or visit: https://brew.sh"
+      return 0
+    fi
   fi
 
   # Use detected brew command
