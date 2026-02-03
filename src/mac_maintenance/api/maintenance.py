@@ -688,7 +688,17 @@ class MaintenanceAPI(BaseAPI):
                     op_hist["success"] = success
                     op_hist["last_duration_seconds"] = round(duration_seconds, 3)
 
-                    # Maintain rolling window of successful runtimes
+                    # Maintain rolling windows of runtimes
+                    # - durations_seconds: successful runs only (preferred for median)
+                    # - durations_all_seconds: all runs (fallback when no successful baseline exists yet)
+
+                    durations_all = op_hist.get("durations_all_seconds", [])
+                    if not isinstance(durations_all, list):
+                        durations_all = []
+                    durations_all.append(round(duration_seconds, 3))
+                    durations_all = durations_all[-5:]
+                    op_hist["durations_all_seconds"] = durations_all
+
                     if success:
                         durations = op_hist.get("durations_seconds", [])
                         if not isinstance(durations, list):

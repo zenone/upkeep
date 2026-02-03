@@ -829,10 +829,19 @@ async def get_last_run() -> Dict[str, Any]:
                             days = op_delta // 86400
                             op_relative = f"{days} day{'s' if days != 1 else ''} ago"
 
-                        durations = op_data.get("durations_seconds", [])
-                        if not isinstance(durations, list):
-                            durations = []
-                        med = _median([d for d in durations if isinstance(d, (int, float))])
+                        durations_success = op_data.get("durations_seconds", [])
+                        if not isinstance(durations_success, list):
+                            durations_success = []
+                        med_success = _median([d for d in durations_success if isinstance(d, (int, float))])
+
+                        durations_all = op_data.get("durations_all_seconds", [])
+                        if not isinstance(durations_all, list):
+                            durations_all = []
+                        med_all = _median([d for d in durations_all if isinstance(d, (int, float))])
+
+                        # Prefer median of successful runs; fallback to median of all runs.
+                        med = med_success if med_success is not None else med_all
+                        basis = "success" if med_success is not None else ("all" if med_all is not None else None)
 
                         operations_history[op_id] = {
                             "last_run": op_data["last_run"],
@@ -841,7 +850,9 @@ async def get_last_run() -> Dict[str, Any]:
                             "last_duration_seconds": op_data.get("last_duration_seconds"),
                             "typical_seconds": round(med, 3) if med is not None else None,
                             "typical_display": _format_seconds(med) if med is not None else None,
-                            "typical_runs": len(durations),
+                            "typical_runs": len(durations_success),
+                            "typical_runs_all": len(durations_all),
+                            "typical_basis": basis,
                         }
                     except (ValueError, KeyError):
                         continue
