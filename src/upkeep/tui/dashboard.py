@@ -8,7 +8,7 @@ import psutil
 from pathlib import Path
 from datetime import datetime
 from textual.app import ComposeResult
-from textual.containers import Container, Horizontal, Vertical, Grid
+from textual.containers import Container, Horizontal, Vertical, Grid, VerticalScroll
 from textual.widgets import Static, ProgressBar, Label
 from textual.reactive import reactive
 
@@ -194,7 +194,7 @@ class MaintenanceStatusWidget(Static):
         yield Static("[dim]  r - Refresh dashboard[/dim]")
 
 
-class DashboardView(Container):
+class DashboardView(VerticalScroll):
     """Main dashboard view."""
 
     def compose(self) -> ComposeResult:

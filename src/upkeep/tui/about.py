@@ -5,20 +5,20 @@ Displays project information, version, and credits.
 """
 
 from textual.app import ComposeResult
-from textual.containers import Container, Vertical, Center
+from textual.containers import Container, Vertical, Center, VerticalScroll
 from textual.widgets import Static, Rule
 
 from .. import __version__
 
 
-class AboutView(Container):
+class AboutView(VerticalScroll):
     """About and information view."""
 
     def compose(self) -> ComposeResult:
         """Compose the about view."""
         with Center():
             with Vertical(classes="box"):
-                yield Static("[bold cyan]macOS Maintenance Toolkit[/bold cyan]")
+                yield Static("[bold cyan]🧹 Upkeep[/bold cyan]")
                 yield Static(f"[dim]Version {__version__}[/dim]")
                 yield Rule()
 
@@ -45,7 +45,7 @@ class AboutView(Container):
 
                 yield Static("\n[bold]Quality Metrics[/bold]")
                 yield Static("• [yellow]127 tests[/yellow] - 100% passing")
-                yield Static("• [yellow]Production ready[/yellow] - v3.0.0")
+                yield Static("• [yellow]Production ready[/yellow] - v2.0.0")
                 yield Static("• [yellow]Type safe[/yellow] - mypy strict mode")
                 yield Static("• [yellow]Linted[/yellow] - ruff + black")
                 yield Static("• [yellow]Documented[/yellow] - Complete guides")

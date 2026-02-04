@@ -105,8 +105,8 @@ class MacMaintenanceTUI(App):
     }
     """
 
-    TITLE = "macOS Maintenance Toolkit"
-    SUB_TITLE = "v3.0.0 | Professional System Maintenance"
+    TITLE = "Upkeep"
+    SUB_TITLE = "v2.0.0 | Mac Maintenance Made Simple"
 
     BINDINGS = [
         Binding("q", "quit", "Quit", priority=True),
