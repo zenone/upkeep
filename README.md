@@ -61,44 +61,49 @@ Want to:
 
 ## 🚀 Quick Start
 
-### Option 1: The Easy Button (Visual Interface)
+### Option 1: Web Dashboard (Recommended)
 
-If you prefer clicking buttons to typing commands:
+The easiest way to get started—a modern web interface that runs locally:
 
 ```bash
-# 1. Download and make executable
-chmod +x upkeep.sh
+# Clone and enter
+git clone https://github.com/zenone/upkeep.git
+cd upkeep
 
-# 2. Launch the interactive interface
-./upkeep.sh --tui
+# Create Python environment and install
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+
+# Launch!
+./run-web.sh
 ```
 
-You'll get a beautiful terminal dashboard with:
-- 📊 System health at a glance
-- 💾 Visual storage analyzer (see what's eating your disk space)
-- 🔧 One-click maintenance operations
-- ⌨️ Keyboard shortcuts (because mice are for quitters)
+Opens **http://localhost:8081** in your browser. You'll see your Mac's health, run maintenance with one click, and actually understand what's happening.
 
 ### Option 2: Quick Status Check (One Command)
 
-Want to know if your Mac is okay right now?
+Just want to know if your Mac is okay?
 
 ```bash
 ./upkeep.sh --status
 ```
 
-This gives you a health dashboard in seconds. No changes, just information.
+Health dashboard in seconds. No changes, just information.
 
-### Option 3: Web Interface (Recommended)
+### Option 3: Terminal UI (For Keyboard Lovers)
 
-A modern web-based dashboard for visual maintenance:
+If you live in the terminal:
 
 ```bash
-# Launch the web interface
-./run-web.sh
+./upkeep.sh --tui
 ```
 
-Then open **http://localhost:8080** in your browser.
+Beautiful dashboard with:
+- 📊 System health at a glance
+- 💾 Visual storage analyzer
+- 🔧 One-click operations
+- ⌨️ Keyboard shortcuts (press `?` for help)
 
 ### Option 4: The "I'm Feeling Lucky" Button
 
@@ -121,24 +126,29 @@ This will:
 ## 📸 Screenshots
 
 ### Dashboard
-Real-time system overview with CPU, memory, disk usage, and health score.
+Real-time system overview. CPU, memory, disk, health score, top processes—all updating live.
 
 ![Dashboard](docs/screenshots/01-dashboard.png)
 
 ### Maintenance Operations
-Each operation explains **why** you'd run it and **what to expect** — no guesswork.
+19 operations, each explaining **why** you'd run it and **what to expect**. No guesswork, no scary warnings.
 
 ![Operations](docs/screenshots/02-maintenance-operations.png)
 
 ### Progress Tracking
-Live output, elapsed time, estimated remaining, and the ability to skip or cancel.
+Watch operations run in real-time. Elapsed time, ETA, skip/cancel controls. Copy output when done.
 
 ![Running](docs/screenshots/03-maintenance-running.png)
 
 ### Storage Analysis
-See exactly what's eating your disk space.
+Where'd all your disk space go? Find out in seconds. Delete or trash right from the UI.
 
 ![Storage](docs/screenshots/04-storage-analyzer.png)
+
+### Scheduling
+Set it and forget it. Daily, weekly, or monthly maintenance—runs automatically via launchd.
+
+![Scheduling](docs/screenshots/schedule-templates-empty.png)
 
 ---
 
@@ -148,14 +158,15 @@ See exactly what's eating your disk space.
 
 A modern, visual interface for Mac maintenance:
 
-- **System Overview**: CPU, memory, disk usage at a glance
-- **18 Maintenance Operations**: Each with clear "Why & What to expect" guidance
-- **Progress Tracking**: Live output, elapsed time, ETA, skip/cancel controls
-- **Storage Analysis**: Visual breakdown of what's using your disk
-- **Scheduling**: Set up automated maintenance routines
-- **Doctor/Preflight**: Checks for missing dependencies before you run
+- **System Overview**: CPU, memory, disk usage, health score at a glance
+- **19 Maintenance Operations**: Each explains *why* you'd run it and *what to expect*
+- **Progress Tracking**: Live output, elapsed time, ETA based on your history
+- **Skip & Cancel**: Changed your mind? Stop or skip mid-operation
+- **Storage Analyzer**: Visual breakdown of what's eating your disk
+- **Scheduling**: Automated maintenance with launchd (daily, weekly, monthly)
+- **Doctor/Preflight**: Catches missing dependencies before you waste time
 
-**Launch it:** `./run-web.sh` → Open **http://localhost:8080**
+**Launch it:** `./run-web.sh` → Opens **http://localhost:8081** automatically
 
 ### 2. 📊 Interactive Dashboard (TUI)
 
@@ -711,21 +722,20 @@ MIT License – see [LICENSE](LICENSE) file for details.
 
 ## 🚦 Status & Roadmap
 
-**Current Version:** 3.0.0
+**Current Version:** 2.0.0
 
-**Recent Updates:**
-- ✅ Interactive TUI with Dashboard, Storage, Maintenance views
-- ✅ Enhanced storage analyzer with file categorization
-- ✅ Preview mode for cleanup operations
-- ✅ File count safety limits
-- ✅ JSON output for automation
-- ✅ 245 automated tests
+**What's New in 2.0:**
+- 🌐 **Web Dashboard** – Modern browser-based interface with live progress tracking
+- ⏱️ **Smart Scheduling** – Set up automated maintenance with launchd integration
+- 📊 **Operation History** – Track what ran, when, and how long it took
+- 🩺 **Doctor/Preflight** – Checks dependencies before running operations
+- ⏳ **ETA & Progress** – Know how long operations will take based on your history
+- 🔄 **Live Output** – Watch what's happening in real-time
+- ✅ 97+ automated tests across 19 operations
 
 **Coming Soon:**
 - 📊 Historical trend tracking
-- 🔔 Scheduled maintenance notifications
-- 📱 Status bar widget (maybe)
-- 🌐 Web dashboard (considering)
+- 📱 Menu bar status widget
 
 ---
 
