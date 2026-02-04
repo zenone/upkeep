@@ -1008,7 +1008,7 @@ launch_tui() {
   fi
 
   info "Launching interactive TUI..."
-  python3 -m upkeep.tui.app || error "TUI launch failed"
+  "$PYTHON_CMD" -m upkeep.tui.app || error "TUI launch failed"
 }
 
 status_dashboard() {
@@ -1294,7 +1294,7 @@ report_big_space_users() {
   local home="${ACTUAL_HOME:-$HOME}"
   if [[ "${PYTHON_AVAILABLE:-0}" -eq 1 ]]; then
     info "Using Python storage analyzer for enhanced analysis..."
-    if python3 -m upkeep.bridge analyze "${home}" --max-depth 3 2>/dev/null; then
+    if "$PYTHON_CMD" -m upkeep.bridge analyze "${home}" --max-depth 3 2>/dev/null; then
       success "Storage analysis complete (Python-enhanced)."
       return 0
     else
@@ -3019,11 +3019,18 @@ check_minimum_space
 # Check if Python environment is available
 PYTHON_AVAILABLE=0
 PYTHON_VERSION=""
-if command_exists python3; then
+
+# Auto-detect local .venv and use it if available
+PYTHON_CMD="python3"
+if [[ -f ".venv/bin/python" ]]; then
+  PYTHON_CMD=".venv/bin/python"
+fi
+
+if command_exists "$PYTHON_CMD" || [[ -x "$PYTHON_CMD" ]]; then
   # Try to check Python bridge availability (non-blocking)
-  if python3 -m upkeep.bridge check >/dev/null 2>&1; then
+  if "$PYTHON_CMD" -m upkeep.bridge check >/dev/null 2>&1; then
     # Parse output safely without eval
-    BRIDGE_OUTPUT=$(python3 -m upkeep.bridge check 2>/dev/null || echo "")
+    BRIDGE_OUTPUT=$("$PYTHON_CMD" -m upkeep.bridge check 2>/dev/null || echo "")
     if echo "$BRIDGE_OUTPUT" | grep -q "PYTHON_AVAILABLE=1"; then
       PYTHON_AVAILABLE=1
       PYTHON_VERSION=$(echo "$BRIDGE_OUTPUT" | grep "^VERSION=" | cut -d= -f2)
