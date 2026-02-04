@@ -89,7 +89,18 @@ Want to know if your Mac is okay right now?
 
 This gives you a health dashboard in seconds. No changes, just information.
 
-### Option 3: The "I'm Feeling Lucky" Button
+### Option 3: Web Interface (Recommended)
+
+A modern web-based dashboard for visual maintenance:
+
+```bash
+# Launch the web interface
+./run-web.sh
+```
+
+Then open **http://localhost:8080** in your browser.
+
+### Option 4: The "I'm Feeling Lucky" Button
 
 Run safe maintenance operations that almost everyone should do regularly:
 
@@ -107,18 +118,55 @@ This will:
 
 ---
 
+## 📸 Screenshots
+
+### Dashboard
+Real-time system overview with CPU, memory, disk usage, and health score.
+
+![Dashboard](docs/screenshots/01-dashboard.png)
+
+### Maintenance Operations
+Each operation explains **why** you'd run it and **what to expect** — no guesswork.
+
+![Operations](docs/screenshots/02-maintenance-operations.png)
+
+### Progress Tracking
+Live output, elapsed time, estimated remaining, and the ability to skip or cancel.
+
+![Running](docs/screenshots/03-maintenance-running.png)
+
+### Storage Analysis
+See exactly what's eating your disk space.
+
+![Storage](docs/screenshots/04-storage-analyzer.png)
+
+---
+
 ## 💡 Core Features
 
-### 1. 📊 Interactive Dashboard (TUI)
+### 1. 🌐 Web Dashboard (Recommended)
 
-A beautiful terminal interface that puts system health at your fingertips:
+A modern, visual interface for Mac maintenance:
+
+- **System Overview**: CPU, memory, disk usage at a glance
+- **18 Maintenance Operations**: Each with clear "Why & What to expect" guidance
+- **Progress Tracking**: Live output, elapsed time, ETA, skip/cancel controls
+- **Storage Analysis**: Visual breakdown of what's using your disk
+- **Scheduling**: Set up automated maintenance routines
+- **Doctor/Preflight**: Checks for missing dependencies before you run
+
+**Launch it:** `./run-web.sh` → Open **http://localhost:8080**
+
+### 2. 📊 Interactive Dashboard (TUI)
+
+A beautiful terminal interface for keyboard enthusiasts:
 
 - **Real-time monitoring**: Disk usage, memory, CPU, security status
 - **Storage analyzer**: See exactly what's using your disk space (categorized by images, videos, documents, code, etc.)
 - **One-click operations**: Run maintenance tasks with visual feedback
 - **Keyboard-driven**: Navigate like a pro with intuitive shortcuts
 
-**Launch it:** `./maintain.sh --tui` or `mac-maintenance tui`
+**Launch it:** `./maintain.sh --tui`
 
 ### 2. 🔍 Smart Storage Analysis
 
