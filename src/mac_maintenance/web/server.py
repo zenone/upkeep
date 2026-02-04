@@ -1379,7 +1379,8 @@ async def run_schedule_now(schedule_id: str):
         from mac_maintenance.core.launchd import run_scheduled_task_async
 
         try:
-            success = await run_scheduled_task_async(schedule_id)
+            # For interactive runs, don't block forever behind another scheduled batch.
+            success = await run_scheduled_task_async(schedule_id, lock_wait_seconds=60)
         except Exception as e:
             # Surface the underlying reason to the UI
             return {

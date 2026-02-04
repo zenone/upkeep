@@ -464,7 +464,7 @@ exec \"$PYTHON\" -m mac_maintenance.scripts.run_schedule \"$1\"
         return schedule_ids
 
 
-async def run_scheduled_task_async(schedule_id: str) -> bool:
+async def run_scheduled_task_async(schedule_id: str, *, lock_wait_seconds: int = 30 * 60) -> bool:
     """Entry point for scheduled task execution.
 
     This function is called by launchd at scheduled times.
@@ -512,19 +512,34 @@ async def run_scheduled_task_async(schedule_id: str) -> bool:
         lock_path = locks_dir / "scheduler.lock"
 
         @contextmanager
-        def _acquire_lock():
+        def _acquire_lock(wait_seconds: int):
+            """Acquire the global scheduler lock.
+
+            Best practice: queue (wait) rather than skip to avoid missed maintenance.
+            We still enforce an upper bound to prevent hanging forever.
+            """
             fh = open(lock_path, "w")
+            acquired = False
             try:
-                try:
-                    fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                    yield True
-                except BlockingIOError:
-                    yield False
+                deadline = _time.time() + max(0, int(wait_seconds))
+                # Poll with a short sleep so we can log waiting and honor a timeout.
+                while True:
+                    try:
+                        fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                        acquired = True
+                        yield True
+                        break
+                    except BlockingIOError:
+                        if _time.time() >= deadline:
+                            yield False
+                            break
+                        _time.sleep(1)
             finally:
-                try:
-                    fcntl.flock(fh, fcntl.LOCK_UN)
-                except Exception:
-                    pass
+                if acquired:
+                    try:
+                        fcntl.flock(fh, fcntl.LOCK_UN)
+                    except Exception:
+                        pass
                 fh.close()
 
         def _notify(title: str, message: str) -> None:
@@ -549,9 +564,14 @@ async def run_scheduled_task_async(schedule_id: str) -> bool:
         failed = 0
         total = len(schedule.operations)
 
-        with _acquire_lock() as have_lock:
+        logger.info(f"Waiting for scheduler lock (up to {lock_wait_seconds}s)...")
+
+        with _acquire_lock(lock_wait_seconds) as have_lock:
             if not have_lock:
-                msg = f"Skipped {schedule.name}: another maintenance batch is already running"
+                msg = (
+                    f"Skipped {schedule.name}: another maintenance batch is already running "
+                    f"(lock wait timeout after {lock_wait_seconds}s)"
+                )
                 logger.warning(msg)
                 # Don't update last_run on a skip.
                 if getattr(schedule, "notify", True):
