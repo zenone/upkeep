@@ -373,7 +373,7 @@ fi
 
 if [ "$HTTPS_ENABLED" = "true" ]; then
     # Start with HTTPS
-    uvicorn upkeep.web.server:app \
+    python -m uvicorn upkeep.web.server:app \
         --host 127.0.0.1 \
         --port "$PORT" \
         --ssl-keyfile "$KEY_FILE" \
@@ -381,7 +381,7 @@ if [ "$HTTPS_ENABLED" = "true" ]; then
         $RELOAD_FLAG
 else
     # Start with HTTP
-    uvicorn upkeep.web.server:app \
+    python -m uvicorn upkeep.web.server:app \
         --host 127.0.0.1 \
         --port "$PORT" \
         $RELOAD_FLAG
