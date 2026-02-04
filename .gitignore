@@ -169,3 +169,7 @@ test-*.md
 # Generated test-matrix artifacts
 docs/test-matrix/*.json
 !install-daemon.sh
+!setup-https.sh
+!stop-all.sh
+!check_types.sh
+!run_tests.sh
