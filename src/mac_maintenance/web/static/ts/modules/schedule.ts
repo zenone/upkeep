@@ -95,7 +95,7 @@ export async function loadSchedules(): Promise<void> {
               ${schedule.description ? `<div class="schedule-desc">${escapeHtml(schedule.description)}</div>` : ''}
             </div>
             <div class="schedule-actions">
-              <button class="secondary" onclick="editSchedule('${schedule.id}')" title="Edit">
+              <button class="secondary" onclick="openScheduleModal('${schedule.id}')" title="Edit">
                 ✏️
               </button>
               <button class="secondary" onclick="toggleScheduleEnabled('${schedule.id}', ${!schedule.enabled})"
