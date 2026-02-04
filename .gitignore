@@ -157,6 +157,7 @@ fix-*.sh
 setup-*.sh
 check_*.sh
 find_*.py
+!find_port.py
 stop-all.sh
 install-*.sh
 
