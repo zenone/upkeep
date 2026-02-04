@@ -30,11 +30,7 @@ umask 022
 export COLUMNS=999
 export LINES=999
 
-# Debug: Verify COLUMNS is set (Task #121 investigation)
-# Only log if running from daemon context
-if [[ -n "${MAC_MAINTENANCE_DAEMON:-}" ]]; then
-  echo "DEBUG: COLUMNS=$COLUMNS LINES=$LINES (preventing truncation)" >&2
-fi
+# COLUMNS/LINES set above to prevent output truncation (Task #121)
 
 ########################################
 # UI / Logging
@@ -1793,8 +1789,13 @@ brew_maintenance() {
         fi
 
         # Add PATH export if not already present
-        if [ -f "$profile_file" ] && ! grep -q "$missing_path" "$profile_file"; then
-          echo "" >> "$profile_file"
+        # Check if we can actually access the file (root can't access user files due to TCC)
+        if [ -f "$profile_file" ] && ! cat "$profile_file" >/dev/null 2>&1; then
+          warning "Cannot access $profile_file (permission denied)"
+          info "To fix manually, add to your shell profile:"
+          info "  export PATH=\"$missing_path:\$PATH\""
+        elif [ -f "$profile_file" ] && ! grep -q "$missing_path" "$profile_file" 2>/dev/null; then
+          echo "" >> "$profile_file" 2>/dev/null || { warning "Cannot write to $profile_file"; return; }
           echo "# Added by Upkeep - $(date +%Y-%m-%d)" >> "$profile_file"
           echo "export PATH=\"$missing_path:\$PATH\"" >> "$profile_file"
           success "✓ Added $missing_path to $profile_file"
@@ -1803,7 +1804,7 @@ brew_maintenance() {
           info "PATH already configured in $profile_file"
         else
           info "Creating $profile_file..."
-          echo "# Upkeep - $(date +%Y-%m-%d)" > "$profile_file"
+          echo "# Upkeep - $(date +%Y-%m-%d)" > "$profile_file" 2>/dev/null || { warning "Cannot create $profile_file"; return; }
           echo "export PATH=\"$missing_path:\$PATH\"" >> "$profile_file"
           success "✓ Created $profile_file with PATH configuration"
         fi
