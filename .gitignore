@@ -164,3 +164,6 @@ install-*.sh
 example-*.txt
 full_upgrade.txt
 test-*.md
+
+# Generated test-matrix artifacts
+docs/test-matrix/*.json
