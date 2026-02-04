@@ -5,6 +5,10 @@
 set -e
 set -o pipefail
 
+# Get script directory and cd to it
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 # Ensure output is not buffered
 export PYTHONUNBUFFERED=1
 
