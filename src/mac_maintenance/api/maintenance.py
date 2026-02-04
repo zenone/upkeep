@@ -250,6 +250,15 @@ class MaintenanceAPI(BaseAPI):
             "safe": True,
             "recommended": False,
         },
+        "periodic": {
+            "id": "periodic",
+            "name": "Run Periodic Maintenance",
+            "description": "Run macOS periodic maintenance scripts (daily/weekly/monthly)",
+            "guidance": "Why: macOS ships periodic housekeeping scripts (log rotation, temp cleanup, etc.). On laptops/sleeping Macs they may not run regularly. When: Run monthly, or if the Mac is often asleep at night (scripts may be skipped). After: Runs periodic tasks; usually takes seconds to a few minutes. Mostly safe; output is informational. No reboot required.",
+            "category": "System Operations",
+            "safe": True,
+            "recommended": False,
+        },
         "mail-optimize": {
             "id": "mail-optimize",
             "name": "Optimize Mail Database",
