@@ -124,14 +124,19 @@ class LaunchdGenerator:
 
         runner_path = bin_dir / "mac-maintenance-run-schedule"
 
-        content = """#!/bin/bash
+        # Ensure the project sources are importable even when running under launchd.
+        # We embed the repo's src/ path at generation time (works for local clones).
+        project_src = str((Path(__file__).resolve().parents[3] / "src").resolve())
+
+        content = f"""#!/bin/bash
 set -euo pipefail
 
-PYTHON={python!s}
+PYTHON={sys.executable!s}
+export PYTHONPATH=\"{project_src}${{PYTHONPATH:+:$PYTHONPATH}}\"
 
 # Run the schedule by id
 exec \"$PYTHON\" -m mac_maintenance.scripts.run_schedule \"$1\"
-""".format(python=sys.executable)
+"""
 
         try:
             if (not runner_path.exists()) or (runner_path.read_text(encoding="utf-8") != content):
