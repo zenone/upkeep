@@ -17,8 +17,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # TypeScript build artifacts
-src/mac_maintenance/web/static/app.js
-src/mac_maintenance/web/static/app.js.map
+src/upkeep/web/static/app.js
+src/upkeep/web/static/app.js.map
 
 # macOS
 .DS_Store
