@@ -372,16 +372,16 @@ if [ "${DEVELOPMENT:-false}" = "true" ]; then
 fi
 
 if [ "$HTTPS_ENABLED" = "true" ]; then
-    # Start with HTTPS
-    python -m uvicorn upkeep.web.server:app \
+    # Start with HTTPS (use explicit venv path for reliability after sudo)
+    .venv/bin/python -m uvicorn upkeep.web.server:app \
         --host 127.0.0.1 \
         --port "$PORT" \
         --ssl-keyfile "$KEY_FILE" \
         --ssl-certfile "$CERT_FILE" \
         $RELOAD_FLAG
 else
-    # Start with HTTP
-    python -m uvicorn upkeep.web.server:app \
+    # Start with HTTP (use explicit venv path for reliability after sudo)
+    .venv/bin/python -m uvicorn upkeep.web.server:app \
         --host 127.0.0.1 \
         --port "$PORT" \
         $RELOAD_FLAG
