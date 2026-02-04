@@ -19,7 +19,7 @@
     },
     "shell_scripts": {
       "language": "Bash 4.0+",
-      "operations": "maintain.sh (legacy core operations)"
+      "operations": "upkeep.sh (legacy core operations)"
     },
     "dependencies": {
       "runtime": [
@@ -47,7 +47,7 @@
       "daemon": "Privileged background service for root operations",
       "web_server": "FastAPI REST API + static file serving",
       "tui": "Terminal UI for interactive use",
-      "cli": "Direct command-line operations via maintain.sh",
+      "cli": "Direct command-line operations via upkeep.sh",
       "bridge": "Python-to-Bash bridge for legacy operations"
     },
     "communication": {
@@ -109,7 +109,7 @@
   "deployment": {
     "environment": "macOS (Darwin)",
     "installation": "Local development mode",
-    "daemon_location": "/var/local/mac-maintenance-jobs/",
+    "daemon_location": "/var/local/upkeep-jobs/",
     "web_port": 8080,
     "target_users": "macOS power users and system administrators"
   }

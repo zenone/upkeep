@@ -18,14 +18,14 @@ from pathlib import Path
 from datetime import datetime, time
 from typing import List
 
-from mac_maintenance.api.models.schedule import (
+from upkeep.api.models.schedule import (
     ScheduleConfig,
     ScheduleFrequency,
     DayOfWeek,
     ScheduleResponse,
     ScheduleListResponse,
 )
-from mac_maintenance.core.exceptions import (
+from upkeep.core.exceptions import (
     ValidationError,
     NotFoundError,
     ConflictError,
@@ -261,7 +261,7 @@ class TestScheduleAPICRUD:
     @pytest.fixture
     def schedule_api(self, temp_schedule_file):
         """Create ScheduleAPI instance with temporary storage."""
-        from mac_maintenance.api.schedule import ScheduleAPI
+        from upkeep.api.schedule import ScheduleAPI
         return ScheduleAPI(storage_path=temp_schedule_file)
 
     def test_api_initialization(self, schedule_api):
@@ -460,7 +460,7 @@ class TestScheduleAPILogic:
     @pytest.fixture
     def schedule_api(self, temp_schedule_file):
         """Create ScheduleAPI instance."""
-        from mac_maintenance.api.schedule import ScheduleAPI
+        from upkeep.api.schedule import ScheduleAPI
         return ScheduleAPI(storage_path=temp_schedule_file)
 
     def test_enable_disable_schedule(self, schedule_api):
@@ -586,7 +586,7 @@ class TestScheduleAPILogic:
 
     def test_persistence_across_restarts(self, temp_schedule_file):
         """Schedules should persist across API restarts."""
-        from mac_maintenance.api.schedule import ScheduleAPI
+        from upkeep.api.schedule import ScheduleAPI
 
         # Create schedule with first API instance
         api1 = ScheduleAPI(storage_path=temp_schedule_file)
@@ -620,7 +620,7 @@ class TestScheduleAPIConflicts:
     @pytest.fixture
     def schedule_api(self, temp_schedule_file):
         """Create ScheduleAPI instance."""
-        from mac_maintenance.api.schedule import ScheduleAPI
+        from upkeep.api.schedule import ScheduleAPI
         return ScheduleAPI(storage_path=temp_schedule_file)
 
     def test_no_conflict_different_times(self, schedule_api):

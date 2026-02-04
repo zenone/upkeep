@@ -4,7 +4,7 @@ Tests for CLI main module.
 
 import pytest
 from click.testing import CliRunner
-from mac_maintenance.cli.main import main
+from upkeep.cli.main import main
 
 
 class TestCLIMain:

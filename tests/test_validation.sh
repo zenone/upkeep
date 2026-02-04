@@ -5,7 +5,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/test_helpers.sh"
 
-# Define the function we're testing (copied from maintain.sh)
+# Define the function we're testing (copied from upkeep.sh)
 validate_numeric() {
   local value="$1"
   local name="$2"

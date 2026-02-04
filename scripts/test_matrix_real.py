@@ -23,7 +23,7 @@ from datetime import datetime
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "src"))
 
-from mac_maintenance.api.maintenance import MaintenanceAPI  # type: ignore
+from upkeep.api.maintenance import MaintenanceAPI  # type: ignore
 
 
 OUT_DIR = REPO / "docs" / "test-matrix"

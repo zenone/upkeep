@@ -10,7 +10,7 @@ echo
 
 # Test 1: Check if run_schedule.py exists and is executable
 echo "Test 1: Checking run_schedule.py..."
-if [ -f "src/mac_maintenance/scripts/run_schedule.py" ]; then
+if [ -f "src/upkeep/scripts/run_schedule.py" ]; then
     echo "✅ run_schedule.py found"
 else
     echo "❌ run_schedule.py missing"
@@ -35,7 +35,7 @@ fi
 # Test 3: Check log directory
 echo
 echo "Test 3: Checking log directory..."
-LOG_DIR="$HOME/.mac-maintenance/logs"
+LOG_DIR="$HOME/.upkeep/logs"
 if [ ! -d "$LOG_DIR" ]; then
     echo "Creating log directory..."
     mkdir -p "$LOG_DIR"
@@ -52,9 +52,9 @@ echo
 echo "Test 4: Testing Python imports..."
 python3 << 'EOF'
 try:
-    from mac_maintenance.api.schedule import ScheduleAPI
-    from mac_maintenance.api.maintenance import MaintenanceAPI
-    from mac_maintenance.core.launchd import LaunchdGenerator
+    from upkeep.api.schedule import ScheduleAPI
+    from upkeep.api.maintenance import MaintenanceAPI
+    from upkeep.core.launchd import LaunchdGenerator
     print("✅ All imports successful")
 except ImportError as e:
     print(f"❌ Import failed: {e}")
@@ -65,7 +65,7 @@ EOF
 echo
 echo "Test 5: Testing schedule creation..."
 python3 << 'EOF'
-from mac_maintenance.api.schedule import ScheduleAPI
+from upkeep.api.schedule import ScheduleAPI
 from datetime import time
 
 api = ScheduleAPI()
@@ -92,8 +92,8 @@ EOF
 echo
 echo "Test 6: Testing plist generation..."
 python3 << 'EOF'
-from mac_maintenance.core.launchd import LaunchdGenerator
-from mac_maintenance.api.models.schedule import ScheduleConfig, ScheduleFrequency
+from upkeep.core.launchd import LaunchdGenerator
+from upkeep.api.models.schedule import ScheduleConfig, ScheduleFrequency
 from datetime import time
 
 gen = LaunchdGenerator()
@@ -120,7 +120,7 @@ EOF
 echo
 echo "Test 7: Checking scheduled task entry point..."
 python3 << 'EOF'
-from mac_maintenance.core.launchd import run_scheduled_task
+from upkeep.core.launchd import run_scheduled_task
 print("✅ run_scheduled_task import OK")
 EOF
 

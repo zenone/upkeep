@@ -11,13 +11,13 @@ from datetime import time as time_type
 from unittest.mock import Mock, patch, MagicMock
 import plistlib
 
-from mac_maintenance.core.launchd import LaunchdGenerator
-from mac_maintenance.api.models.schedule import (
+from upkeep.core.launchd import LaunchdGenerator
+from upkeep.api.models.schedule import (
     ScheduleConfig,
     ScheduleFrequency,
     DayOfWeek,
 )
-from mac_maintenance.core.exceptions import (
+from upkeep.core.exceptions import (
     ValidationError,
     DaemonNotAvailableError,
 )
@@ -98,7 +98,7 @@ class TestLaunchdGenerator:
         assert "StartCalendarInterval" in plist_content
 
         # Check label format
-        assert plist_content["Label"] == f"com.mac-maintenance.schedule.{daily_schedule.id}"
+        assert plist_content["Label"] == f"com.upkeep.schedule.{daily_schedule.id}"
 
         # Check program arguments
         assert len(plist_content["ProgramArguments"]) > 0
@@ -161,8 +161,8 @@ class TestLaunchdGenerator:
         stdout_path = plist_content["StandardOutPath"]
         stderr_path = plist_content["StandardErrorPath"]
 
-        assert ".mac-maintenance" in stdout_path or "/var/log" in stdout_path
-        assert ".mac-maintenance" in stderr_path or "/var/log" in stderr_path
+        assert ".upkeep" in stdout_path or "/var/log" in stdout_path
+        assert ".upkeep" in stderr_path or "/var/log" in stderr_path
 
     def test_generate_plist_disabled_schedule(self, generator, daily_schedule):
         """Disabled schedules should still generate plist but not be loaded."""
@@ -181,7 +181,7 @@ class TestLaunchdGenerator:
         assert plist_path is not None
         assert plist_path.exists()
         assert plist_path.parent == temp_plist_dir
-        assert plist_path.name == f"com.mac-maintenance.schedule.{daily_schedule.id}.plist"
+        assert plist_path.name == f"com.upkeep.schedule.{daily_schedule.id}.plist"
 
         # Verify file is valid plist
         with open(plist_path, 'rb') as f:
@@ -283,7 +283,7 @@ class TestLaunchdGenerator:
         path = generator.get_plist_path(daily_schedule.id)
 
         assert path.parent == generator.plist_dir
-        assert path.name == f"com.mac-maintenance.schedule.{daily_schedule.id}.plist"
+        assert path.name == f"com.upkeep.schedule.{daily_schedule.id}.plist"
 
     def test_is_registered(self, generator, daily_schedule):
         """Should check if schedule is registered."""
@@ -328,14 +328,14 @@ class TestSchedulerEntryPoint:
 
     def test_entry_point_exists(self):
         """Scheduler entry point script should exist."""
-        from mac_maintenance.core.launchd import run_scheduled_task
+        from upkeep.core.launchd import run_scheduled_task
         assert run_scheduled_task is not None
 
-    @patch('mac_maintenance.api.schedule.ScheduleAPI')
-    @patch('mac_maintenance.api.maintenance.MaintenanceAPI')
+    @patch('upkeep.api.schedule.ScheduleAPI')
+    @patch('upkeep.api.maintenance.MaintenanceAPI')
     def test_run_scheduled_task(self, mock_maintenance_api, mock_schedule_api):
         """Should load schedule and execute operations."""
-        from mac_maintenance.core.launchd import run_scheduled_task
+        from upkeep.core.launchd import run_scheduled_task
 
         # Mock schedule
         schedule = ScheduleConfig(
@@ -358,10 +358,10 @@ class TestSchedulerEntryPoint:
         # Verify schedule was loaded
         mock_schedule_api.return_value.get_schedule.assert_called_once_with("schedule-test")
 
-    @patch('mac_maintenance.api.schedule.ScheduleAPI')
+    @patch('upkeep.api.schedule.ScheduleAPI')
     def test_run_scheduled_task_not_found(self, mock_schedule_api):
         """Should handle schedule not found."""
-        from mac_maintenance.core.launchd import run_scheduled_task
+        from upkeep.core.launchd import run_scheduled_task
 
         # Mock schedule not found
         mock_schedule_api.return_value.get_schedule.return_value.success = False
@@ -371,10 +371,10 @@ class TestSchedulerEntryPoint:
 
         assert result is False
 
-    @patch('mac_maintenance.api.schedule.ScheduleAPI')
+    @patch('upkeep.api.schedule.ScheduleAPI')
     def test_run_scheduled_task_updates_last_run(self, mock_schedule_api):
         """Should update schedule last_run timestamp after execution."""
-        from mac_maintenance.core.launchd import run_scheduled_task
+        from upkeep.core.launchd import run_scheduled_task
         from datetime import datetime
 
         schedule = ScheduleConfig(

@@ -15,7 +15,7 @@ import {
   calculateETA,
   getOperationHistory,
   clearOperationTimes,
-} from '../../src/mac_maintenance/web/static/ts/modules/operation-times';
+} from '../../src/upkeep/web/static/ts/modules/operation-times';
 
 describe('Operation Time Tracking', () => {
   // Clear localStorage before each test
@@ -34,7 +34,7 @@ describe('Operation Time Tracking', () => {
     });
 
     it('should return stored data when it exists', () => {
-      localStorage.setItem('mac-maintenance-operation-times', JSON.stringify({
+      localStorage.setItem('upkeep-operation-times', JSON.stringify({
         'brew-update': { runs: [50], average: 50 }
       }));
 
@@ -44,7 +44,7 @@ describe('Operation Time Tracking', () => {
     });
 
     it('should handle corrupted JSON gracefully', () => {
-      localStorage.setItem('mac-maintenance-operation-times', 'invalid json{');
+      localStorage.setItem('upkeep-operation-times', 'invalid json{');
       const times = loadOperationTimes();
       expect(times).toEqual({});
     });
@@ -129,7 +129,7 @@ describe('Operation Time Tracking', () => {
     });
 
     it('should return default for operation with no runs', () => {
-      localStorage.setItem('mac-maintenance-operation-times', JSON.stringify({
+      localStorage.setItem('upkeep-operation-times', JSON.stringify({
         'brew-update': { runs: [], average: 0 }
       }));
 
@@ -331,7 +331,7 @@ describe('Operation Time Tracking', () => {
 
       const times = loadOperationTimes();
       expect(times).toEqual({});
-      expect(localStorage.getItem('mac-maintenance-operation-times')).toBeNull();
+      expect(localStorage.getItem('upkeep-operation-times')).toBeNull();
     });
   });
 

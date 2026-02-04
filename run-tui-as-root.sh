@@ -10,12 +10,12 @@ echo ""
 
 # Activate venv and set PYTHONPATH
 source .venv/bin/activate
-export PYTHONPATH=/Users/szenone/Documents/CODE/BASH/mac-maintenance/src:$PYTHONPATH
+export PYTHONPATH=/Users/szenone/Documents/CODE/BASH/upkeep/src:$PYTHONPATH
 
 # Run the entire Python TUI as root
 # This way all subprocess.run() calls inherit root privileges
 echo "Launching TUI as root..."
-sudo -E env "PATH=$PATH" "PYTHONPATH=$PYTHONPATH" mac-maintenance tui
+sudo -E env "PATH=$PATH" "PYTHONPATH=$PYTHONPATH" upkeep tui
 
 # Note: -E preserves environment variables
 # "PATH=$PATH" ensures the venv python is used

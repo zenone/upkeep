@@ -37,7 +37,7 @@ trap cleanup EXIT INT TERM
 
 echo "Launching TUI..."
 source .venv/bin/activate
-export PYTHONPATH=/Users/szenone/Documents/CODE/BASH/mac-maintenance/src:$PYTHONPATH
-mac-maintenance tui
+export PYTHONPATH=/Users/szenone/Documents/CODE/BASH/upkeep/src:$PYTHONPATH
+upkeep tui
 
 # Cleanup happens automatically via trap

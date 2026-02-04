@@ -49,11 +49,11 @@ echo ""
 run_test "Virtual environment exists" "[ -d .venv ]"
 
 # Check Python package source exists
-run_test "Python package source exists" "[ -d src/mac_maintenance ]"
+run_test "Python package source exists" "[ -d src/upkeep ]"
 
 # Check scripts exist
 run_test "run-web.sh exists" "[ -f ./run-web.sh ]"
-run_test "maintain.sh exists" "[ -f ./maintain.sh ]"
+run_test "upkeep.sh exists" "[ -f ./upkeep.sh ]"
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

@@ -1,6 +1,6 @@
 # CHANGELOG
 
-All notable changes between the original `maintain.sh` script and the current **macOS Tahoe Maintenance Toolkit** are documented here.
+All notable changes between the original `upkeep.sh` script and the current **macOS Tahoe Maintenance Toolkit** are documented here.
 
 This project follows a pragmatic versioning model:
 - Major versions reflect **philosophical or architectural shifts**

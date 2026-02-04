@@ -1,4 +1,4 @@
-# 🧹 macOS Maintenance Toolkit
+# 🧹 Upkeep
 
 **Your Mac's Personal Health Coach** – Keep your macOS system running smoothly without the snake oil.
 
@@ -67,10 +67,10 @@ If you prefer clicking buttons to typing commands:
 
 ```bash
 # 1. Download and make executable
-chmod +x maintain.sh
+chmod +x upkeep.sh
 
 # 2. Launch the interactive interface
-./maintain.sh --tui
+./upkeep.sh --tui
 ```
 
 You'll get a beautiful terminal dashboard with:
@@ -84,7 +84,7 @@ You'll get a beautiful terminal dashboard with:
 Want to know if your Mac is okay right now?
 
 ```bash
-./maintain.sh --status
+./upkeep.sh --status
 ```
 
 This gives you a health dashboard in seconds. No changes, just information.
@@ -105,7 +105,7 @@ Then open **http://localhost:8080** in your browser.
 Run safe maintenance operations that almost everyone should do regularly:
 
 ```bash
-./maintain.sh --all-safe
+./upkeep.sh --all-safe
 ```
 
 This will:
@@ -166,14 +166,14 @@ A beautiful terminal interface for keyboard enthusiasts:
 - **One-click operations**: Run maintenance tasks with visual feedback
 - **Keyboard-driven**: Navigate like a pro with intuitive shortcuts
 
-**Launch it:** `./maintain.sh --tui`
+**Launch it:** `./upkeep.sh --tui`
 
 ### 2. 🔍 Smart Storage Analysis
 
 Ever wondered where all your disk space went?
 
 ```bash
-mac-maintenance analyze ~/Documents
+upkeep analyze ~/Documents
 ```
 
 **What you'll see:**
@@ -190,7 +190,7 @@ mac-maintenance analyze ~/Documents
 Get a **real** assessment of your Mac's health:
 
 ```bash
-./maintain.sh --status
+./upkeep.sh --status
 ```
 
 **Checks:**
@@ -239,13 +239,13 @@ Perfect for scheduled maintenance or remote systems:
 
 ```bash
 # Silent mode (for cron jobs)
-./maintain.sh --all-safe --quiet
+./upkeep.sh --all-safe --quiet
 
 # Machine-readable output
-./maintain.sh --all-safe --output-json
+./upkeep.sh --all-safe --output-json
 
 # See what would happen without doing it
-./maintain.sh --all-deep --dry-run
+./upkeep.sh --all-deep --dry-run
 ```
 
 ---
@@ -267,11 +267,11 @@ Perfect for scheduled maintenance or remote systems:
 
 ```bash
 # Clone the repository
-git clone https://github.com/zenone/mac-maintenance.git
-cd mac-maintenance
+git clone https://github.com/zenone/upkeep.git
+cd upkeep
 
 # Make it executable
-chmod +x maintain.sh
+chmod +x upkeep.sh
 ```
 
 ### Step 2: Grant Permissions
@@ -307,8 +307,8 @@ source .venv/bin/activate
 uv pip install -e .
 
 # Test it
-mac-maintenance --version
-mac-maintenance tui
+upkeep --version
+upkeep tui
 ```
 
 #### Fallback: stdlib `venv` + `pip`
@@ -319,8 +319,8 @@ source .venv/bin/activate
 python -m pip install -U pip
 python -m pip install -e .
 
-mac-maintenance --version
-mac-maintenance tui
+upkeep --version
+upkeep tui
 ```
 
 **What if I skip this?** The bash script works perfectly fine standalone. You just won't get the fancy TUI or color-coded storage reports. Everything else works.
@@ -333,18 +333,18 @@ mac-maintenance tui
 
 **1. Check if everything is okay:**
 ```bash
-./maintain.sh --status
+./upkeep.sh --status
 ```
 
 **2. If you see issues, launch the interactive interface:**
 ```bash
-./maintain.sh --tui
+./upkeep.sh --tui
 ```
 Navigate with keyboard (press `?` for help), click around, see what's what.
 
 **3. Run safe maintenance when you're ready:**
 ```bash
-./maintain.sh --all-safe
+./upkeep.sh --all-safe
 ```
 
 **That's it.** You don't need to run this every day. Once a week or when something feels off is plenty.
@@ -353,53 +353,53 @@ Navigate with keyboard (press `?` for help), click around, see what's what.
 
 **See what's using disk space:**
 ```bash
-mac-maintenance analyze ~/
+upkeep analyze ~/
 ```
 
 **Update everything safely:**
 ```bash
-./maintain.sh --install-macos-updates --brew --mas
+./upkeep.sh --install-macos-updates --brew --mas
 ```
 
 **Clean up old files (preview first):**
 ```bash
-./maintain.sh --preview --trim-logs 30
-./maintain.sh --preview --trim-caches 30
+./upkeep.sh --preview --trim-logs 30
+./upkeep.sh --preview --trim-caches 30
 # Looks good? Run for real:
-./maintain.sh --trim-logs 30 --trim-caches 30
+./upkeep.sh --trim-logs 30 --trim-caches 30
 ```
 
 **Check if disk is healthy:**
 ```bash
-./maintain.sh --verify-disk --smart
+./upkeep.sh --verify-disk --smart
 ```
 
 ### For Advanced Users: Power Features
 
 **Automated weekly maintenance (cron job):**
 ```bash
-0 3 * * 0 /path/to/maintain.sh --all-safe --assume-yes --quiet
+0 3 * * 0 /path/to/upkeep.sh --all-safe --assume-yes --quiet
 ```
 
 **CI/CD health check with JSON output:**
 ```bash
-./maintain.sh --status --output-json | jq '.summary.health_score'
+./upkeep.sh --status --output-json | jq '.summary.health_score'
 ```
 
 **Deep clean when something's actually wrong:**
 ```bash
-./maintain.sh --all-deep
+./upkeep.sh --all-deep
 ```
 (includes snapshot thinning, cache cleaning, index rebuilding – use sparingly)
 
 **Combine operations:**
 ```bash
-./maintain.sh --verify-disk --space-report --security-audit --trim-logs 30
+./upkeep.sh --verify-disk --space-report --security-audit --trim-logs 30
 ```
 
 ### TUI Keyboard Shortcuts
 
-Once you launch `mac-maintenance tui`:
+Once you launch `upkeep tui`:
 
 - `d` – Dashboard view
 - `m` – Maintenance operations
@@ -455,9 +455,9 @@ Once you launch `mac-maintenance tui`:
 ### "How often should I run this?"
 
 **Recommended schedule:**
-- **Weekly:** Quick status check (`./maintain.sh --status`)
-- **Monthly:** Safe maintenance (`./maintain.sh --all-safe`)
-- **When something feels off:** Deep maintenance (`./maintain.sh --all-deep`)
+- **Weekly:** Quick status check (`./upkeep.sh --status`)
+- **Monthly:** Safe maintenance (`./upkeep.sh --all-safe`)
+- **When something feels off:** Deep maintenance (`./upkeep.sh --all-deep`)
 - **Never just because:** Don't run maintenance as a ritual
 
 ### "What's the difference between --all-safe and --all-deep?"
@@ -542,29 +542,29 @@ ls ~/Library/Logs
 
 ```bash
 # Silent mode (only errors shown, everything still logged)
-./maintain.sh --all-safe --quiet
+./upkeep.sh --all-safe --quiet
 
 # Non-interactive (auto-confirm prompts with safe defaults)
-./maintain.sh --all-safe --assume-yes
+./upkeep.sh --all-safe --assume-yes
 
 # Machine-readable output
-./maintain.sh --all-safe --output-json
+./upkeep.sh --all-safe --output-json
 ```
 
 **Cron job example** (weekly Sunday at 3 AM):
 ```cron
-0 3 * * 0 /path/to/mac-maintenance/maintain.sh --all-safe --assume-yes --quiet
+0 3 * * 0 /path/to/upkeep/upkeep.sh --all-safe --assume-yes --quiet
 ```
 
 ### "I found a bug / have a feature request. Where do I report it?"
 
-Open an issue on GitHub: [https://github.com/zenone/mac-maintenance/issues](https://github.com/zenone/mac-maintenance/issues)
+Open an issue on GitHub: [https://github.com/zenone/upkeep/issues](https://github.com/zenone/upkeep/issues)
 
 **When reporting bugs, please include:**
 - macOS version (`sw_vers`)
-- Script version (`./maintain.sh --version`)
+- Script version (`./upkeep.sh --version`)
 - Full command you ran
-- Log file from `~/Library/Logs/mac-maintenance-*.log`
+- Log file from `~/Library/Logs/upkeep-*.log`
 
 ---
 
@@ -572,7 +572,7 @@ Open an issue on GitHub: [https://github.com/zenone/mac-maintenance/issues](http
 
 ### The Stack
 
-**Bash Script (maintain.sh):**
+**Bash Script (upkeep.sh):**
 - Core maintenance operations
 - System checks and reporting
 - Works standalone, no dependencies
@@ -642,7 +642,7 @@ npm run build:web
 **File structure:**
 
 ```
-src/mac_maintenance/web/static/
+src/upkeep/web/static/
 ├── ts/                      # TypeScript source
 │   ├── app.ts              # Entry point
 │   ├── types.ts            # Type definitions
@@ -662,13 +662,13 @@ src/mac_maintenance/web/static/
 ### Project Structure
 
 ```
-mac-maintenance/
-├── maintain.sh              # Main bash script
+upkeep/
+├── upkeep.sh              # Main bash script
 ├── pyproject.toml           # Python package configuration
 ├── package.json             # Node.js dependencies (web frontend)
 ├── tsconfig.json            # TypeScript configuration
 ├── src/
-│   └── mac_maintenance/
+│   └── upkeep/
 │       ├── cli/             # Command-line interface
 │       ├── core/            # System information gathering
 │       ├── storage/         # Disk usage analyzer
@@ -756,6 +756,6 @@ Modern Macs don't need constant "optimization." They need **informed maintenance
 
 ---
 
-**Repository:** [https://github.com/zenone/mac-maintenance](https://github.com/zenone/mac-maintenance)
+**Repository:** [https://github.com/zenone/upkeep](https://github.com/zenone/upkeep)
 
-**Issues/Suggestions:** [https://github.com/zenone/mac-maintenance/issues](https://github.com/zenone/mac-maintenance/issues)
+**Issues/Suggestions:** [https://github.com/zenone/upkeep/issues](https://github.com/zenone/upkeep/issues)

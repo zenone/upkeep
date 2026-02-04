@@ -1,12 +1,12 @@
 [project]
-name = "mac-maintenance"
+name = "upkeep"
 version = "3.0.0"
 description = "A modern, safe-by-default maintenance toolkit for macOS"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
-    { name = "mac-maintenance contributors" }
+    { name = "upkeep contributors" }
 ]
 keywords = ["macos", "maintenance", "system", "disk", "cleanup", "tui"]
 classifiers = [
@@ -46,9 +46,9 @@ dev = [
 ]
 
 [project.scripts]
-mac-maintenance = "mac_maintenance.cli.main:main"
-mac-maintenance-tui = "mac_maintenance.tui.app:run"
-mac-maintenance-analyze = "mac_maintenance.storage.cli:main"
+upkeep = "upkeep.cli.main:main"
+upkeep-tui = "upkeep.tui.app:run"
+upkeep-analyze = "upkeep.storage.cli:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -56,7 +56,7 @@ build-backend = "hatchling.build"
 
 [tool.hatchling.build]
 # Hatch expects importable package names; the sources live under src/
-packages = ["mac_maintenance"]
+packages = ["upkeep"]
 
 [tool.hatchling.build.targets.wheel]
 
@@ -71,7 +71,7 @@ markers = [
 addopts = [
     "--strict-markers",
     "--strict-config",
-    "--cov=mac_maintenance",
+    "--cov=upkeep",
     "--cov-report=term-missing",
     "--cov-report=html",
     "--cov-report=xml",

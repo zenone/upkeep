@@ -36,7 +36,7 @@ Mac Maintenance is a **privileged system utility** that:
 │   ↓ Shell Execution                             │
 │ ┌─────────────────────────────────────────────┐ │
 │ │ System (macOS)                              │ │
-│ │   • Bash scripts (maintain.sh)              │ │
+│ │   • Bash scripts (upkeep.sh)              │ │
 │ │   • Homebrew, system caches, permissions    │ │
 │ └─────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────┘
@@ -97,7 +97,7 @@ Mac Maintenance is a **privileged system utility** that:
 ```python
 # NEEDS REVIEW: src/mac_maintenance/core/system.py
 # NEEDS REVIEW: src/mac_maintenance/bridge.py
-# NEEDS REVIEW: maintain.sh (all functions)
+# NEEDS REVIEW: upkeep.sh (all functions)
 ```
 
 ---

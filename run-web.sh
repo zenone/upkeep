@@ -37,7 +37,7 @@ find_available_port() {
 # Function to stop existing Mac Maintenance servers
 stop_existing_servers() {
     # Check for running Mac Maintenance web servers (uvicorn process)
-    local pids=$(pgrep -f "uvicorn mac_maintenance.web.server:app" 2>/dev/null)
+    local pids=$(pgrep -f "uvicorn upkeep.web.server:app" 2>/dev/null)
 
     if [ -n "$pids" ]; then
         echo "🔍 Found running Mac Maintenance server(s)"
@@ -54,7 +54,7 @@ stop_existing_servers() {
         # Wait up to 5 seconds for processes to stop
         local waited=0
         while [ $waited -lt 5 ]; do
-            pids=$(pgrep -f "uvicorn mac_maintenance.web.server:app" 2>/dev/null)
+            pids=$(pgrep -f "uvicorn upkeep.web.server:app" 2>/dev/null)
             if [ -z "$pids" ]; then
                 echo "✅ Previous instances stopped cleanly"
                 echo ""
@@ -65,7 +65,7 @@ stop_existing_servers() {
         done
 
         # Force kill if still running
-        pids=$(pgrep -f "uvicorn mac_maintenance.web.server:app" 2>/dev/null)
+        pids=$(pgrep -f "uvicorn upkeep.web.server:app" 2>/dev/null)
         if [ -n "$pids" ]; then
             echo "⚠️  Forcing shutdown of unresponsive processes..."
             echo "$pids" | xargs kill -9 2>/dev/null
@@ -83,14 +83,14 @@ echo ""
 export PYTHONPATH="$(pwd)/src:$PYTHONPATH"
 
 # Validate prerequisites
-if [ ! -d ".venv" ] || ! .venv/bin/python -c "import mac_maintenance" 2>/dev/null; then
+if [ ! -d ".venv" ] || ! .venv/bin/python -c "import upkeep" 2>/dev/null; then
     echo "❌ Setup required"
     echo ""
     if [ ! -d ".venv" ]; then
         echo "Missing: Virtual environment"
         echo "   python3 -m venv .venv"
     fi
-    if [ -d ".venv" ] && ! .venv/bin/python -c "import mac_maintenance" 2>/dev/null; then
+    if [ -d ".venv" ] && ! .venv/bin/python -c "import upkeep" 2>/dev/null; then
         echo "Missing: Package installation"
         echo "   source .venv/bin/activate && pip install -e ."
     fi
@@ -108,7 +108,7 @@ else
 fi
 
 # Stop existing servers if any
-pids=$(pgrep -f "uvicorn mac_maintenance.web.server:app" 2>/dev/null) || true
+pids=$(pgrep -f "uvicorn upkeep.web.server:app" 2>/dev/null) || true
 if [ -n "$pids" ]; then
     echo "✓ Stopped previous instance"
     echo "$pids" | xargs kill -TERM 2>/dev/null || true
@@ -130,7 +130,7 @@ if [ "${1:-}" = "--https" ]; then
     USE_HTTPS=true
 fi
 
-CERT_DIR="$HOME/.local/mac-maintenance-certs"
+CERT_DIR="$HOME/.local/upkeep-certs"
 CERT_FILE="$CERT_DIR/localhost.pem"
 KEY_FILE="$CERT_DIR/localhost-key.pem"
 
@@ -159,30 +159,30 @@ else
 fi
 echo ""
 
-# Check and update sudoers files if maintain.sh changed (zero friction auto-update)
+# Check and update sudoers files if upkeep.sh changed (zero friction auto-update)
 # This ensures SETENV tags and other sudoers changes are automatically applied
 echo "🔒 Checking sudoers configuration..."
-if [ -f "./maintain.sh" ]; then
-    # Check if maintain.sh is newer than sudoers files (code updated = auto-regenerate)
+if [ -f "./upkeep.sh" ]; then
+    # Check if upkeep.sh is newer than sudoers files (code updated = auto-regenerate)
     SUDOERS_OUTDATED=false
 
-    if [ -f "/etc/sudoers.d/mac-maintenance-mas" ]; then
-        if [ "./maintain.sh" -nt "/etc/sudoers.d/mac-maintenance-mas" ]; then
+    if [ -f "/etc/sudoers.d/upkeep-mas" ]; then
+        if [ "./upkeep.sh" -nt "/etc/sudoers.d/upkeep-mas" ]; then
             SUDOERS_OUTDATED=true
         fi
     fi
 
-    if [ -f "/etc/sudoers.d/mac-maintenance-homebrew" ]; then
-        if [ "./maintain.sh" -nt "/etc/sudoers.d/mac-maintenance-homebrew" ]; then
+    if [ -f "/etc/sudoers.d/upkeep-homebrew" ]; then
+        if [ "./upkeep.sh" -nt "/etc/sudoers.d/upkeep-homebrew" ]; then
             SUDOERS_OUTDATED=true
         fi
     fi
 
     if [ "$SUDOERS_OUTDATED" = true ]; then
-        echo "   Detected maintain.sh updates - regenerating sudoers files..."
-        # Trigger setup by removing old files (maintain.sh will auto-regenerate on next run)
-        sudo rm -f /etc/sudoers.d/mac-maintenance-mas 2>/dev/null || true
-        sudo rm -f /etc/sudoers.d/mac-maintenance-homebrew 2>/dev/null || true
+        echo "   Detected upkeep.sh updates - regenerating sudoers files..."
+        # Trigger setup by removing old files (upkeep.sh will auto-regenerate on next run)
+        sudo rm -f /etc/sudoers.d/upkeep-mas 2>/dev/null || true
+        sudo rm -f /etc/sudoers.d/upkeep-homebrew 2>/dev/null || true
         echo "   ✓ Sudoers will auto-regenerate on first operation"
     else
         echo "   ✓ Sudoers up-to-date"
@@ -194,7 +194,7 @@ echo ""
 DAEMON_RUNNING=false
 
 # Check if daemon is running (not just installed)
-if sudo -n launchctl list 2>/dev/null | grep -q "com.mac-maintenance.daemon"; then
+if sudo -n launchctl list 2>/dev/null | grep -q "com.upkeep.daemon"; then
     # Daemon is loaded, check if actually running
     if pgrep -f "maintenance_daemon.py" >/dev/null 2>&1; then
         DAEMON_RUNNING=true
@@ -202,7 +202,7 @@ if sudo -n launchctl list 2>/dev/null | grep -q "com.mac-maintenance.daemon"; th
     else
         echo "⚠️  Daemon installed but not running"
     fi
-elif launchctl list 2>/dev/null | grep -q "com.mac-maintenance.daemon"; then
+elif launchctl list 2>/dev/null | grep -q "com.upkeep.daemon"; then
     # In user domain (shouldn't be)
     DAEMON_RUNNING=true
     echo "✓ Daemon running (user domain)"
@@ -273,7 +273,7 @@ cleanup() {
     # Check if daemon is running
     if pgrep -f "maintenance_daemon.py" >/dev/null 2>&1; then
         # Check for active scheduled tasks
-        SCHEDULES_FILE="$HOME/.mac-maintenance/schedules.json"
+        SCHEDULES_FILE="$HOME/.upkeep/schedules.json"
         ACTIVE_SCHEDULES=""
         if [ -f "$SCHEDULES_FILE" ]; then
             # Use Python to parse JSON and find enabled schedules
@@ -307,7 +307,7 @@ EOF
         read -p "Stop daemon too? (y/n): " -n 1 -r
         echo ""
         if [[ $REPLY =~ ^[Yy]$ ]]; then
-            if sudo launchctl unload /Library/LaunchDaemons/com.mac-maintenance.daemon.plist 2>/dev/null; then
+            if sudo launchctl unload /Library/LaunchDaemons/com.upkeep.daemon.plist 2>/dev/null; then
                 echo "✓ Daemon stopped"
                 if [ -n "$ACTIVE_SCHEDULES" ]; then
                     echo "⚠️  Scheduled maintenance tasks are now disabled"
@@ -373,7 +373,7 @@ fi
 
 if [ "$HTTPS_ENABLED" = "true" ]; then
     # Start with HTTPS
-    uvicorn mac_maintenance.web.server:app \
+    uvicorn upkeep.web.server:app \
         --host 127.0.0.1 \
         --port "$PORT" \
         --ssl-keyfile "$KEY_FILE" \
@@ -381,7 +381,7 @@ if [ "$HTTPS_ENABLED" = "true" ]; then
         $RELOAD_FLAG
 else
     # Start with HTTP
-    uvicorn mac_maintenance.web.server:app \
+    uvicorn upkeep.web.server:app \
         --host 127.0.0.1 \
         --port "$PORT" \
         $RELOAD_FLAG

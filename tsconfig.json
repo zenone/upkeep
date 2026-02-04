@@ -55,8 +55,8 @@
     "allowUnusedLabels": false
   },
   "include": [
-    "src/mac_maintenance/web/static/**/*.js",
-    "src/mac_maintenance/web/static/**/*.ts",
+    "src/upkeep/web/static/**/*.js",
+    "src/upkeep/web/static/**/*.ts",
     "types/**/*.d.ts"
   ],
   "exclude": [
@@ -64,8 +64,8 @@
     "dist",
     "build",
     "**/*.min.js",
-    "src/mac_maintenance/web/static/app.js",
-    "src/mac_maintenance/web/static/**/*.js",
-    "src/mac_maintenance/web/static/**/*.js.map"
+    "src/upkeep/web/static/app.js",
+    "src/upkeep/web/static/**/*.js",
+    "src/upkeep/web/static/**/*.js.map"
   ]
 }

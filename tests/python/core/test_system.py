@@ -4,7 +4,7 @@ Tests for core.system module.
 
 import pytest
 import platform
-from mac_maintenance.core import system
+from upkeep.core import system
 
 
 class TestMacOSVersion:

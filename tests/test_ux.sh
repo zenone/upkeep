@@ -5,7 +5,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/test_helpers.sh"
 
-MAINTAIN_SH="$(cd "$SCRIPT_DIR/.." && pwd)/maintain.sh"
+MAINTAIN_SH="$(cd "$SCRIPT_DIR/.." && pwd)/upkeep.sh"
 
 start_test_suite "UX Features"
 

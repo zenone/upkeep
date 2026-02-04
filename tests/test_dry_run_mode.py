@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-MAINTAIN_SH = REPO_ROOT / "maintain.sh"
+MAINTAIN_SH = REPO_ROOT / "upkeep.sh"
 
 
 def _run_json(args: list[str], timeout_s: int = 10) -> dict:

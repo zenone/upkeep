@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Security Function Tests
-# Tests for security-related functions in maintain.sh
+# Tests for security-related functions in upkeep.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/test_helpers.sh"
 
-# Define the functions we're testing (copied from maintain.sh)
+# Define the functions we're testing (copied from upkeep.sh)
 version_compare() {
   local ver1="$1"
   local ver2="$2"

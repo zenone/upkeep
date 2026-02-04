@@ -5,10 +5,10 @@ Basic smoke tests to ensure TUI components can be imported and instantiated.
 """
 
 import pytest
-from mac_maintenance.tui import MacMaintenanceTUI
-from mac_maintenance.tui.dashboard import DashboardView, DiskUsageWidget, MetricBox
-from mac_maintenance.tui.storage import StorageView
-from mac_maintenance.tui.about import AboutView
+from upkeep.tui import MacMaintenanceTUI
+from upkeep.tui.dashboard import DashboardView, DiskUsageWidget, MetricBox
+from upkeep.tui.storage import StorageView
+from upkeep.tui.about import AboutView
 
 
 class TestTUIImports:

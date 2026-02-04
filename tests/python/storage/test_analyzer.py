@@ -4,7 +4,7 @@ Tests for storage.analyzer module.
 
 import pytest
 from pathlib import Path
-from mac_maintenance.storage.analyzer import (
+from upkeep.storage.analyzer import (
     DiskAnalyzer,
     FileEntry,
     AnalysisResult,

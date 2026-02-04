@@ -165,7 +165,7 @@ test_snapshot_logic_documented() {
   # - Function should skip if disk usage < threshold
   # This test just verifies the function exists in the script
 
-  MAINTAIN_SH="$(cd "$SCRIPT_DIR/.." && pwd)/maintain.sh"
+  MAINTAIN_SH="$(cd "$SCRIPT_DIR/.." && pwd)/upkeep.sh"
 
   # Check that snapshot counting logic exists
   grep -q "snapshot_count.*tmutil listlocalsnapshots" "$MAINTAIN_SH" || return 1
@@ -185,7 +185,7 @@ assert_success "thin_tm_localsnapshots: has snapshot existence check" \
 
 test_zero_snapshots_documented() {
   # Verify that the function handles 0 snapshots gracefully
-  MAINTAIN_SH="$(cd "$SCRIPT_DIR/.." && pwd)/maintain.sh"
+  MAINTAIN_SH="$(cd "$SCRIPT_DIR/.." && pwd)/upkeep.sh"
 
   # Should have check for 0 snapshots
   grep -A 10 "thin_tm_localsnapshots" "$MAINTAIN_SH" | grep -q "No local snapshots found" || return 1
@@ -199,7 +199,7 @@ assert_success "thin_tm_localsnapshots: handles 0 snapshots case" \
 
 test_invalid_disk_usage_documented() {
   # Verify that the function validates disk usage percentage
-  MAINTAIN_SH="$(cd "$SCRIPT_DIR/.." && pwd)/maintain.sh"
+  MAINTAIN_SH="$(cd "$SCRIPT_DIR/.." && pwd)/upkeep.sh"
 
   # Should have validation for disk usage
   sed -n '/^thin_tm_localsnapshots/,/^}/p' "$MAINTAIN_SH" | grep -q "Could not determine disk usage" || return 1
