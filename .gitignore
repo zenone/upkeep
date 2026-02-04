@@ -168,3 +168,4 @@ test-*.md
 
 # Generated test-matrix artifacts
 docs/test-matrix/*.json
+!install-daemon.sh
