@@ -98,14 +98,15 @@ clean_output() {
     text="${text//$'\b'/}"
 
     # Remove all ANSI escape sequences (not just colors)
-    # This includes: colors, cursor movement, clear screen, etc.
+    # This includes: colors, cursor movement, clear screen, character set selection, etc.
     # Pattern explanation:
-    #   \x1b\[ - ESC[ sequence start
+    #   \x1b\[ - ESC[ sequence start (CSI)
     #   [0-9;?]* - zero or more digits, semicolons, or question marks
     #   [a-zA-Z] - command letter (m=color, K=clear line, H=cursor pos, etc.)
     #   \x1b\][^\x07]* - OSC sequences (Operating System Command)
     #   \x07 - BEL character that ends OSC
-    text=$(echo "$text" | sed -E 's/\x1b\[[0-9;?]*[a-zA-Z]//g; s/\x1b\][^\x07]*\x07//g' 2>/dev/null || echo "$text")
+    #   \x1b[()] - Character set selection (e.g., ESC(B from tput sgr0)
+    text=$(echo "$text" | sed -E 's/\x1b\[[0-9;?]*[a-zA-Z]//g; s/\x1b\][^\x07]*\x07//g; s/\x1b[()].//g' 2>/dev/null || echo "$text")
 
     # Remove other problematic control characters but keep newlines and tabs
     # \x00-\x08: NULL through backspace (except \x08 already removed)
@@ -1008,7 +1009,7 @@ launch_tui() {
   fi
 
   info "Launching interactive TUI..."
-  "$PYTHON_CMD" -m upkeep.tui.app || error "TUI launch failed"
+  "$PYTHON_CMD" -m upkeep.tui || error "TUI launch failed"
 }
 
 status_dashboard() {

@@ -9,6 +9,16 @@ This module provides an interactive terminal interface using Textual:
 - Keyboard navigation
 """
 
-from .app import MacMaintenanceTUI, run
+
+def __getattr__(name: str):
+    """Lazy imports to avoid circular import warnings with python -m."""
+    if name == "MacMaintenanceTUI":
+        from .app import MacMaintenanceTUI
+        return MacMaintenanceTUI
+    if name == "run":
+        from .app import run
+        return run
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = ["MacMaintenanceTUI", "run"]
