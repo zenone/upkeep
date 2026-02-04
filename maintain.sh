@@ -1283,6 +1283,12 @@ report_big_space_users() {
   section "Disk Usage Hotspots (Top 15)"
   info "This is a quick signal - not a full forensic scan."
 
+  # In dry-run mode, skip actual filesystem scan (can take minutes).
+  if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
+    info "DRY-RUN: would scan for large directories"
+    return 0
+  fi
+
   # Try Python-enhanced analysis first (provides categorization)
   # Use ACTUAL_HOME for user's home, not daemon's HOME (/var/root)
   local home="${ACTUAL_HOME:-$HOME}"
@@ -2404,7 +2410,13 @@ spotlight_status() {
     warning "mdutil not found."
     return 0
   fi
-  mdutil -s / || true
+  # Capture output to avoid corrupting JSON mode stdout.
+  local status_output
+  status_output=$(mdutil -s / 2>&1) || true
+  if [[ -n "$status_output" ]]; then
+    # Print via info (which respects QUIET/JSON mode).
+    info "$status_output"
+  fi
   success "Spotlight status checked."
 }
 
