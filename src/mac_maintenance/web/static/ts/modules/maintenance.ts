@@ -864,13 +864,35 @@ async function refreshLastRunTimestamp(): Promise<void> {
     const response = await fetch('/api/maintenance/last-run');
     const data = await response.json();
 
-    const banners = document.querySelectorAll('.last-run-banner');
+    // Update the global "Last maintenance run" banner (Task #130 fix)
+    const banners = document.querySelectorAll('.info-banner');
     banners.forEach(banner => {
-      if (data.last_run) {
-        const statusIcon = data.status === 'completed' ? '✓' : '✗';
-        banner.innerHTML = `📅 Last run: ${data.last_run_relative} ${statusIcon}`;
+      if (data.global_last_run_relative) {
+        banner.innerHTML = `📅 Last maintenance run: <strong>${data.global_last_run_relative}</strong>`;
+        // Update style to success
+        (banner as HTMLElement).style.background = 'var(--success-bg)';
+        (banner as HTMLElement).style.color = 'var(--success-color)';
       }
     });
+
+    // Also update per-operation "Last run" timestamps in the operations list
+    if (data.operations) {
+      for (const [opId, opData] of Object.entries(data.operations)) {
+        const opItem = document.querySelector(`[data-operation-id="${opId}"]`);
+        if (opItem) {
+          const lastRunDiv = opItem.querySelector('.operation-info > div:last-child');
+          if (lastRunDiv && (opData as any).last_run_relative) {
+            const statusIcon = (opData as any).success ? '✓' : '✗';
+            const statusColor = (opData as any).success ? 'var(--success-color)' : 'var(--error-color)';
+            const typicalDuration = (opData as any).typical_display || '';
+            const durationHtml = typicalDuration ? ` | ⏱️ Typically <strong>${typicalDuration}</strong>` : '';
+            lastRunDiv.innerHTML = `
+              📅 Last run: <strong>${(opData as any).last_run_relative}</strong> <span style="color: ${statusColor}">${statusIcon}</span>${durationHtml}
+            `;
+          }
+        }
+      }
+    }
   } catch (error) {
     console.error('Error refreshing timestamp:', error);
   }
