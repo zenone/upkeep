@@ -245,7 +245,7 @@ Perfect for scheduled maintenance or remote systems:
 - Admin password (for system operations)
 - Terminal app with Full Disk Access permission
 
-**Optional (for interactive TUI and storage analyzer):**
+**Optional (for web dashboard and storage analyzer):**
 - Python 3.10 or newer
 - 5 minutes for setup
 
