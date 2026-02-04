@@ -64,6 +64,12 @@ chmod 700 "${LOG_DIR}"  # Restrict directory access to owner only
 LOG_FILE="${LOG_DIR}/mac-maintenance-$(date +%Y%m%d-%H%M%S).log"
 touch "${LOG_FILE}"
 chmod 600 "${LOG_FILE}"  # Restrict log file access to owner only (security: may contain sensitive command output)
+
+# Save original stderr BEFORE exec redirect, so we can write to it in JSON mode.
+# This allows warnings/errors to go to stderr even after the exec below merges stderr→stdout.
+exec 9>&2
+ORIGINAL_STDERR=9
+
 exec > >(tee -a "${LOG_FILE}") 2>&1
 
 ts() { date +"%Y-%m-%d %H:%M:%S"; }
@@ -112,7 +118,22 @@ clean_output() {
 }
 
 log()        { [[ "${QUIET:-0}" -eq 0 ]] && echo -e "$(ts) $(clean_output "$*")" || echo -e "$(ts) $(clean_output "$*")" >> "${LOG_FILE}"; }
-log_always() { echo -e "$(ts) $(clean_output "$*")"; }  # Always output (for errors in quiet mode)
+# Always output (for errors/warnings in quiet mode).
+# In JSON mode, send all human text to stderr so stdout remains machine-readable.
+log_always() {
+  if [[ "${OUTPUT_JSON:-0}" -eq 1 ]]; then
+    # In JSON mode, send human-readable text to the ORIGINAL stderr (fd 9),
+    # which was saved before the exec redirect merged stderr→stdout.
+    echo -e "$(ts) $(clean_output "$*")" >&${ORIGINAL_STDERR:-2}
+  else
+    echo -e "$(ts) $(clean_output "$*")"
+  fi
+}
+# Print text only in non-JSON mode (use for detail output that would corrupt machine-readable JSON).
+print_human() {
+  [[ "${OUTPUT_JSON:-0}" -eq 1 ]] && return 0
+  echo -e "$@"
+}
 
 section() {
   local text="$*"
@@ -315,6 +336,19 @@ run_as_user() {
   # - Otherwise → run normally
   # - Uses -H flag to set HOME to user's home directory
   # - Preserves SUDO_ASKPASS to prevent nested sudo prompts (Task #113 fix)
+  #
+  # Dry-run behavior:
+  # - In --dry-run mode we must NOT execute user-context commands (brew/mas/etc),
+  #   because they can hang (auto-update/network) and violate the "safe" contract.
+  if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
+    # In --output-json mode, stdout must remain machine-readable JSON.
+    # Avoid emitting human text that may be redirected into stdout via `2>&1`.
+    if [[ "${OUTPUT_JSON:-0}" -eq 1 ]]; then
+      return 0
+    fi
+    warning "DRY-RUN: $*"
+    return 0
+  fi
 
   local actual_user="${ACTUAL_USER:-${SUDO_USER:-${USER}}}"
 
@@ -683,6 +717,8 @@ confirm() {
 run() {
   # Print the command, then run it (or skip on dry-run)
   if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
+    # In JSON mode, stdout must remain machine-readable.
+    [[ "${OUTPUT_JSON:-0}" -eq 1 ]] && return 0
     warning "DRY-RUN: $*"
     return 0
   fi
@@ -692,6 +728,8 @@ run() {
 
 run_sudo() {
   if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
+    # In JSON mode, stdout must remain machine-readable.
+    [[ "${OUTPUT_JSON:-0}" -eq 1 ]] && return 0
     warning "DRY-RUN (sudo): $*"
     return 0
   fi
@@ -713,6 +751,8 @@ run_with_progress() {
   shift
 
   if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
+    # In JSON mode, stdout must remain machine-readable.
+    [[ "${OUTPUT_JSON:-0}" -eq 1 ]] && return 0
     warning "DRY-RUN: $*"
     return 0
   fi
@@ -2082,9 +2122,12 @@ mas_updates() {
       return 0
     else
       info "Found $outdated_count App Store app(s) with available updates:"
-      echo "$outdated_apps" | head -5  # Show first 5
-      if [[ "$outdated_count" -gt 5 ]]; then
-        info "... and $((outdated_count - 5)) more"
+      # In JSON mode, do NOT emit raw text to stdout (breaks JSON parsing).
+      if [[ "${OUTPUT_JSON:-0}" -ne 1 ]]; then
+        echo "$outdated_apps" | head -5  # Show first 5
+        if [[ "$outdated_count" -gt 5 ]]; then
+          info "... and $((outdated_count - 5)) more"
+        fi
       fi
       warning "⏱️  Installing App Store updates can take 10-20 minutes"
       info "Large apps (Final Cut, Logic Pro, Xcode) may take even longer"
@@ -2198,17 +2241,17 @@ mas_updates() {
   if [[ ${#apps_updated[@]} -gt 0 ]]; then
     success "✅ Successfully Updated (${#apps_updated[@]}):"
     for app in "${apps_updated[@]}"; do
-      echo "  • $app"
+      print_human "  • $app"
     done
   fi
 
   if [[ ${#apps_running[@]} -gt 0 ]]; then
-    echo ""
+    print_human ""
     warning "⏭️  Skipped - App Running (${#apps_running[@]}):"
     for app in "${apps_running[@]}"; do
-      echo "  • $app"
+      print_human "  • $app"
     done
-    echo ""
+    print_human ""
     info "💡 To update skipped apps:"
     info "   1. Close the apps listed above"
     info "   2. Run 'Update App Store Apps' again"
@@ -2216,10 +2259,10 @@ mas_updates() {
   fi
 
   if [[ ${#apps_failed[@]} -gt 0 ]]; then
-    echo ""
+    print_human ""
     warning "❌ Failed Updates (${#apps_failed[@]}):"
     for app in "${apps_failed[@]}"; do
-      echo "  • $app"
+      print_human "  • $app"
     done
   fi
 
