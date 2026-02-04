@@ -1,11 +1,11 @@
 #!/bin/bash
-# Comprehensive test runner for Mac Maintenance
+# Comprehensive test runner for Upkeep
 # Tests Tasks #46, #47, and general system health
 
 set -e
 
 echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║         Mac Maintenance - Comprehensive Test Suite          ║"
+echo "║         Upkeep - Comprehensive Test Suite          ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
 

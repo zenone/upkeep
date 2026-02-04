@@ -1,12 +1,12 @@
 """
-Custom exceptions for Mac Maintenance.
+Custom exceptions for Upkeep.
 
 Following API-First principles, all exceptions are specific and actionable.
 """
 
 
 class MacMaintenanceError(Exception):
-    """Base exception for all Mac Maintenance errors.
+    """Base exception for all Upkeep errors.
 
     All custom exceptions should inherit from this to allow
     catching all application-specific errors.

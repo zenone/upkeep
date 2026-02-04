@@ -1,5 +1,5 @@
 #!/bin/bash
-# Launch Mac Maintenance web interface
+# Launch Upkeep web interface
 # Server runs as normal user - authentication is handled via web UI
 
 set -e
@@ -34,13 +34,13 @@ find_available_port() {
     echo "$port"
 }
 
-# Function to stop existing Mac Maintenance servers
+# Function to stop existing Upkeep servers
 stop_existing_servers() {
-    # Check for running Mac Maintenance web servers (uvicorn process)
+    # Check for running Upkeep web servers (uvicorn process)
     local pids=$(pgrep -f "uvicorn upkeep.web.server:app" 2>/dev/null)
 
     if [ -n "$pids" ]; then
-        echo "🔍 Found running Mac Maintenance server(s)"
+        echo "🔍 Found running Upkeep server(s)"
         echo "🛑 Stopping existing instances..."
         echo ""
 
@@ -76,7 +76,7 @@ stop_existing_servers() {
     fi
 }
 
-echo "🔧 Mac Maintenance"
+echo "🔧 Upkeep"
 echo ""
 
 # Set PYTHONPATH for validation check

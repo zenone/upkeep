@@ -85,10 +85,10 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     lifespan=lifespan,
 
-    title="Mac Maintenance API",
+    title="Upkeep API",
     version=__version__,
     description="""
-# Mac Maintenance REST API
+# Upkeep REST API
 
 Comprehensive API for macOS system maintenance, monitoring, and automation.
 
@@ -110,7 +110,7 @@ Currently localhost-only. Authentication planned for remote access.
     """,
     terms_of_service=None,
     contact={
-        "name": "Mac Maintenance Support",
+        "name": "Upkeep Support",
         "url": "https://github.com/yourusername/upkeep",
     },
     license_info={
@@ -1430,7 +1430,7 @@ else:
     async def read_root():
         """API root - static files not found."""
         return {
-            "message": "Mac Maintenance API",
+            "message": "Upkeep API",
             "version": __version__,
             "docs": "/docs",
             "note": "Static files not found. Web UI unavailable.",

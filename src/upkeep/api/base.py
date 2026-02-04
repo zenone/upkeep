@@ -1,5 +1,5 @@
 """
-Base API class for Mac Maintenance.
+Base API class for Upkeep.
 
 All API classes inherit from BaseAPI to ensure consistent
 logging, error handling, and behavior.

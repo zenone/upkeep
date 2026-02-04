@@ -1448,7 +1448,7 @@ setup_homebrew_sudo() {
   # - Security: Homebrew is trusted software, user-specific access only
   local sudoers_content
   sudoers_content=$(cat <<EOF
-# Mac Maintenance - Homebrew operations
+# Upkeep - Homebrew operations
 # Created: $(date +%Y-%m-%d)
 # Purpose: Allow Homebrew to run without password prompts
 # Security: Only allows Homebrew commands for specific user
@@ -1626,7 +1626,7 @@ setup_mas_sudo() {
 
   # Create sudoers entry with explicit command whitelist
   local sudoers_content=$(cat <<EOF
-# Mac Maintenance - mas CLI passwordless sudo
+# Upkeep - mas CLI passwordless sudo
 # Created: $(date '+%Y-%m-%d %H:%M:%S')
 # Purpose: Allow mas operations in daemon context without password prompts
 # Security: Only allows mas commands for specific user
@@ -1816,7 +1816,7 @@ brew_maintenance() {
         # Add PATH export if not already present
         if [ -f "$profile_file" ] && ! grep -q "$missing_path" "$profile_file"; then
           echo "" >> "$profile_file"
-          echo "# Added by Mac Maintenance - $(date +%Y-%m-%d)" >> "$profile_file"
+          echo "# Added by Upkeep - $(date +%Y-%m-%d)" >> "$profile_file"
           echo "export PATH=\"$missing_path:\$PATH\"" >> "$profile_file"
           success "✓ Added $missing_path to $profile_file"
           info "Restart your terminal or run: source $profile_file"
@@ -1824,7 +1824,7 @@ brew_maintenance() {
           info "PATH already configured in $profile_file"
         else
           info "Creating $profile_file..."
-          echo "# Mac Maintenance - $(date +%Y-%m-%d)" > "$profile_file"
+          echo "# Upkeep - $(date +%Y-%m-%d)" > "$profile_file"
           echo "export PATH=\"$missing_path:\$PATH\"" >> "$profile_file"
           success "✓ Created $profile_file with PATH configuration"
         fi

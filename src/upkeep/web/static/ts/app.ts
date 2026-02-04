@@ -1,5 +1,5 @@
 /**
- * Mac Maintenance Tool - Frontend Application
+ * Upkeep Tool - Frontend Application
  * Entry point for TypeScript modules
  */
 
@@ -11,7 +11,7 @@ import { onScheduleTabShow, openScheduleModal, closeScheduleModal, loadSchedules
 import type { TabName } from './types';
 
 console.log('╔════════════════════════════════════════════════╗');
-console.log('║   MAC MAINTENANCE - SCRIPT LOADING            ║');
+console.log('║   UPKEEP - SCRIPT LOADING            ║');
 console.log('╚════════════════════════════════════════════════╝');
 
 // ============================================================================
@@ -151,6 +151,6 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('✓ Process refresh configured (10s interval)');
 
   console.log('╔════════════════════════════════════════════════╗');
-  console.log('║   MAC MAINTENANCE - READY                     ║');
+  console.log('║   UPKEEP - READY                     ║');
   console.log('╚════════════════════════════════════════════════╝');
 });

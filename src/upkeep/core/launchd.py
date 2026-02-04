@@ -575,7 +575,7 @@ async def run_scheduled_task_async(schedule_id: str, *, lock_wait_seconds: int =
                 logger.warning(msg)
                 # Don't update last_run on a skip.
                 if getattr(schedule, "notify", True):
-                    _notify("Mac Maintenance (Skipped)", msg)
+                    _notify("Upkeep (Skipped)", msg)
                 return True
 
             logger.info(f"Executing operations for schedule: {schedule.name}")
@@ -617,12 +617,12 @@ async def run_scheduled_task_async(schedule_id: str, *, lock_wait_seconds: int =
         if getattr(schedule, "notify", True):
             if failed > 0:
                 _notify(
-                    "Mac Maintenance (Failed)",
+                    "Upkeep (Failed)",
                     f"{schedule.name}: {successful}/{total} ok, {failed} failed in {duration_s}s",
                 )
             else:
                 _notify(
-                    "Mac Maintenance (Success)",
+                    "Upkeep (Success)",
                     f"{schedule.name}: {successful}/{total} ok in {duration_s}s",
                 )
 

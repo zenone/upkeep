@@ -1,5 +1,5 @@
 """
-Common type definitions and enums for Mac Maintenance.
+Common type definitions and enums for Upkeep.
 
 Following API-First principles, all data structures are strongly typed.
 """
