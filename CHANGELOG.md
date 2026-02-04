@@ -134,7 +134,7 @@ This project follows a pragmatic versioning model:
 ### 📝 Logging Improvements
 - Timestamped logs per run
 - Centralized log directory:
-~/Library/Logs/mac-maintenance-YYYYMMDD-HHMMSS.log- Clear RUN vs DRY-RUN indicators
+~/Library/Logs/upkeep-YYYYMMDD-HHMMSS.log- Clear RUN vs DRY-RUN indicators
 - Consistent success/warning/error markers
 
 ---

@@ -375,7 +375,7 @@ pytest -n auto
 
 ### Issue: Import Errors
 
-**Problem:** `ModuleNotFoundError: No module named 'mac_maintenance'`
+**Problem:** `ModuleNotFoundError: No module named 'upkeep'`
 
 **Solution:**
 ```bash

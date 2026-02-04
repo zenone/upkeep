@@ -2,7 +2,7 @@
 """Run a "real" (non-dry-run) pass of daemon-queued operations.
 
 This exercises the production path:
-  API -> /var/local/mac-maintenance-jobs/*.job.json -> root daemon -> maintain.sh
+  API -> /var/local/upkeep-jobs/*.job.json -> root daemon -> upkeep.sh
 
 Notes
 - This is intentionally *not* committed output. Results are written under
