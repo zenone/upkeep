@@ -2104,6 +2104,23 @@
                                 <span>Enable schedule immediately</span>
                             </label>
                         </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="schedule-notify" checked>
+                                <span>Show a notification after it runs</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="schedule-wake">
+                                <span>Wake Mac to run on schedule (daily/weekly only)</span>
+                            </label>
+                            <small style="color: var(--text-secondary);">
+                                Launchd won’t wake a sleeping Mac by itself. Monthly schedules may still be missed due to macOS limitations.
+                            </small>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">

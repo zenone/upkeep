@@ -123,12 +123,18 @@ if [ -z "$PORT" ]; then
 fi
 echo "✓ Using port $PORT"
 
-# Check HTTPS certificates
+# Default to HTTP to avoid browser certificate warnings on localhost.
+# Pass --https to force HTTPS if certificates are installed/trusted.
+USE_HTTPS=false
+if [ "${1:-}" = "--https" ]; then
+    USE_HTTPS=true
+fi
+
 CERT_DIR="$HOME/.local/mac-maintenance-certs"
 CERT_FILE="$CERT_DIR/localhost.pem"
 KEY_FILE="$CERT_DIR/localhost-key.pem"
 
-if [ -f "$CERT_FILE" ] && [ -f "$KEY_FILE" ]; then
+if [ "$USE_HTTPS" = true ] && [ -f "$CERT_FILE" ] && [ -f "$KEY_FILE" ]; then
     # Check if cert is still valid (>30 days)
     expiry=$(openssl x509 -enddate -noout -in "$CERT_FILE" 2>/dev/null | cut -d= -f2)
     if [ -n "$expiry" ]; then
@@ -149,7 +155,7 @@ if [ -f "$CERT_FILE" ] && [ -f "$KEY_FILE" ]; then
     fi
 else
     HTTPS_ENABLED="false"
-    echo "✓ HTTP mode (run ./setup-https.sh to enable HTTPS)"
+    echo "✓ HTTP mode (use ./run-web.sh --https to enable HTTPS if configured)"
 fi
 echo ""
 

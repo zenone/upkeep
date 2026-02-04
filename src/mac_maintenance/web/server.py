@@ -1378,7 +1378,14 @@ async def run_schedule_now(schedule_id: str):
         # Execute operations
         from mac_maintenance.core.launchd import run_scheduled_task_async
 
-        success = await run_scheduled_task_async(schedule_id)
+        try:
+            success = await run_scheduled_task_async(schedule_id)
+        except Exception as e:
+            # Surface the underlying reason to the UI
+            return {
+                "success": False,
+                "message": f"Schedule execution error: {e}"
+            }
 
         if success:
             return {
@@ -1388,7 +1395,7 @@ async def run_schedule_now(schedule_id: str):
         else:
             return {
                 "success": False,
-                "message": f"Schedule execution failed"
+                "message": "Schedule execution failed (check ~/.mac-maintenance/logs)"
             }
 
     except HTTPException:

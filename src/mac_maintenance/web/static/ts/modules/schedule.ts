@@ -170,6 +170,10 @@ export async function saveSchedule(): Promise<void> {
   const time = timeEl?.value || '';
   const enabledEl = document.getElementById('schedule-enabled') as HTMLInputElement | null;
   const enabled = enabledEl?.checked || false;
+  const notifyEl = document.getElementById('schedule-notify') as HTMLInputElement | null;
+  const notify = notifyEl?.checked ?? true;
+  const wakeEl = document.getElementById('schedule-wake') as HTMLInputElement | null;
+  const wake_mac = wakeEl?.checked ?? false;
 
   // Get selected operations
   const operations = Array.from(document.querySelectorAll<HTMLInputElement>('input[name="operations"]:checked'))
@@ -186,7 +190,9 @@ export async function saveSchedule(): Promise<void> {
     operations,
     frequency,
     time_of_day: time + ':00', // Add seconds
-    enabled
+    enabled,
+    notify,
+    wake_mac
   };
 
   // Add frequency-specific fields
@@ -307,6 +313,7 @@ export async function runScheduleNow(scheduleId: string): Promise<void> {
     showToast('Schedule running...', 'success');
     // Reload to show updated last_run
     setTimeout(() => loadSchedules(), 2000);
+    setTimeout(() => loadSchedules(), 7000);
   } catch (error) {
     console.error('Failed to run schedule:', error);
     showToast((error as Error).message, 'error');
@@ -399,12 +406,16 @@ async function loadScheduleForEdit(scheduleId: string): Promise<void> {
     const freqEl = document.getElementById('schedule-frequency') as HTMLSelectElement | null;
     const timeEl = document.getElementById('schedule-time') as HTMLInputElement | null;
     const enabledEl = document.getElementById('schedule-enabled') as HTMLInputElement | null;
+    const notifyEl = document.getElementById('schedule-notify') as HTMLInputElement | null;
+    const wakeEl = document.getElementById('schedule-wake') as HTMLInputElement | null;
 
     if (nameEl) nameEl.value = schedule.name || '';
     if (descEl) descEl.value = schedule.description || '';
     if (freqEl && schedule.frequency) freqEl.value = schedule.frequency;
     if (timeEl && schedule.time_of_day) timeEl.value = schedule.time_of_day.substring(0, 5); // HH:MM
     if (enabledEl) enabledEl.checked = schedule.enabled;
+    if (notifyEl) notifyEl.checked = (schedule as any).notify ?? true;
+    if (wakeEl) wakeEl.checked = (schedule as any).wake_mac ?? false;
 
     // Check selected operations
     (schedule.operations || []).forEach((opId: string) => {
@@ -496,9 +507,22 @@ export function applyScheduleTemplate(template: any): void {
 /**
  * Called when Schedule tab is shown
  */
+let scheduleRefreshTimer: number | null = null;
+
 export function onScheduleTabShow(): void {
   loadScheduleTemplates();
   loadSchedules();
+
+  // Keep schedule status (last_run/next_run) fresh while user is on the tab.
+  if (scheduleRefreshTimer) {
+    window.clearInterval(scheduleRefreshTimer);
+  }
+  scheduleRefreshTimer = window.setInterval(() => {
+    const tab = document.getElementById('schedule');
+    if (tab && tab.classList.contains('active')) {
+      loadSchedules();
+    }
+  }, 10000);
 }
 
 // ============================================================================
