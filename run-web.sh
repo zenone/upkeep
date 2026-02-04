@@ -15,7 +15,7 @@ export PYTHONUNBUFFERED=1
 # Function to find available port
 find_available_port() {
     # Use Python script to find available port (8080-8089)
-    local port=$(python3 find_port.py 2>/dev/null)
+    local port=$(python3 "$SCRIPT_DIR/find_port.py" 2>/dev/null)
     local exit_code=$?
 
     if [ $exit_code -ne 0 ]; then
@@ -120,7 +120,7 @@ if [ -n "$pids" ]; then
 fi
 
 # Find available port
-PORT=$(python3 find_port.py 2>&1) || { echo "❌ find_port.py failed"; exit 1; }
+PORT=$(python3 "$SCRIPT_DIR/find_port.py" 2>&1) || { echo "❌ find_port.py failed"; exit 1; }
 if [ -z "$PORT" ]; then
     echo "❌ No available ports (8080-8089 all in use)"
     exit 1
