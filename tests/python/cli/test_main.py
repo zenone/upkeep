@@ -32,7 +32,7 @@ class TestCLIMain:
         runner = CliRunner()
         result = runner.invoke(main, ["--help"])
 
-        assert "tui" in result.output
+        assert "web" in result.output
         assert "status" in result.output
         assert "analyze" in result.output
 
@@ -83,13 +83,13 @@ class TestAnalyzeCommand:
         assert "Total:" in result.output
 
 
-class TestTUICommand:
-    """Test TUI command."""
+class TestWebCommand:
+    """Test web command."""
 
-    def test_tui_help(self) -> None:
-        """Test TUI command help."""
+    def test_web_help(self) -> None:
+        """Test web command help."""
         runner = CliRunner()
-        result = runner.invoke(main, ["tui", "--help"])
+        result = runner.invoke(main, ["web", "--help"])
 
         assert result.exit_code == 0
-        assert "Terminal User Interface" in result.output or "TUI" in result.output
+        assert "Web Interface" in result.output or "web" in result.output.lower()

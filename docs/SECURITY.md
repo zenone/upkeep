@@ -11,7 +11,7 @@
 ### System Overview
 Mac Maintenance is a **privileged system utility** that:
 - Executes root-level operations (cache clearing, disk repair, Homebrew updates)
-- Accepts user input via Web UI and TUI
+- Accepts user input via Web UI
 - Bridges Python and Bash code
 - Runs a persistent daemon with elevated privileges
 
@@ -144,7 +144,6 @@ Mac Maintenance is a **privileged system utility** that:
 
 **Current Dependencies**:
 - FastAPI: Latest
-- Textual: Latest
 - Python: 3.11+
 
 **Required Actions** (Phase 1.2):

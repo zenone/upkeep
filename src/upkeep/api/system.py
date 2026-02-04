@@ -2,7 +2,7 @@
 SystemAPI - System information and monitoring.
 
 API-First Design: Clean interface for system metrics, health scoring,
-and process monitoring. Used by Web GUI, CLI, and TUI.
+and process monitoring. Used by Web GUI, CLI, and Web.
 """
 
 import psutil

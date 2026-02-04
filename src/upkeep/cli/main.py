@@ -13,7 +13,6 @@ import click
 from pathlib import Path
 
 from .. import __version__
-from ..tui import run as run_tui
 from .commands import status_command, analyze_command
 
 
@@ -26,19 +25,6 @@ def main() -> None:
     A modern, safe-by-default maintenance toolkit for macOS.
     """
     pass
-
-
-@main.command()
-def tui() -> None:
-    """
-    Launch the Terminal User Interface (TUI).
-
-    A beautiful, interactive terminal interface for system maintenance
-    and analysis.
-    """
-    # Simply launch TUI - sudo is handled by run-tui.sh wrapper script
-    # or users can run 'sudo -v' before running 'upkeep tui' directly
-    run_tui()
 
 
 @main.command()

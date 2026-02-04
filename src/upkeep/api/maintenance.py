@@ -2,7 +2,7 @@
 Secure Maintenance API - Job Queue Pattern
 
 API-First Design: Clean interface for maintenance operations.
-Used by Web GUI, CLI, and TUI.
+Used by Web GUI, CLI, and Web.
 """
 
 import asyncio

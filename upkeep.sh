@@ -990,28 +990,6 @@ detect_apple_silicon() {
 ########################################
 # Reporting / Posture
 ########################################
-launch_tui() {
-  # Launch interactive Python TUI (if available)
-  section "Interactive Dashboard (TUI)"
-
-  if [[ "${PYTHON_AVAILABLE:-0}" -ne 1 ]]; then
-    error "Python features not available. TUI requires Python setup."
-    error ""
-    error "To use the TUI:"
-    error "  1. Install uv: curl -LsSf https://astral.sh/uv/install.sh | sh"
-    error "  2. Create virtual environment: uv venv"
-    error "  3. Activate it: source .venv/bin/activate"
-    error "  4. Install package: uv pip install -e ."
-    error "  5. Run: upkeep tui"
-    error ""
-    error "Or use: upkeep-tui (direct command)"
-    return 1
-  fi
-
-  info "Launching interactive TUI..."
-  "$PYTHON_CMD" -m upkeep.tui || error "TUI launch failed"
-}
-
 status_dashboard() {
   # Quick at-a-glance system health dashboard
   section "System Health Dashboard"
@@ -2828,7 +2806,6 @@ DO_REPORT=0
 DO_PREFLIGHT=0
 DO_SECURITY_AUDIT=0
 DO_STATUS=0
-DO_TUI=0
 
 DO_LIST_MACOS_UPDATES=0
 DO_INSTALL_MACOS_UPDATES=0
@@ -2884,7 +2861,6 @@ Common options:
 
 Display:
   --status                   Show system health dashboard (disk, updates, security, etc.)
-  --tui                      Launch interactive Terminal UI (requires Python setup)
 
 Security:
   --security-audit           Comprehensive security posture check (SIP, FileVault, Gatekeeper, sudo vulnerabilities)
@@ -2938,7 +2914,6 @@ while [[ $# -gt 0 ]]; do
     --no-emoji) NO_EMOJI=1; shift ;;
 
     --status) DO_STATUS=1; shift ;;
-    --tui) DO_TUI=1; shift ;;
     --preflight) DO_PREFLIGHT=1; shift ;;
     --report) DO_REPORT=1; shift ;;
     --security-audit) DO_SECURITY_AUDIT=1; shift ;;
@@ -3053,7 +3028,6 @@ elif (( ALL_SAFE )); then
 else
   # Explicit modules (only what user asked)
   (( DO_STATUS )) && status_dashboard
-  (( DO_TUI )) && launch_tui
   (( DO_PREFLIGHT )) && preflight
   (( DO_REPORT )) && report_system_posture
   (( DO_SECURITY_AUDIT )) && security_posture_check

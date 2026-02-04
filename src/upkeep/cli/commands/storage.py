@@ -56,7 +56,7 @@ def analyze_command(path: Path) -> None:
 
             console.print(table)
 
-        console.print("\n[dim]Run 'upkeep tui' for detailed analysis[/dim]\n")
+        console.print("\n[dim]Run 'upkeep web' or './run-web.sh' for detailed analysis[/dim]\n")
 
     except PathNotFoundError as e:
         console.print(f"\n[red]Error: {e}[/red]\n")

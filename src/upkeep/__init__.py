@@ -5,7 +5,6 @@ A modern, safe-by-default maintenance toolkit for macOS.
 
 This package provides advanced features beyond the bash core:
 - Storage analysis and visualization
-- Terminal UI (TUI) interface
 - Web dashboard interface
 - Duplicate file detection
 - Advanced reporting

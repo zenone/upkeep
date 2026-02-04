@@ -46,4 +46,4 @@ def status_command() -> None:
     )
     console.print(f"  Available: {memory.available / (1024**3):.1f} GB\n")
 
-    console.print("[dim]Run 'upkeep tui' for detailed analysis[/dim]\n")
+    console.print("[dim]Run 'upkeep web' or './run-web.sh' for detailed analysis[/dim]\n")

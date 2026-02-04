@@ -1,7 +1,7 @@
 """Storage API for disk analysis and management.
 
 API-First Design: Clean interface for storage operations.
-Used by Web GUI, CLI, and TUI.
+Used by Web GUI, CLI, and Web.
 """
 
 from pathlib import Path

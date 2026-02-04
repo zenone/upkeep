@@ -91,21 +91,7 @@ Just want to know if your Mac is okay?
 
 Health dashboard in seconds. No changes, just information.
 
-### Option 3: Terminal UI (For Keyboard Lovers)
-
-If you live in the terminal:
-
-```bash
-./upkeep.sh --tui
-```
-
-Beautiful dashboard with:
-- 📊 System health at a glance
-- 💾 Visual storage analyzer
-- 🔧 One-click operations
-- ⌨️ Keyboard shortcuts (press `?` for help)
-
-### Option 4: The "I'm Feeling Lucky" Button
+### Option 3: The "I'm Feeling Lucky" Button
 
 Run safe maintenance operations that almost everyone should do regularly:
 
@@ -167,17 +153,6 @@ A modern, visual interface for Mac maintenance:
 - **Doctor/Preflight**: Catches missing dependencies before you waste time
 
 **Launch it:** `./run-web.sh` → Opens **http://localhost:8081** automatically
-
-### 2. 📊 Interactive Dashboard (TUI)
-
-A beautiful terminal interface for keyboard enthusiasts:
-
-- **Real-time monitoring**: Disk usage, memory, CPU, security status
-- **Storage analyzer**: See exactly what's using your disk space (categorized by images, videos, documents, code, etc.)
-- **One-click operations**: Run maintenance tasks with visual feedback
-- **Keyboard-driven**: Navigate like a pro with intuitive shortcuts
-
-**Launch it:** `./upkeep.sh --tui`
 
 ### 2. 🔍 Smart Storage Analysis
 
@@ -300,7 +275,7 @@ The script needs "Full Disk Access" to read log files and cache directories.
 
 ### Step 3 (Optional): Enable Python Features
 
-Want the interactive TUI and enhanced storage analyzer? Install Python components.
+Want the web dashboard and enhanced storage analyzer? Install Python components.
 
 #### Recommended: `uv`
 
@@ -319,7 +294,7 @@ uv pip install -e .
 
 # Test it
 upkeep --version
-upkeep tui
+./run-web.sh
 ```
 
 #### Fallback: stdlib `venv` + `pip`
@@ -331,10 +306,10 @@ python -m pip install -U pip
 python -m pip install -e .
 
 upkeep --version
-upkeep tui
+./run-web.sh
 ```
 
-**What if I skip this?** The bash script works perfectly fine standalone. You just won't get the fancy TUI or color-coded storage reports. Everything else works.
+**What if I skip this?** The bash script works perfectly fine standalone. You just won't get the web dashboard or color-coded storage reports. Everything else works.
 
 ---
 
@@ -347,11 +322,11 @@ upkeep tui
 ./upkeep.sh --status
 ```
 
-**2. If you see issues, launch the interactive interface:**
+**2. If you see issues, launch the web dashboard:**
 ```bash
-./upkeep.sh --tui
+./run-web.sh
 ```
-Navigate with keyboard (press `?` for help), click around, see what's what.
+Opens in your browser at http://localhost:8081. Easy to navigate, point and click.
 
 **3. Run safe maintenance when you're ready:**
 ```bash
@@ -407,20 +382,6 @@ upkeep analyze ~/
 ```bash
 ./upkeep.sh --verify-disk --space-report --security-audit --trim-logs 30
 ```
-
-### TUI Keyboard Shortcuts
-
-Once you launch `upkeep tui`:
-
-- `d` – Dashboard view
-- `m` – Maintenance operations
-- `s` – Storage analyzer
-- `a` – About / help
-- `r` – Refresh current view
-- `?` – Show help
-- `q` – Quit
-
-**Mouse works too** – click tabs, buttons, checkboxes.
 
 ---
 
@@ -495,11 +456,11 @@ Once you launch `upkeep tui`:
 **No.** The core bash script works standalone and includes all essential maintenance features.
 
 **Python is optional** and adds:
-- 🎨 Interactive TUI with visual interface
+- 🌐 Web dashboard interface (localhost:8081)
 - 📊 Enhanced storage analysis with categorization
 - 🎯 Better visualizations and progress indicators
 
-If you're comfortable with the command line, you don't need Python. If you want pretty interfaces, install Python.
+If you're comfortable with the command line, you don't need Python. If you want the web dashboard, install Python.
 
 ### "Can I use this on macOS Ventura / Sonoma / older versions?"
 
@@ -526,7 +487,7 @@ Older versions (Monterey, Big Sur, Catalina) might work but are untested. Some f
 - ➕ Safe defaults (nothing scary happens by default)
 - ➕ Educational (explains what everything does)
 - ➕ Automation-friendly (scriptable, JSON output)
-- ➖ Requires terminal comfort (or Python for TUI)
+- ➖ Requires terminal comfort (or Python for web dashboard)
 - ➖ Less hand-holding for beginners (but we're working on it!)
 
 ### "I'm getting a permissions error. What do I do?"
@@ -590,10 +551,10 @@ Open an issue on GitHub: [https://github.com/zenone/upkeep/issues](https://githu
 - 1,350 lines of careful bash scripting
 
 **Python Package (optional):**
-- Interactive TUI (powered by [Textual](https://textual.textualize.io/))
+- Web dashboard (localhost:8081)
 - Enhanced storage analyzer
 - Rich terminal output
-- Tested with 245 automated tests
+- Tested with 200+ automated tests
 
 **Bridge:**
 - Seamless integration between bash and Python
@@ -683,7 +644,6 @@ upkeep/
 │       ├── cli/             # Command-line interface
 │       ├── core/            # System information gathering
 │       ├── storage/         # Disk usage analyzer
-│       ├── tui/             # Interactive terminal UI
 │       └── web/
 │           ├── api/         # FastAPI REST endpoints
 │           ├── static/      # Web frontend (TypeScript)
@@ -708,7 +668,7 @@ MIT License – see [LICENSE](LICENSE) file for details.
 ## 🙏 Credits
 
 **Built with:**
-- [Textual](https://textual.textualize.io/) – Amazing Python TUI framework
+- [FastAPI](https://fastapi.tiangolo.com/) – Modern Python web framework
 - [Rich](https://rich.readthedocs.io/) – Beautiful terminal formatting
 - [Click](https://click.palletsprojects.com/) – CLI framework
 - [psutil](https://psutil.readthedocs.io/) – System monitoring

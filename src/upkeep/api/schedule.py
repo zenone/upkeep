@@ -1,7 +1,7 @@
 """Schedule API for recurring maintenance tasks.
 
 API-First Design: Clean interface for schedule management.
-Used by Web GUI, CLI, and TUI.
+Used by Web GUI, CLI, and Web.
 """
 
 import json

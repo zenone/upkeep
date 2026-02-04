@@ -1,7 +1,7 @@
 """API layer for upkeep toolkit.
 
 This package provides a clean, testable API for all maintenance operations.
-All CLI and TUI interfaces should use these APIs rather than direct subprocess calls.
+All CLI and web interfaces should use these APIs rather than direct subprocess calls.
 
 Usage:
     from upkeep.api import StorageAPI, SystemAPI, MaintenanceAPI

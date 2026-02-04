@@ -8,7 +8,7 @@ license = { text = "MIT" }
 authors = [
     { name = "upkeep contributors" }
 ]
-keywords = ["macos", "maintenance", "system", "disk", "cleanup", "tui"]
+keywords = ["macos", "maintenance", "system", "disk", "cleanup", "web"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
@@ -27,7 +27,6 @@ classifiers = [
 ]
 
 dependencies = [
-    "textual>=0.50.0",      # TUI framework
     "rich>=13.7.0",         # Beautiful terminal output
     "click>=8.1.7",         # CLI framework
     "psutil>=5.9.0",        # System and process utilities
@@ -47,7 +46,6 @@ dev = [
 
 [project.scripts]
 upkeep = "upkeep.cli.main:main"
-upkeep-tui = "upkeep.tui.app:run"
 upkeep-analyze = "upkeep.storage.cli:main"
 
 [build-system]

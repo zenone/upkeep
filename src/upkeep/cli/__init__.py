@@ -3,7 +3,7 @@ Command-line interface for Python features.
 
 This module provides CLI entry points for Python functionality:
 - Storage analysis commands
-- TUI launcher
+- Web dashboard launcher
 - Report generation
 - Integration with bash script
 """
