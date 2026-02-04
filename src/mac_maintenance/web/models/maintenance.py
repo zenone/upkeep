@@ -61,8 +61,13 @@ class OperationHistory(BaseModel):
 
     last_run: Optional[str] = Field(None, description="ISO 8601 timestamp of last run")
     last_run_relative: str = Field(..., description="Human-readable relative time (e.g., '2 hours ago')")
-    status: Optional[str] = Field(None, description="Last run status: completed, failed, or skipped")
-    duration_seconds: Optional[float] = Field(None, description="Duration of last run in seconds", ge=0)
+    success: Optional[bool] = Field(None, description="Whether last run was successful")
+    last_duration_seconds: Optional[float] = Field(None, description="Duration of last run in seconds", ge=0)
+    typical_seconds: Optional[float] = Field(None, description="Median duration in seconds (for ETA)")
+    typical_display: Optional[str] = Field(None, description="Human-readable typical duration (e.g., '12s')")
+    typical_runs: Optional[int] = Field(None, description="Number of successful runs used for typical calculation")
+    typical_runs_all: Optional[int] = Field(None, description="Number of all runs recorded")
+    typical_basis: Optional[str] = Field(None, description="Which data was used: 'success' or 'all'")
 
 
 class LastRunResponse(BaseModel):
@@ -79,14 +84,24 @@ class LastRunResponse(BaseModel):
                     "clear_user_caches": {
                         "last_run": "2026-01-28T17:30:25Z",
                         "last_run_relative": "2 hours ago",
-                        "status": "completed",
-                        "duration_seconds": 2.3,
+                        "success": True,
+                        "last_duration_seconds": 2.3,
+                        "typical_seconds": 2.5,
+                        "typical_display": "3s",
+                        "typical_runs": 5,
+                        "typical_runs_all": 5,
+                        "typical_basis": "success",
                     },
                     "repair_permissions": {
                         "last_run": None,
                         "last_run_relative": "Never",
-                        "status": None,
-                        "duration_seconds": None,
+                        "success": None,
+                        "last_duration_seconds": None,
+                        "typical_seconds": None,
+                        "typical_display": None,
+                        "typical_runs": 0,
+                        "typical_runs_all": 0,
+                        "typical_basis": None,
                     },
                 },
             }
