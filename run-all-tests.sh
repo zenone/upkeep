@@ -174,10 +174,9 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 run_test "README.md exists" "[ -f README.md ]"
-run_test "Documentation directory exists" "[ -d .claude ]"
-run_test "CURRENT_STATUS.md exists" "[ -f .claude/CURRENT_STATUS.md ]"
-run_test "WIZARD_PRESET_FIX.md exists" "[ -f .claude/WIZARD_PRESET_FIX.md ]"
-run_test "REBRAND_IMPLEMENTATION_PLAN.md exists" "[ -f .claude/REBRAND_IMPLEMENTATION_PLAN.md ]"
+run_test "Documentation directory exists" "[ -d docs ]"
+run_test "CHANGELOG.md exists" "[ -f CHANGELOG.md ]"
+run_test "SECURITY.md exists" "[ -f docs/SECURITY.md ]"
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -229,9 +228,9 @@ fi
 echo ""
 echo "Next Steps:"
 echo "  1. Review test results above"
-echo "  2. If all pass: All open tasks complete! 🎉"
+echo "  2. If all pass: Ready to deploy! 🎉"
 echo "  3. If failures: Review error messages"
-echo "  4. Check documentation: .claude/CURRENT_STATUS.md"
+echo "  4. Check documentation: README.md"
 echo ""
 
 if [ $TESTS_FAILED -eq 0 ]; then

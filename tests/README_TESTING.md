@@ -440,9 +440,9 @@ pip install -e .
 - Markers: https://docs.pytest.org/en/stable/how-to/mark.html
 
 ### Project Documentation
-- Defensive Coding Standards: `.claude/DEFENSIVE_CODING_STANDARDS.md`
-- Lessons Learned: `.claude/LESSONS_LEARNED_UPDATE_2026-01-30.md`
-- Current State: `.claude/CURRENT_STATE_2026-01-30_FINAL.md`
+- Security Guide: `docs/SECURITY.md`
+- Changelog: `CHANGELOG.md`
+- Main README: `README.md`
 
 ---
 
