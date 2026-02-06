@@ -1,3 +1,16 @@
+# Development workspace (local only)
+.dev/
+
+# Internal state files
+docs/CONTEXT.json
+docs/STATE.json
+
+# Removed features (local development only)
+src/upkeep/tui/
+tests/python/tui/
+run-tui.sh
+run-tui-as-root.sh
+
 # Python virtual environments
 .venv/
 .venv2/
