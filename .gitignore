@@ -108,8 +108,6 @@ coverage.xml
 # Backups
 *.bak
 
-# Claude Code / AI assistant files
-.claude/
 
 # Internal documentation (development phase tracking)
 PHASE*.md
@@ -139,7 +137,6 @@ PRIORITY*.md
 ISSUES_RESOLVED.md
 OPERATION_INFO*.md
 
-# Research and naming documents (archived in .claude/)
 *RESEARCH*.md
 *RECOMMENDATIONS*.md
 *NAMING*.md
@@ -186,3 +183,6 @@ docs/test-matrix/*.json
 !stop-all.sh
 !check_types.sh
 !run_tests.sh
+
+# Local configuration
+.local/
