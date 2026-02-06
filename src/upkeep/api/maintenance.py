@@ -212,6 +212,15 @@ class MaintenanceAPI(BaseAPI):
             "safe": True,
             "recommended": False,
         },
+        "dev-tools-cache": {
+            "id": "dev-tools-cache",
+            "name": "Clear Dev Tools Caches",
+            "description": "Clear npm, pip, Go, Cargo, and Composer package caches",
+            "guidance": "Why: Package managers (npm, pip, Go, Cargo, Composer) cache downloaded packages to speed up installs. Over time, these caches grow to several GB with old/unused packages. When: Run monthly to reclaim disk space, when you notice npm/pip/go taking excessive disk space, or when package installs fail with cache corruption. After: Frees 500MB-5GB typically. Next package install will re-download needed packages (slight delay on first install only). No impact on installed packages or projects.",
+            "category": "Cleanup Operations",
+            "safe": True,
+            "recommended": False,
+        },
         "thin-tm": {
             "id": "thin-tm",
             "name": "Thin Time Machine Snapshots",

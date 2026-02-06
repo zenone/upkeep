@@ -187,8 +187,8 @@ test_zero_snapshots_documented() {
   # Verify that the function handles 0 snapshots gracefully
   MAINTAIN_SH="$(cd "$SCRIPT_DIR/.." && pwd)/upkeep.sh"
 
-  # Should have check for 0 snapshots
-  grep -A 10 "thin_tm_localsnapshots" "$MAINTAIN_SH" | grep -q "No local snapshots found" || return 1
+  # Should have check for 0 snapshots (within the function body, ~20 lines down)
+  sed -n '/^thin_tm_localsnapshots/,/^}/p' "$MAINTAIN_SH" | grep -q "No local snapshots found" || return 1
 
   return 0
 }

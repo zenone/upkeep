@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2155
 # macOS Tahoe Maintenance Toolkit (safe-by-default, OnyX-ish but guardrailed)
 #
 # Philosophy:
@@ -2511,6 +2512,116 @@ clear_developer_caches() {
   fi
 }
 
+clear_dev_tools_caches() {
+  section "Developer Tools Cache Cleanup"
+
+  # Use actual user's home directory (not root's when running as daemon)
+  local user_home=$(get_actual_user_home)
+  local freed=0
+  local total_size=0
+
+  # npm cache (~/.npm)
+  if [ -d "$user_home/.npm" ]; then
+    local npm_size=$(du -sk "$user_home/.npm" 2>/dev/null | awk '{print $1}')
+    total_size=$((total_size + npm_size))
+    info "npm cache: ~$((npm_size / 1024))MB"
+    if confirm "Clear npm cache (~$((npm_size / 1024))MB)?"; then
+      if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
+        success "npm cache cleared (dry-run)"
+      elif command_exists npm; then
+        npm cache clean --force 2>/dev/null || rm -rf "$user_home/.npm/_cacache" 2>/dev/null
+        success "npm cache cleared"
+      else
+        rm -rf "$user_home/.npm/_cacache" 2>/dev/null
+        success "npm cache cleared (manual)"
+      fi
+      freed=$((freed + npm_size))
+    fi
+  fi
+
+  # pip cache (~/Library/Caches/pip)
+  if [ -d "$user_home/Library/Caches/pip" ]; then
+    local pip_size=$(du -sk "$user_home/Library/Caches/pip" 2>/dev/null | awk '{print $1}')
+    total_size=$((total_size + pip_size))
+    info "pip cache: ~$((pip_size / 1024))MB"
+    if confirm "Clear pip cache (~$((pip_size / 1024))MB)?"; then
+      if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
+        success "pip cache cleared (dry-run)"
+      elif command_exists pip3; then
+        pip3 cache purge 2>/dev/null || rm -rf "$user_home/Library/Caches/pip" 2>/dev/null
+        success "pip cache cleared"
+      else
+        rm -rf "$user_home/Library/Caches/pip" 2>/dev/null
+        success "pip cache cleared (manual)"
+      fi
+      freed=$((freed + pip_size))
+    fi
+  fi
+
+  # Go module cache (~/go/pkg/mod/cache)
+  if [ -d "$user_home/go/pkg/mod/cache" ]; then
+    local go_size=$(du -sk "$user_home/go/pkg/mod/cache" 2>/dev/null | awk '{print $1}')
+    total_size=$((total_size + go_size))
+    info "Go module cache: ~$((go_size / 1024))MB"
+    if confirm "Clear Go module cache (~$((go_size / 1024))MB)?"; then
+      if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
+        success "Go module cache cleared (dry-run)"
+      elif command_exists go; then
+        go clean -modcache 2>/dev/null || rm -rf "$user_home/go/pkg/mod/cache" 2>/dev/null
+        success "Go module cache cleared"
+      else
+        rm -rf "$user_home/go/pkg/mod/cache" 2>/dev/null
+        success "Go module cache cleared (manual)"
+      fi
+      freed=$((freed + go_size))
+    fi
+  fi
+
+  # Cargo/Rust cache (~/.cargo/registry/cache)
+  if [ -d "$user_home/.cargo/registry/cache" ]; then
+    local cargo_size=$(du -sk "$user_home/.cargo/registry/cache" 2>/dev/null | awk '{print $1}')
+    total_size=$((total_size + cargo_size))
+    info "Cargo registry cache: ~$((cargo_size / 1024))MB"
+    if confirm "Clear Cargo registry cache (~$((cargo_size / 1024))MB)?"; then
+      if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
+        success "Cargo cache cleared (dry-run)"
+      else
+        rm -rf "$user_home/.cargo/registry/cache" 2>/dev/null
+        success "Cargo cache cleared"
+      fi
+      freed=$((freed + cargo_size))
+    fi
+  fi
+
+  # Composer/PHP cache (~/.composer/cache)
+  if [ -d "$user_home/.composer/cache" ]; then
+    local composer_size=$(du -sk "$user_home/.composer/cache" 2>/dev/null | awk '{print $1}')
+    total_size=$((total_size + composer_size))
+    info "Composer cache: ~$((composer_size / 1024))MB"
+    if confirm "Clear Composer cache (~$((composer_size / 1024))MB)?"; then
+      if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
+        success "Composer cache cleared (dry-run)"
+      elif command_exists composer; then
+        composer clear-cache 2>/dev/null || rm -rf "$user_home/.composer/cache" 2>/dev/null
+        success "Composer cache cleared"
+      else
+        rm -rf "$user_home/.composer/cache" 2>/dev/null
+        success "Composer cache cleared (manual)"
+      fi
+      freed=$((freed + composer_size))
+    fi
+  fi
+
+  if [ $total_size -eq 0 ]; then
+    info "No developer tool caches found"
+    return 0
+  fi
+
+  if [ $freed -gt 0 ]; then
+    success "Freed ~$((freed / 1024))MB from developer tool caches"
+  fi
+}
+
 optimize_mail_database() {
   section "Optimize Mail.app Database"
 
@@ -2828,6 +2939,7 @@ DO_SPOTLIGHT_REINDEX=0
 DO_PERIODIC=0  # OBSOLETE in macOS 15 - kept for backward compatibility
 DO_BROWSER_CACHE=0
 DO_DEV_CACHE=0
+DO_DEV_TOOLS_CACHE=0
 DO_MAIL_OPTIMIZE=0
 DO_DNS_FLUSH=0
 
@@ -2893,6 +3005,10 @@ Housekeeping:
 Cleanup:
   --trim-logs [days]
   --trim-caches [days]
+  --browser-cache            Clear Safari and Chrome browser caches
+  --dev-cache                Clear Xcode DerivedData and simulators
+  --dev-tools-cache          Clear npm, pip, Go, Cargo, Composer caches
+  --mail-optimize            Rebuild Mail.app envelope index
 
 Tuning:
   --space-threshold PCT
@@ -2939,6 +3055,7 @@ while [[ $# -gt 0 ]]; do
     --flush-dns) DO_DNS_FLUSH=1; shift ;;
     --browser-cache) DO_BROWSER_CACHE=1; shift ;;
     --dev-cache) DO_DEV_CACHE=1; shift ;;
+    --dev-tools-cache) DO_DEV_TOOLS_CACHE=1; shift ;;
     --mail-optimize) DO_MAIL_OPTIMIZE=1; shift ;;
 
     --trim-logs)
@@ -3054,6 +3171,7 @@ else
   (( DO_DNS_FLUSH )) && flush_dns
   (( DO_BROWSER_CACHE )) && clear_browser_caches
   (( DO_DEV_CACHE )) && clear_developer_caches
+  (( DO_DEV_TOOLS_CACHE )) && clear_dev_tools_caches
   (( DO_MAIL_OPTIMIZE )) && optimize_mail_database
 
   (( DO_TRIM_LOGS )) && trim_user_logs

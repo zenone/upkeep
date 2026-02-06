@@ -102,6 +102,14 @@ if [ ! -d ".venv" ] || ! .venv/bin/python -c "import upkeep" 2>/dev/null; then
 fi
 echo "✓ Prerequisites OK"
 
+# Auto-reinstall package if source changed (zero friction updates)
+NEWEST_SRC=$(find src/upkeep -name "*.py" -newer .venv/lib/*/site-packages/upkeep*.dist-info 2>/dev/null | head -1)
+if [ -n "$NEWEST_SRC" ]; then
+    echo "🔄 Source code updated - reinstalling package..."
+    source .venv/bin/activate && pip install -e . -q
+    echo "✓ Package reinstalled"
+fi
+
 # Install Node.js dependencies if needed (for TypeScript build)
 if [ ! -d "node_modules" ]; then
     echo "📦 Installing Node.js dependencies (first run)..."
@@ -206,6 +214,40 @@ if [ -f "./upkeep.sh" ]; then
 fi
 echo ""
 
+# Auto-update daemon if source files changed (zero friction updates)
+DAEMON_NEEDS_UPDATE=false
+INSTALLED_DAEMON="/usr/local/lib/upkeep/upkeep_daemon.py"
+INSTALLED_SCRIPT="/usr/local/lib/upkeep/upkeep.sh"
+
+if [ -f "$INSTALLED_DAEMON" ] && [ -f "./daemon/upkeep_daemon.py" ]; then
+    if [ "./daemon/upkeep_daemon.py" -nt "$INSTALLED_DAEMON" ]; then
+        DAEMON_NEEDS_UPDATE=true
+    fi
+fi
+
+if [ -f "$INSTALLED_SCRIPT" ] && [ -f "./upkeep.sh" ]; then
+    if [ "./upkeep.sh" -nt "$INSTALLED_SCRIPT" ]; then
+        DAEMON_NEEDS_UPDATE=true
+    fi
+fi
+
+if [ "$DAEMON_NEEDS_UPDATE" = true ]; then
+    echo "🔄 Daemon update detected..."
+    echo "   Source files are newer than installed version."
+    echo "   Auto-updating daemon (requires administrator privileges)..."
+    echo ""
+    
+    if sudo ./install-daemon.sh; then
+        echo ""
+        echo "✓ Daemon updated successfully"
+    else
+        echo ""
+        echo "⚠️  Daemon update failed. You may need to run manually:"
+        echo "    sudo ./install-daemon.sh"
+    fi
+    echo ""
+fi
+
 # Check daemon status and auto-start if needed
 DAEMON_RUNNING=false
 
@@ -224,39 +266,22 @@ elif launchctl list 2>/dev/null | grep -q "com.upkeep.daemon"; then
     echo "✓ Daemon running (user domain)"
 fi
 
-# Auto-start daemon if not running
+# Auto-install daemon if not running (zero friction - no prompts)
 if [ "$DAEMON_RUNNING" = false ]; then
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "🔧 Daemon Setup Required"
+    echo "🔧 Installing maintenance daemon (one-time setup)..."
+    echo "   This enables maintenance operations & scheduling."
     echo ""
-    echo "The maintenance daemon enables:"
-    echo "  • Running maintenance operations"
-    echo "  • Scheduled maintenance tasks"
-    echo "  • Background system operations"
-    echo ""
-    echo "This requires administrator privileges (one-time setup)."
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo ""
-    read -p "Install daemon now? (y/n): " -n 1 -r
-    echo ""
-    echo ""
-
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        if sudo ./install-daemon.sh; then
-            DAEMON_RUNNING=true
-            echo ""
-            echo "✓ Daemon installed and running"
-        else
-            echo ""
-            echo "⚠️  Daemon installation failed"
-            echo "    Maintenance operations will not be available"
-            echo "    You can install later with: sudo ./install-daemon.sh"
-        fi
+    
+    if sudo ./install-daemon.sh; then
+        DAEMON_RUNNING=true
+        echo ""
+        echo "✓ Daemon installed and running"
     else
-        echo "⚠️  Skipping daemon installation"
-        echo "    Maintenance operations will not be available"
-        echo "    You can install later with: sudo ./install-daemon.sh"
+        echo ""
+        echo "⚠️  Daemon installation failed"
+        echo "    Maintenance operations will not be available until installed."
+        echo "    Try: sudo ./install-daemon.sh"
     fi
     echo ""
 fi

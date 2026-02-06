@@ -76,26 +76,13 @@ echo "🔒 Setting permissions..."
 chmod 777 "$QUEUE_DIR"
 chown root:wheel "$QUEUE_DIR"
 
-# Check if daemon is already running
+# Check if daemon is already running - auto-update without prompting
 echo "🔄 Configuring launchd..."
 if launchctl list | grep -q "com.upkeep.daemon"; then
-    echo ""
-    echo "⚠️  Daemon is already running:"
-    launchctl list | grep com.upkeep.daemon || true
-    echo ""
-    echo "This will unload the existing daemon and reload with the new version."
-    read -p "Continue? (y/n): " -n 1 -r
-    echo ""
-
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "❌ Installation cancelled"
-        exit 0
-    fi
-
-    echo "   Stopping existing daemon..."
+    echo "   Updating existing daemon..."
     launchctl unload "$PLIST_DST" 2>/dev/null || true
     sleep 1
-    echo "   ✅ Daemon unloaded"
+    echo "   ✓ Previous version unloaded"
 fi
 
 # Load daemon

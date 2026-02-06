@@ -62,7 +62,7 @@ export async function analyzeStorage(): Promise<void> {
     showToast(`Analyzed: ${data.file_count} files, ${data.total_size_gb.toFixed(2)} GB`, 'success');
 
     resultsDiv.innerHTML = `
-      <h3 style="margin-top: 2rem;">Results for ${data.root_path}</h3>
+      <h3 style="margin-top: 2rem;">Results for ${data.path || path}</h3>
       <div class="metric-grid" style="margin-top: 1rem;">
         <div class="metric-card">
           <h3>Total Size</h3>
