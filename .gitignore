@@ -1,188 +1,77 @@
-# Development workspace (local only)
-.dev/
+# Local configuration
+.local/
 
-# Internal state files
-docs/CONTEXT.json
-docs/STATE.json
-
-# Removed features (local development only)
-src/upkeep/tui/
-tests/python/tui/
-run-tui.sh
-run-tui-as-root.sh
-
-# Python virtual environments
+# Python
 .venv/
-.venv2/
 venv/
 env/
-ENV/
 *.pyc
 __pycache__/
+*.egg-info/
+.eggs/
+dist/
+build/
 
 # Node.js
 node_modules/
-# Lockfile is committed for reproducible installs
-# (especially important for a CLI + local dashboard tool)
-# package-lock.json
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
-# TypeScript build artifacts
+# TypeScript build output
 src/upkeep/web/static/app.js
 src/upkeep/web/static/app.js.map
 
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Type checking / Linting
+.mypy_cache/
+.ruff_cache/
+
 # macOS
 .DS_Store
-.AppleDouble
-.LSOverride
-Icon
 ._*
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-.com.apple.timemachine.donotpresent
-
-# Logs
-*.log
-logs/
-
-# Temporary files
-*.tmp
-*.temp
-*.swp
-*.swo
-*~
-
-# Backup directory and backup files
-.backup/
-*.backup
-pre-github-backup.tar.gz
 
 # IDE
 .vscode/
 .idea/
-*.sublime-*
 
-# Test outputs
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Distribution / packaging
-dist/
-build/
-*.egg-info/
-.eggs/
-*.whl
-
-# uv / Poetry
-.uv/
-poetry.lock
-uv.lock
-
-# Mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Ruff
-.ruff_cache/
-
-# Coverage reports
-coverage.xml
-.coverage.*
-.coverage *
-
-# Build caches
-*.tsbuildinfo
-
-# Runtime pid/port files
-*.pid
-*.pid.*
+# Logs and temp files
+*.log
+logs/
+*.tmp
+*.swp
+*~
 
 # Backups
 *.bak
+.backup/
 
-
-# Internal documentation (development phase tracking)
+# Development artifacts (not for public repo)
 PHASE*.md
-ANALYSIS*.md
-CODE_REVIEW.md
-EXECUTIVE_SUMMARY.md
-MAINTENANCE_TAB_COMPLETE.md
-PYTHON_DEVELOPMENT.md
-RELEASE_NOTES_v*.md
-TESTING_GUIDE_v*.md
-TUI_ENHANCEMENT_PLAN.md
-BASH_PYTHON_BRIDGE.md
-
-# Session summaries and completion markers (development artifacts)
 *COMPLETE*.md
 *SUMMARY*.md
 *FIXES*.md
-*FIX.md
 *IMPLEMENTATION*.md
-*CHECKLIST*.md
-*DEBUGGING*.md
-*READY*.md
 SESSION*.md
-TESTING_INSTRUCTIONS.md
-PRE_GITHUB_CHECKLIST.md
-PRIORITY*.md
-ISSUES_RESOLVED.md
-OPERATION_INFO*.md
-
-*RESEARCH*.md
-*RECOMMENDATIONS*.md
-*NAMING*.md
-NAMING*.md
-MARKET_RESEARCH*.md
-REBRAND*.md
-*GUIDE*.md
-*ENHANCEMENTS.md
-*SETUP*.md
-*PLAN*.md
-*PRACTICES*.md
-*IMPROVEMENTS*.md
-*TEST*.md
-*PRIORITY*.md
 TASK_*.md
-SUDO_*.md
-API_*.md
-UX_*.md
-QUICK_START.md
-SECURE_*.md
-
-# Test and helper scripts (temporary)
+*PLAN*.md
+*RESEARCH*.md
+*CHECKLIST*.md
 test-*.sh
-test-*.html
-# NOTE: do not ignore unit/integration tests under tests/
-# (we keep test_*.py in version control)
-fix-*.sh
-setup-*.sh
-check_*.sh
-find_*.py
-!find_port.py
-stop-all.sh
-install-*.sh
-
-# Example and test files
-example-*.txt
-full_upgrade.txt
 test-*.md
+fix-*.sh
 
-# Generated test-matrix artifacts
+# Generated artifacts
 docs/test-matrix/*.json
+*.pid
+
+# Keep these scripts
 !install-daemon.sh
 !setup-https.sh
 !stop-all.sh
 !check_types.sh
 !run_tests.sh
-
-# Local configuration
-.local/
+!find_port.py
