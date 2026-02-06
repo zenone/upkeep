@@ -213,8 +213,20 @@
             min-width: 2px;  /* Ensure bar is always visible even at 0% */
         }
 
-        .progress-bar-fill.warning { background: #ff9500; }
-        .progress-bar-fill.danger { background: var(--danger-color); }
+        .progress-bar-fill.warning {
+            background: #ff9500;
+            padding: 0;
+            margin: 0;
+            border-radius: 0;
+            color: inherit;
+        }
+        .progress-bar-fill.danger {
+            background: var(--danger-color);
+            padding: 0;
+            margin: 0;
+            border-radius: 0;
+            color: inherit;
+        }
 
         .info-grid {
             display: grid;
