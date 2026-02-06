@@ -9,6 +9,73 @@ This project follows a pragmatic versioning model:
 
 ---
 
+## [3.0.0] – Web Dashboard & Scheduling
+### _Modern interface, automation, and comprehensive guidance_
+
+### 🌐 Web Dashboard
+- **Modern browser-based interface** at localhost:8080
+- Real-time system metrics (CPU, memory, disk, processes)
+- Live operation progress with elapsed time and ETA
+- Skip/cancel controls during operation execution
+- Copy output to clipboard when done
+
+### ✨ Quick Start Wizard
+Six presets for different maintenance scenarios:
+- 🚀 **Quick Clean** (3 ops, ~5 min) - Fast cache cleanup
+- 🔧 **Weekly Routine** (8 ops, ~15 min) - Standard maintenance
+- 🏥 **Full Checkup** (12 ops, ~30 min) - Comprehensive check
+- 💻 **Developer** (6 ops, ~20 min) - Dev caches (20-60GB savings)
+- 🔒 **Security** (5 ops, ~10 min) - Updates + integrity
+- 🎯 **Custom** - Pick your own operations
+
+### 📅 Scheduling System
+Seven schedule templates with launchd integration:
+- ⭐ Essential Weekly Maintenance
+- 🧹 Light Daily Cleanup
+- 🔧 Deep Monthly Maintenance
+- 📦 Software Updates Weekly
+- 💻 Developer Cleanup Monthly
+- 🔒 Security Focus Weekly
+- 💾 Storage Recovery
+
+### 🔧 New Operations (20 total)
+- **dev-tools-cache** - Clear npm, pip, Go, Cargo, Composer caches
+
+### 📖 Operation Guidance
+Every operation now includes:
+- **WHY**: Problems it solves, context
+- **WHAT**: Expected outcomes, timeline, side effects
+- **WHEN**: Recommended run scenarios
+
+### 🩺 Doctor/Preflight
+- Automatic dependency checking before operations
+- Actionable fix suggestions for missing tools
+- One-click fixes where possible
+
+### ⏱️ Smart ETA
+- Historical operation timing
+- Per-operation typical duration display
+- Batch ETA calculation
+
+### 📊 Storage Analyzer
+- Visual breakdown of disk usage
+- Largest files/directories list
+- Move to Trash or permanent delete
+- Category breakdown
+
+### 🔒 Security
+- Secure launchd daemon for privileged operations
+- No password handling in web API
+- Sudo vulnerability checks (CVE-2025-32462, CVE-2025-32463)
+
+### 🛠️ Technical Improvements
+- TypeScript frontend with full type checking
+- FastAPI backend with Pydantic models
+- 47 automated test suites
+- ShellCheck compliant bash script
+
+---
+
 ## [2.0.0] – macOS Tahoe Maintenance Toolkit  
 ### _Architectural rewrite & safety-first redesign_
 
