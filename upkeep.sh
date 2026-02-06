@@ -23,6 +23,10 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 umask 022
 
+# Ensure system utilities are in PATH (required for diskutil, tmutil, softwareupdate, etc.)
+# Some execution contexts (sandboxed shells, certain daemons) may not include /usr/sbin
+export PATH="/usr/sbin:/sbin:$PATH"
+
 # Prevent terminal width truncation (Task #105 fix)
 # In non-interactive contexts (daemon, cron, ssh without tty), COLUMNS defaults to 80
 # This causes programs to truncate output at 80 characters
