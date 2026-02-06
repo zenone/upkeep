@@ -114,27 +114,22 @@ This will:
 ### Dashboard
 Real-time system overview. CPU, memory, disk, health score, top processes—all updating live.
 
-![Dashboard](docs/screenshots/01-dashboard.png)
+![Dashboard](docs/screenshots/dashboard.png)
 
 ### Maintenance Operations
 20 operations, each explaining **why** you'd run it and **what to expect**. No guesswork, no scary warnings.
 
-![Operations](docs/screenshots/02-maintenance-operations.png)
-
-### Progress Tracking
-Watch operations run in real-time. Elapsed time, ETA, skip/cancel controls. Copy output when done.
-
-![Running](docs/screenshots/03-maintenance-running.png)
+![Operations](docs/screenshots/maintenance.png)
 
 ### Storage Analysis
 Where'd all your disk space go? Find out in seconds. Delete or trash right from the UI.
 
-![Storage](docs/screenshots/04-storage-analyzer.png)
+![Storage](docs/screenshots/storage.png)
 
 ### Scheduling
 Set it and forget it. Daily, weekly, or monthly maintenance—runs automatically via launchd.
 
-![Scheduling](docs/screenshots/schedule-templates-empty.png)
+![Scheduling](docs/screenshots/schedule.png)
 
 ---
 
@@ -683,9 +678,9 @@ MIT License – see [LICENSE](LICENSE) file for details.
 
 ## 🚦 Status & Roadmap
 
-**Current Version:** 2.0.0
+**Current Version:** 3.0.0
 
-**What's New in 2.0:**
+**What's New in 3.0:**
 - 🌐 **Web Dashboard** – Modern browser-based interface with live progress tracking
 - ✨ **Quick Start Wizard** – 6 presets for different maintenance scenarios (Developer, Security, etc.)
 - ⏱️ **Smart Scheduling** – 7 schedule templates with launchd integration
