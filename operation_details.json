@@ -1028,6 +1028,63 @@
       ],
       "safety": "low-risk",
       "note": "Some packages may have breaking changes in updates. Check release notes if you rely on specific package versions for development. After running, review 'brew doctor' output for any issues and test critical command-line tools you depend on."
+    },
+    "dev-tools-cache": {
+      "id": "dev-tools-cache",
+      "name": "Clear Dev Tools Caches",
+      "category": "Cleanup",
+      "why": {
+        "title": "Problems This Solves",
+        "problems": [
+          {
+            "symptom": "Disk space eaten by package caches",
+            "description": "npm, pip, Go, Cargo, and Composer caches growing to several GB with old/unused packages"
+          },
+          {
+            "symptom": "Package install corruption",
+            "description": "Failed or corrupted packages causing npm install or pip install to fail"
+          },
+          {
+            "symptom": "Dependency confusion",
+            "description": "Old cached packages causing version conflicts or unexpected behavior"
+          }
+        ],
+        "context": "Package managers cache downloaded packages to speed up installs. Over time, these caches accumulate old versions and unused packages, wasting disk space and potentially causing issues."
+      },
+      "what": {
+        "title": "Expected Results",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Space freed: Typically 500MB-5GB of disk space recovered"
+          },
+          {
+            "type": "temporary",
+            "description": "First install delay: Next package install will re-download needed packages"
+          },
+          {
+            "type": "positive",
+            "description": "Clean slate: Fresh cache eliminates potential corruption issues"
+          },
+          {
+            "type": "neutral",
+            "description": "No project impact: Installed packages in node_modules, venv, etc. are NOT affected"
+          }
+        ],
+        "timeline": "Operation completes in 30-60 seconds. Cache rebuilds automatically during normal development.",
+        "side_effects": [
+          "Global npm packages remain installed",
+          "Virtual environments remain intact",
+          "Project dependencies remain installed"
+        ]
+      },
+      "when_to_run": [
+        "Monthly to reclaim disk space from package caches",
+        "When package installs fail with cache corruption errors",
+        "After switching between major versions of Node, Python, Go, etc.",
+        "When investigating disk space issues in developer directories"
+      ],
+      "safety": "low-risk"
     }
   }
 }
