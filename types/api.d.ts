@@ -232,14 +232,12 @@ export interface CategoryBreakdown {
  */
 export interface StorageAnalyzeResponse {
   success: boolean;
-  root_path: string;
-  total_size: number;
+  path: string;
   total_size_gb: number;
   file_count: number;
   dir_count: number;
   largest_entries: StorageEntry[];
-  category_sizes: Record<string, CategoryBreakdown>;
-  timestamp: string;
+  error?: string;
 }
 
 /**
