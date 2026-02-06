@@ -904,14 +904,25 @@ async function refreshLastRunTimestamp(): Promise<void> {
 
 // Research-based presets for Mac maintenance (2025-2026 best practices)
 const WIZARD_PRESETS: Record<string, string[]> = {
-  // Quick Clean: Fast cleanup for weekly/biweekly use (5 min)
-  quick: ['browser-cache', 'trim-caches'],
+  // Quick Clean: Fast cleanup for weekly/biweekly use (~5 min)
+  // Use case: "I just need to free up some space quickly"
+  quick: ['browser-cache', 'trim-caches', 'trim-logs'],
 
-  // Weekly Routine: Comprehensive weekly maintenance (15 min)
-  weekly: ['brew-update', 'mas-update', 'disk-verify', 'browser-cache', 'trim-caches', 'trim-logs', 'spotlight-status'],
+  // Weekly Routine: Comprehensive weekly maintenance (~15 min)
+  // Use case: Regular Sunday morning maintenance
+  weekly: ['brew-update', 'mas-update', 'disk-verify', 'browser-cache', 'trim-caches', 'trim-logs', 'periodic', 'spotlight-status'],
 
-  // Full Checkup: All recommended + comprehensive safe operations (30 min)
-  full: ['brew-update', 'mas-update', 'disk-verify', 'browser-cache', 'dev-cache', 'trim-caches', 'trim-logs', 'smart-check', 'spotlight-status', 'dns-flush']
+  // Full Checkup: All recommended + comprehensive safe operations (~30 min)
+  // Use case: Monthly deep maintenance or before major work
+  full: ['brew-update', 'mas-update', 'disk-verify', 'browser-cache', 'dev-cache', 'dev-tools-cache', 'trim-caches', 'trim-logs', 'smart-check', 'periodic', 'spotlight-status', 'dns-flush'],
+
+  // Developer: Optimized for software developers (~20 min, 20-60GB savings)
+  // Use case: When Xcode/npm/pip caches are eating disk space
+  developer: ['dev-cache', 'dev-tools-cache', 'browser-cache', 'trim-caches', 'brew-cleanup', 'dns-flush'],
+
+  // Security: Focus on updates and system integrity (~10 min)
+  // Use case: After security advisories or monthly security check
+  security: ['macos-check', 'brew-update', 'mas-update', 'disk-verify', 'smart-check']
 };
 
 export function showQuickStartWizard(): void {

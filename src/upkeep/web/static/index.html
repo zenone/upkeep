@@ -1947,29 +1947,41 @@
                     <button class="modal-close" onclick="closeWizard()">✕</button>
                 </div>
                 <div class="modal-body">
-                    <div class="wizard-options" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
-                        <div class="wizard-option" onclick="selectWizardOption('quick')" style="background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s;">
-                            <div style="font-size: 3rem; margin-bottom: 0.75rem;">🚀</div>
-                            <h4 style="margin: 0.5rem 0; font-size: 1.1rem;">Quick Clean</h4>
-                            <p style="color: var(--text-secondary); font-size: 0.875rem; margin: 0.5rem 0 0.75rem 0;">5 minutes - Clear caches and temporary files</p>
-                            <div style="color: var(--accent-color); font-size: 0.75rem; font-weight: 600;">2 operations</div>
+                    <div class="wizard-options" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem;">
+                        <div class="wizard-option" onclick="selectWizardOption('quick')" style="background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 12px; padding: 1.25rem; text-align: center; cursor: pointer; transition: all 0.2s;">
+                            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🚀</div>
+                            <h4 style="margin: 0.5rem 0; font-size: 1rem;">Quick Clean</h4>
+                            <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0.5rem 0 0.5rem 0;">~5 min - Clear caches</p>
+                            <div style="color: var(--accent-color); font-size: 0.75rem; font-weight: 600;">3 operations</div>
                         </div>
-                        <div class="wizard-option" onclick="selectWizardOption('weekly')" style="background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s;">
-                            <div style="font-size: 3rem; margin-bottom: 0.75rem;">🔧</div>
-                            <h4 style="margin: 0.5rem 0; font-size: 1.1rem;">Weekly Routine</h4>
-                            <p style="color: var(--text-secondary); font-size: 0.875rem; margin: 0.5rem 0 0.75rem 0;">15 minutes - Recommended maintenance tasks</p>
-                            <div style="color: var(--accent-color); font-size: 0.75rem; font-weight: 600;">7 operations</div>
+                        <div class="wizard-option" onclick="selectWizardOption('weekly')" style="background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 12px; padding: 1.25rem; text-align: center; cursor: pointer; transition: all 0.2s;">
+                            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔧</div>
+                            <h4 style="margin: 0.5rem 0; font-size: 1rem;">Weekly Routine</h4>
+                            <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0.5rem 0 0.5rem 0;">~15 min - Standard maintenance</p>
+                            <div style="color: var(--accent-color); font-size: 0.75rem; font-weight: 600;">8 operations</div>
                         </div>
-                        <div class="wizard-option" onclick="selectWizardOption('full')" style="background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s;">
-                            <div style="font-size: 3rem; margin-bottom: 0.75rem;">🏥</div>
-                            <h4 style="margin: 0.5rem 0; font-size: 1.1rem;">Full Checkup</h4>
-                            <p style="color: var(--text-secondary); font-size: 0.875rem; margin: 0.5rem 0 0.75rem 0;">30 minutes - Complete system maintenance</p>
-                            <div style="color: var(--accent-color); font-size: 0.75rem; font-weight: 600;">10 operations</div>
+                        <div class="wizard-option" onclick="selectWizardOption('full')" style="background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 12px; padding: 1.25rem; text-align: center; cursor: pointer; transition: all 0.2s;">
+                            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🏥</div>
+                            <h4 style="margin: 0.5rem 0; font-size: 1rem;">Full Checkup</h4>
+                            <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0.5rem 0 0.5rem 0;">~30 min - Complete system check</p>
+                            <div style="color: var(--accent-color); font-size: 0.75rem; font-weight: 600;">12 operations</div>
                         </div>
-                        <div class="wizard-option" onclick="selectWizardOption('custom')" style="background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s;">
-                            <div style="font-size: 3rem; margin-bottom: 0.75rem;">🎯</div>
-                            <h4 style="margin: 0.5rem 0; font-size: 1.1rem;">Custom</h4>
-                            <p style="color: var(--text-secondary); font-size: 0.875rem; margin: 0.5rem 0 0.75rem 0;">Choose specific operations yourself</p>
+                        <div class="wizard-option" onclick="selectWizardOption('developer')" style="background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 12px; padding: 1.25rem; text-align: center; cursor: pointer; transition: all 0.2s;">
+                            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">💻</div>
+                            <h4 style="margin: 0.5rem 0; font-size: 1rem;">Developer</h4>
+                            <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0.5rem 0 0.5rem 0;">~20 min - Dev caches (20-60GB)</p>
+                            <div style="color: var(--accent-color); font-size: 0.75rem; font-weight: 600;">6 operations</div>
+                        </div>
+                        <div class="wizard-option" onclick="selectWizardOption('security')" style="background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 12px; padding: 1.25rem; text-align: center; cursor: pointer; transition: all 0.2s;">
+                            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔒</div>
+                            <h4 style="margin: 0.5rem 0; font-size: 1rem;">Security</h4>
+                            <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0.5rem 0 0.5rem 0;">~10 min - Updates & integrity</p>
+                            <div style="color: var(--accent-color); font-size: 0.75rem; font-weight: 600;">5 operations</div>
+                        </div>
+                        <div class="wizard-option" onclick="selectWizardOption('custom')" style="background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 12px; padding: 1.25rem; text-align: center; cursor: pointer; transition: all 0.2s;">
+                            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🎯</div>
+                            <h4 style="margin: 0.5rem 0; font-size: 1rem;">Custom</h4>
+                            <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0.5rem 0 0.5rem 0;">Pick your own operations</p>
                             <div style="color: var(--accent-color); font-size: 0.75rem; font-weight: 600;">Your choice</div>
                         </div>
                     </div>

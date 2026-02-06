@@ -1032,11 +1032,12 @@ async def get_schedule_templates():
     Returns:
         List of schedule templates
     """
+    # Research-based schedule templates for Mac maintenance (2025-2026 best practices)
     templates = [
         {
             "name": "Essential Weekly Maintenance",
-            "description": "Recommended weekly maintenance tasks to keep your Mac running smoothly",
-            "operations": ["disk-verify", "trim-caches", "brew-update", "mas-update"],
+            "description": "Recommended weekly maintenance: updates, disk health, and basic cleanup",
+            "operations": ["disk-verify", "trim-caches", "trim-logs", "brew-update", "mas-update", "periodic"],
             "frequency": "weekly",
             "time_of_day": "03:00:00",
             "days_of_week": ["sunday"],
@@ -1045,7 +1046,7 @@ async def get_schedule_templates():
         },
         {
             "name": "Light Daily Cleanup",
-            "description": "Quick daily cleanup to free up space and maintain performance",
+            "description": "Quick daily cleanup: logs and DNS cache (runs at 2 AM)",
             "operations": ["trim-logs", "dns-flush"],
             "frequency": "daily",
             "time_of_day": "02:00:00",
@@ -1053,8 +1054,8 @@ async def get_schedule_templates():
         },
         {
             "name": "Deep Monthly Maintenance",
-            "description": "Comprehensive monthly maintenance including cache cleanup and disk health",
-            "operations": ["disk-verify", "smart-check", "trim-caches", "browser-cache", "mail-optimize"],
+            "description": "Comprehensive monthly check: disk health, caches, and system scripts",
+            "operations": ["disk-verify", "smart-check", "trim-caches", "browser-cache", "mail-optimize", "periodic", "spotlight-status"],
             "frequency": "monthly",
             "time_of_day": "04:00:00",
             "day_of_month": 1,
@@ -1062,8 +1063,8 @@ async def get_schedule_templates():
         },
         {
             "name": "Software Updates Weekly",
-            "description": "Keep your software up to date with weekly update checks",
-            "operations": ["macos-check", "mas-update", "brew-update"],
+            "description": "Keep software current: macOS, App Store, and Homebrew updates",
+            "operations": ["macos-check", "mas-update", "brew-update", "brew-cleanup"],
             "frequency": "weekly",
             "time_of_day": "10:00:00",
             "days_of_week": ["saturday"],
@@ -1071,12 +1072,30 @@ async def get_schedule_templates():
         },
         {
             "name": "Developer Cleanup Monthly",
-            "description": "Free up development caches and optimize for developers (20-50GB savings)",
-            "operations": ["dev-cache", "browser-cache", "trim-caches"],
+            "description": "Developer-focused cleanup: Xcode, npm, pip, Go caches (20-60GB savings)",
+            "operations": ["dev-cache", "dev-tools-cache", "browser-cache", "trim-caches", "brew-cleanup"],
             "frequency": "monthly",
             "time_of_day": "03:00:00",
             "day_of_month": 15,
             "icon": "💻"
+        },
+        {
+            "name": "Security Focus Weekly",
+            "description": "Security-first maintenance: all updates plus disk integrity checks",
+            "operations": ["macos-check", "brew-update", "mas-update", "disk-verify", "smart-check"],
+            "frequency": "weekly",
+            "time_of_day": "09:00:00",
+            "days_of_week": ["monday"],
+            "icon": "🔒"
+        },
+        {
+            "name": "Storage Recovery",
+            "description": "Maximum space recovery: all cleanup operations (run when disk is full)",
+            "operations": ["browser-cache", "dev-cache", "dev-tools-cache", "trim-caches", "trim-logs", "brew-cleanup"],
+            "frequency": "monthly",
+            "time_of_day": "02:00:00",
+            "day_of_month": 1,
+            "icon": "💾"
         }
     ]
 

@@ -5,7 +5,7 @@
 [![macOS](https://img.shields.io/badge/macOS-Sequoia%20%7C%20Sonoma%20%7C%20Ventura-blue.svg)](https://www.apple.com/macos/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-245%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-47%20suites%20passing-brightgreen.svg)](tests/)
 
 ---
 
@@ -79,7 +79,7 @@ pip install -e .
 ./run-web.sh
 ```
 
-Opens **http://localhost:8081** in your browser. You'll see your Mac's health, run maintenance with one click, and actually understand what's happening.
+Opens **http://localhost:8080** in your browser. You'll see your Mac's health, run maintenance with one click, and actually understand what's happening.
 
 ### Option 2: Quick Status Check (One Command)
 
@@ -117,7 +117,7 @@ Real-time system overview. CPU, memory, disk, health score, top processes—all 
 ![Dashboard](docs/screenshots/01-dashboard.png)
 
 ### Maintenance Operations
-19 operations, each explaining **why** you'd run it and **what to expect**. No guesswork, no scary warnings.
+20 operations, each explaining **why** you'd run it and **what to expect**. No guesswork, no scary warnings.
 
 ![Operations](docs/screenshots/02-maintenance-operations.png)
 
@@ -145,14 +145,15 @@ Set it and forget it. Daily, weekly, or monthly maintenance—runs automatically
 A modern, visual interface for Mac maintenance:
 
 - **System Overview**: CPU, memory, disk usage, health score at a glance
-- **19 Maintenance Operations**: Each explains *why* you'd run it and *what to expect*
+- **20 Maintenance Operations**: Each explains *why* you'd run it and *what to expect*
+- **Quick Start Wizard**: 6 presets—Quick Clean, Weekly, Full Checkup, Developer, Security, or Custom
 - **Progress Tracking**: Live output, elapsed time, ETA based on your history
 - **Skip & Cancel**: Changed your mind? Stop or skip mid-operation
 - **Storage Analyzer**: Visual breakdown of what's eating your disk
-- **Scheduling**: Automated maintenance with launchd (daily, weekly, monthly)
+- **7 Schedule Templates**: Essential Weekly, Daily Cleanup, Deep Monthly, Software Updates, Developer, Security Focus, Storage Recovery
 - **Doctor/Preflight**: Catches missing dependencies before you waste time
 
-**Launch it:** `./run-web.sh` → Opens **http://localhost:8081** automatically
+**Launch it:** `./run-web.sh` → Opens **http://localhost:8080** automatically
 
 ### 2. 🔍 Smart Storage Analysis
 
@@ -326,7 +327,7 @@ upkeep --version
 ```bash
 ./run-web.sh
 ```
-Opens in your browser at http://localhost:8081. Easy to navigate, point and click.
+Opens in your browser at http://localhost:8080. Easy to navigate, point and click.
 
 **3. Run safe maintenance when you're ready:**
 ```bash
@@ -456,7 +457,7 @@ upkeep analyze ~/
 **No.** The core bash script works standalone and includes all essential maintenance features.
 
 **Python is optional** and adds:
-- 🌐 Web dashboard interface (localhost:8081)
+- 🌐 Web dashboard interface (localhost:8080)
 - 📊 Enhanced storage analysis with categorization
 - 🎯 Better visualizations and progress indicators
 
@@ -551,7 +552,7 @@ Open an issue on GitHub: [https://github.com/zenone/upkeep/issues](https://githu
 - 1,350 lines of careful bash scripting
 
 **Python Package (optional):**
-- Web dashboard (localhost:8081)
+- Web dashboard (localhost:8080)
 - Enhanced storage analyzer
 - Rich terminal output
 - Tested with 200+ automated tests
@@ -686,12 +687,14 @@ MIT License – see [LICENSE](LICENSE) file for details.
 
 **What's New in 2.0:**
 - 🌐 **Web Dashboard** – Modern browser-based interface with live progress tracking
-- ⏱️ **Smart Scheduling** – Set up automated maintenance with launchd integration
+- ✨ **Quick Start Wizard** – 6 presets for different maintenance scenarios (Developer, Security, etc.)
+- ⏱️ **Smart Scheduling** – 7 schedule templates with launchd integration
+- 💻 **Developer Tools Cache** – Clear npm, pip, Go, Cargo, Composer caches (new operation)
 - 📊 **Operation History** – Track what ran, when, and how long it took
 - 🩺 **Doctor/Preflight** – Checks dependencies before running operations
 - ⏳ **ETA & Progress** – Know how long operations will take based on your history
 - 🔄 **Live Output** – Watch what's happening in real-time
-- ✅ 97+ automated tests across 19 operations
+- ✅ 47 automated test suites across 20 operations
 
 **Coming Soon:**
 - 📊 Historical trend tracking
