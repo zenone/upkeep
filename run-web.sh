@@ -102,6 +102,18 @@ if [ ! -d ".venv" ] || ! .venv/bin/python -c "import upkeep" 2>/dev/null; then
 fi
 echo "✓ Prerequisites OK"
 
+# Install Node.js dependencies if needed (for TypeScript build)
+if [ ! -d "node_modules" ]; then
+    echo "📦 Installing Node.js dependencies (first run)..."
+    if npm install --silent; then
+        echo "✓ Node.js dependencies installed"
+    else
+        echo "❌ Failed to install Node.js dependencies"
+        echo "   Try running: npm install"
+        exit 1
+    fi
+fi
+
 # Build TypeScript frontend
 echo "🔨 Building TypeScript frontend..."
 if npm run build:web; then
