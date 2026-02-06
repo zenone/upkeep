@@ -114,7 +114,7 @@ This will:
 ### Dashboard
 Real-time system overview. CPU, memory, disk, health score, top processes—all updating live.
 
-![Dashboard](docs/screenshots/dashboard.png)
+![Dashboard](docs/screenshots/dashboard-v3.png)
 
 ### Maintenance Operations
 20 operations, each explaining **why** you'd run it and **what to expect**. No guesswork, no scary warnings.
