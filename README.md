@@ -727,3 +727,11 @@ Modern Macs don't need constant "optimization." They need **informed maintenance
 **Repository:** [https://github.com/zenone/upkeep](https://github.com/zenone/upkeep)
 
 **Issues/Suggestions:** [https://github.com/zenone/upkeep/issues](https://github.com/zenone/upkeep/issues)
+
+---
+
+<p align="center">
+  Made by <a href="https://github.com/zenone">@zenone</a>
+  <br>
+  <a href="https://www.linkedin.com/in/zenone/">LinkedIn</a> · <a href="https://github.com/zenone">GitHub</a>
+</p>
