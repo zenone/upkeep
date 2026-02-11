@@ -26,7 +26,20 @@ Upkeep’s philosophy is **safe by default**. These actions are chosen because t
    ```bash
    rm -rf ~/Library/Developer/Xcode/DerivedData/*
    ```
-6. **Time Machine local snapshots** (often a big win)
+6. **Messages caches** (often huge)
+   ```bash
+   rm -rf ~/Library/Messages/Caches
+   ```
+
+7. **macOS Aerial wallpapers** (can be tens of GB)
+
+   If you don’t need offline Apple TV-style Aerial videos:
+
+   ```bash
+   rm -rf "~/Library/Application Support/com.apple.wallpaper/aerials/videos"
+   ```
+
+8. **Time Machine local snapshots** (often a big win)
    ```bash
    tmutil listlocalsnapshots /
    sudo tmutil thinlocalsnapshots / 30000000000 4
