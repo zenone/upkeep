@@ -169,6 +169,10 @@ upkeep analyze ~/Documents
 
 ### 3. 🩺 System Health Checks
 
+> Disk space is the #1 silent killer of macOS reliability.
+> 
+> If you’re tight on space, see: `docs/DISK_SPACE_MAINTENANCE.md`
+
 Get a **real** assessment of your Mac's health:
 
 ```bash

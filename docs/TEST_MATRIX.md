@@ -6,6 +6,10 @@ This document is the canonical checklist for ship readiness.
 
 ## Run modes
 
+## Maintenance operations (manual runbooks)
+
+- Disk space recovery playbook: `docs/DISK_SPACE_MAINTENANCE.md`
+
 - **Dry-ish (safe)**: runs each operation via `upkeep.sh` with `--dry-run --output-json` to validate:
   - command wiring / flags
   - dependency detection
