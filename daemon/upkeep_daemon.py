@@ -59,6 +59,8 @@ ALLOWED_OPERATIONS = {
     "dev-cache": (["--dev-cache", "--assume-yes"], 300),
     "dev-tools-cache": (["--dev-tools-cache", "--assume-yes"], 300),
     "mail-optimize": (["--mail-optimize", "--assume-yes"], 300),
+    "messages-cache": (["--messages-cache", "--assume-yes"], 300),
+    "wallpaper-aerials": (["--wallpaper-aerials", "--assume-yes"], 600),
 }
 
 

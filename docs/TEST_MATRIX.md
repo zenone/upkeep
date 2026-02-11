@@ -1,6 +1,6 @@
 # mac-maintenance — Test Matrix (P0)
 
-Goal: systematically validate all 18 maintenance operations end-to-end.
+Goal: systematically validate all 20 maintenance operations end-to-end.
 
 This document is the canonical checklist for ship readiness.
 
@@ -34,6 +34,9 @@ This document is the canonical checklist for ship readiness.
 | trim-caches | Trim User Caches | ⬜ | ⬜ | |
 | browser-cache | Clear Browser Caches | ⬜ | ⬜ | |
 | dev-cache | Clear Developer Caches | ⬜ | ⬜ | |
+| dev-tools-cache | Clear Dev Tools Caches | ⬜ | ⬜ | |
+| messages-cache | Clear Messages Caches | ⬜ | ⬜ | |
+| wallpaper-aerials | Remove Aerial Wallpaper Videos | ⬜ | ⬜ | |
 | thin-tm | Thin Time Machine Snapshots | ⬜ | ⬜ | |
 | spotlight-status | Check Spotlight Status | ⬜ | ⬜ | |
 | spotlight-reindex | Rebuild Spotlight Index | ⬜ | ⬜ | |

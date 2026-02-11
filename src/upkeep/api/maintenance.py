@@ -230,6 +230,24 @@ class MaintenanceAPI(BaseAPI):
             "safe": False,
             "recommended": False,
         },
+        "messages-cache": {
+            "id": "messages-cache",
+            "name": "Clear Messages Caches",
+            "description": "Remove Messages preview/cache files (not chat history)",
+            "guidance": "Why: Messages builds large preview caches and attachment preview thumbnails over time. These can grow to many GB and waste space. When: Run when low on disk space, or when Messages caches are unusually large. After: Frees disk space immediately. Messages may rebuild previews over time. Your actual chat database and message content are not deleted.",
+            "category": "Cleanup Operations",
+            "safe": True,
+            "recommended": False,
+        },
+        "wallpaper-aerials": {
+            "id": "wallpaper-aerials",
+            "name": "Remove Aerial Wallpaper Videos",
+            "description": "Delete downloaded macOS Aerial (wallpaper) videos",
+            "guidance": "Why: macOS can download high-resolution Aerial videos for wallpapers/screensavers, which can consume tens of GB. When: Run when disk space is low and Aerial videos are taking significant space. After: Frees disk space immediately. macOS may re-download videos later if Aerial wallpapers are enabled.",
+            "category": "Cleanup Operations",
+            "safe": True,
+            "recommended": False,
+        },
 
         # System Operations
         "spotlight-status": {

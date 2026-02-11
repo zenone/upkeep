@@ -2879,6 +2879,74 @@ trim_user_caches() {
   success "User cache trim complete."
 }
 
+clear_messages_caches() {
+  section "Clear Messages Caches"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+
+  local target="${user_home}/Library/Messages/Caches"
+  local expected="${user_home}/Library/Messages/Caches"
+
+  [[ -d "$target" ]] || { info "No Messages cache dir found: $target"; return 0; }
+
+  validate_safe_path "$target" "$expected" "Messages caches directory" || return 1
+
+  local size
+  size=$(du -sh "$target" 2>/dev/null | awk '{print $1}' || echo "")
+  [[ -n "$size" ]] && info "Current size: ${size}" || true
+
+  if [[ "${PREVIEW:-0}" -eq 1 ]]; then
+    info "PREVIEW: Would delete: $target"
+    return 0
+  fi
+
+  [[ "${DRY_RUN:-0}" -eq 1 ]] && { warning "DRY-RUN: would rm -rf: $target"; return 0; }
+
+  warning "This deletes Messages cache/preview files. It does NOT delete chat history."
+  if ! confirm "Proceed deleting Messages caches?"; then
+    warning "Skipped Messages cache cleanup."
+    return 0
+  fi
+
+  rm -rf "$target" || true
+  success "Messages caches cleared."
+}
+
+remove_aerial_wallpaper_videos() {
+  section "Remove macOS Aerial Wallpaper Videos"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+
+  local target="${user_home}/Library/Application Support/com.apple.wallpaper/aerials/videos"
+  local expected="${user_home}/Library/Application Support/com.apple.wallpaper/aerials/videos"
+
+  [[ -d "$target" ]] || { info "No Aerial videos dir found: $target"; return 0; }
+
+  validate_safe_path "$target" "$expected" "Aerial wallpaper videos directory" || return 1
+
+  local size
+  size=$(du -sh "$target" 2>/dev/null | awk '{print $1}' || echo "")
+  [[ -n "$size" ]] && info "Current size: ${size}" || true
+
+  if [[ "${PREVIEW:-0}" -eq 1 ]]; then
+    info "PREVIEW: Would delete: $target"
+    return 0
+  fi
+
+  [[ "${DRY_RUN:-0}" -eq 1 ]] && { warning "DRY-RUN: would rm -rf: $target"; return 0; }
+
+  warning "This deletes downloaded Aerial videos. macOS may re-download them later if Aerial wallpapers/screensavers are enabled."
+  if ! confirm "Proceed deleting Aerial wallpaper videos?"; then
+    warning "Skipped Aerial wallpaper cleanup."
+    return 0
+  fi
+
+  rm -rf "$target" || true
+  success "Aerial wallpaper videos removed."
+}
+
 ########################################
 # Orchestrators
 ########################################
@@ -2949,6 +3017,8 @@ DO_DNS_FLUSH=0
 
 DO_TRIM_LOGS=0
 DO_TRIM_CACHES=0
+DO_MESSAGES_CACHE=0
+DO_WALLPAPER_AERIALS=0
 
 SPACE_THRESHOLD=85
 TM_THIN_THRESHOLD=88
@@ -3009,6 +3079,8 @@ Housekeeping:
 Cleanup:
   --trim-logs [days]
   --trim-caches [days]
+  --messages-cache           Clear Messages cache/preview files (not chat history)
+  --wallpaper-aerials        Delete downloaded macOS Aerial wallpaper videos
   --browser-cache            Clear Safari and Chrome browser caches
   --dev-cache                Clear Xcode DerivedData and simulators
   --dev-tools-cache          Clear npm, pip, Go, Cargo, Composer caches
@@ -3061,6 +3133,8 @@ while [[ $# -gt 0 ]]; do
     --dev-cache) DO_DEV_CACHE=1; shift ;;
     --dev-tools-cache) DO_DEV_TOOLS_CACHE=1; shift ;;
     --mail-optimize) DO_MAIL_OPTIMIZE=1; shift ;;
+    --messages-cache) DO_MESSAGES_CACHE=1; shift ;;
+    --wallpaper-aerials) DO_WALLPAPER_AERIALS=1; shift ;;
 
     --trim-logs)
       DO_TRIM_LOGS=1
@@ -3180,6 +3254,8 @@ else
 
   (( DO_TRIM_LOGS )) && trim_user_logs
   (( DO_TRIM_CACHES )) && trim_user_caches
+  (( DO_MESSAGES_CACHE )) && clear_messages_caches
+  (( DO_WALLPAPER_AERIALS )) && remove_aerial_wallpaper_videos
 fi
 
 END_TIME=$(date +%s)

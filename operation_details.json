@@ -1,111 +1,152 @@
 {
-  "version": "1.0",
   "last_updated": "2026-01-29",
   "operations": {
-    "browser-cache": {
-      "id": "browser-cache",
-      "name": "Clear Browser Caches",
-      "category": "Cleanup",
-      "why": {
-        "title": "Problems This Solves",
-        "problems": [
-          {
-            "symptom": "Sluggish browsing",
-            "description": "Pages taking 5-10 seconds longer to load than normal"
-          },
-          {
-            "symptom": "Website display glitches",
-            "description": "Images not loading, CSS styling broken, old content showing instead of updates"
-          },
-          {
-            "symptom": "Low disk space",
-            "description": "Browser caches growing to 5-20GB over months of heavy browsing"
-          }
-        ],
-        "context": "Browsers cache images, videos, and scripts to speed up page loading. Over time (months), caches grow large and can become corrupted, causing display issues and wasting storage."
-      },
+    "brew-update": {
+      "category": "System Updates",
+      "id": "brew-update",
+      "name": "Update Homebrew",
+      "note": "Some packages may have breaking changes in updates. Check release notes if you rely on specific package versions for development. After running, review 'brew doctor' output for any issues and test critical command-line tools you depend on.",
+      "safety": "low-risk",
       "what": {
-        "title": "Expected Results",
         "outcomes": [
           {
-            "type": "positive",
-            "description": "Space freed: Typically 5-20GB of disk space recovered"
+            "description": "Packages updated: All Homebrew packages updated to latest versions",
+            "type": "positive"
           },
           {
-            "type": "temporary",
-            "description": "First-time slowdown: Initial website visits will be slightly slower (1-2 seconds) as cache rebuilds"
+            "description": "Time required: 5-15 minutes depending on number of packages",
+            "type": "neutral"
           },
           {
-            "type": "temporary",
-            "description": "Potential logins: May need to re-login to some websites where session cookies were cleared"
+            "description": "Old versions removed: Cleanup removes old package versions",
+            "type": "positive"
           },
           {
-            "type": "positive",
-            "description": "Faster browsing: After cache rebuilds, browsing will feel snappier with fresh data"
+            "description": "Doctor check: Reports any configuration issues",
+            "type": "neutral"
           }
         ],
-        "timeline": "Operation completes in 30-60 seconds. Cache automatically rebuilds over next few days of normal browsing.",
+        "side_effects": [
+          "Package versions change: Commands may have new options or changed behavior",
+          "Config warnings: Doctor may report minor configuration issues (usually safe to ignore)",
+          "Disk space freed: Cleanup removes old versions (500MB-2GB)",
+          "Minor disruption: Terminal commands may need reopening"
+        ],
+        "timeline": "Update Homebrew: 1-2 minutes. Upgrade packages: 3-10 minutes. Cleanup: 1-3 minutes. Doctor check: 30 seconds. Total: 5-15 minutes.",
+        "title": "Expected Results"
+      },
+      "when_to_run": [
+        "Weekly for security",
+        "Before installing new packages (to avoid conflicts)",
+        "When brew commands fail",
+        "After macOS updates (check compatibility)"
+      ],
+      "why": {
+        "context": "Homebrew packages receive security fixes, bug fixes, and new features regularly. Outdated packages have known vulnerabilities and may cause conflicts.",
+        "problems": [
+          {
+            "description": "Outdated packages with known security issues",
+            "symptom": "Security vulnerabilities"
+          },
+          {
+            "description": "Installing new packages fails due to outdated dependencies",
+            "symptom": "Package conflicts"
+          },
+          {
+            "description": "Bugs in command-line tools that have been patched",
+            "symptom": "Missing bug fixes"
+          }
+        ],
+        "title": "Problems This Solves"
+      }
+    },
+    "browser-cache": {
+      "category": "Cleanup",
+      "id": "browser-cache",
+      "name": "Clear Browser Caches",
+      "safety": "low-risk",
+      "what": {
+        "outcomes": [
+          {
+            "description": "Space freed: Typically 5-20GB of disk space recovered",
+            "type": "positive"
+          },
+          {
+            "description": "First-time slowdown: Initial website visits will be slightly slower (1-2 seconds) as cache rebuilds",
+            "type": "temporary"
+          },
+          {
+            "description": "Potential logins: May need to re-login to some websites where session cookies were cleared",
+            "type": "temporary"
+          },
+          {
+            "description": "Faster browsing: After cache rebuilds, browsing will feel snappier with fresh data",
+            "type": "positive"
+          }
+        ],
         "side_effects": [
           "Saved passwords remain intact (stored separately)",
           "Bookmarks and history are preserved",
           "Downloads folder is NOT affected"
-        ]
+        ],
+        "timeline": "Operation completes in 30-60 seconds. Cache automatically rebuilds over next few days of normal browsing.",
+        "title": "Expected Results"
       },
       "when_to_run": [
         "Monthly if you browse heavily (4+ hours/day)",
         "When browsers feel sluggish or pages display incorrectly",
         "When low on disk space"
       ],
-      "safety": "low-risk"
-    },
-    "dev-cache": {
-      "id": "dev-cache",
-      "name": "Clear Developer Caches",
-      "category": "Cleanup",
       "why": {
-        "title": "Problems This Solves",
+        "context": "Browsers cache images, videos, and scripts to speed up page loading. Over time (months), caches grow large and can become corrupted, causing display issues and wasting storage.",
         "problems": [
           {
-            "symptom": "Xcode build failures",
-            "description": "\"Command failed\" errors or mysterious compile failures despite clean code"
+            "description": "Pages taking 5-10 seconds longer to load than normal",
+            "symptom": "Sluggish browsing"
           },
           {
-            "symptom": "Autocomplete stops working",
-            "description": "Code completion freezes or shows outdated suggestions"
+            "description": "Images not loading, CSS styling broken, old content showing instead of updates",
+            "symptom": "Website display glitches"
           },
           {
-            "symptom": "Disk space crisis",
-            "description": "DerivedData growing to 20-50GB, causing \"disk almost full\" warnings"
+            "description": "Browser caches growing to 5-20GB over months of heavy browsing",
+            "symptom": "Low disk space"
           }
         ],
-        "context": "Xcode stores compiled code, indexes, and build artifacts in DerivedData. This grows rapidly and can cause build failures when cache becomes stale or corrupted."
-      },
+        "title": "Problems This Solves"
+      }
+    },
+    "dev-cache": {
+      "category": "Cleanup",
+      "id": "dev-cache",
+      "name": "Clear Developer Caches",
+      "safety": "low-risk",
       "what": {
-        "title": "Expected Results",
         "outcomes": [
           {
-            "type": "positive",
-            "description": "Space freed: Typically 20-50GB of disk space recovered"
+            "description": "Space freed: Typically 20-50GB of disk space recovered",
+            "type": "positive"
           },
           {
-            "type": "temporary",
-            "description": "First build slowdown: Next Xcode build will take 3-5x longer (full rebuild required)"
+            "description": "First build slowdown: Next Xcode build will take 3-5x longer (full rebuild required)",
+            "type": "temporary"
           },
           {
-            "type": "positive",
-            "description": "Subsequent builds normal: After first rebuild, build times return to normal"
+            "description": "Subsequent builds normal: After first rebuild, build times return to normal",
+            "type": "positive"
           },
           {
-            "type": "positive",
-            "description": "Fixed autocomplete: Code completion will rebuild in background (5-10 minutes)"
+            "description": "Fixed autocomplete: Code completion will rebuild in background (5-10 minutes)",
+            "type": "positive"
           }
         ],
-        "timeline": "Operation completes in 1-2 minutes. First rebuild takes 10-30 minutes depending on project size. Indexing completes in background over next 10-15 minutes.",
         "side_effects": [
           "All Swift Package Manager caches deleted (packages will re-download)",
           "Simulator apps will need reinstalling",
           "Project-specific settings preserved"
-        ]
+        ],
+        "timeline": "Operation completes in 1-2 minutes. First rebuild takes 10-30 minutes depending on project size. Indexing completes in background over next 10-15 minutes.",
+        "title": "Expected Results"
       },
       "when_to_run": [
         "Monthly for active developers (daily Xcode use)",
@@ -113,293 +154,119 @@
         "When autocomplete stops working",
         "When disk space is critically low"
       ],
-      "safety": "low-risk"
+      "why": {
+        "context": "Xcode stores compiled code, indexes, and build artifacts in DerivedData. This grows rapidly and can cause build failures when cache becomes stale or corrupted.",
+        "problems": [
+          {
+            "description": "\"Command failed\" errors or mysterious compile failures despite clean code",
+            "symptom": "Xcode build failures"
+          },
+          {
+            "description": "Code completion freezes or shows outdated suggestions",
+            "symptom": "Autocomplete stops working"
+          },
+          {
+            "description": "DerivedData growing to 20-50GB, causing \"disk almost full\" warnings",
+            "symptom": "Disk space crisis"
+          }
+        ],
+        "title": "Problems This Solves"
+      }
     },
-    "thin-tm": {
-      "id": "thin-tm",
-      "name": "Thin Time Machine Snapshots",
+    "dev-tools-cache": {
       "category": "Cleanup",
-      "why": {
-        "title": "Problems This Solves",
-        "problems": [
-          {
-            "symptom": "Critical disk space shortage",
-            "description": "Disk >88% full with urgent need for space"
-          },
-          {
-            "symptom": "System slowdown",
-            "description": "macOS throttling performance due to low disk space"
-          },
-          {
-            "symptom": "Cannot install updates",
-            "description": "Not enough space for macOS updates (20-40GB needed)"
-          }
-        ],
-        "context": "Time Machine stores local snapshots on your disk for quick restores. macOS usually manages these automatically, deleting old snapshots when space runs low."
-      },
+      "id": "dev-tools-cache",
+      "name": "Clear Dev Tools Caches",
+      "safety": "low-risk",
       "what": {
-        "title": "Expected Results",
         "outcomes": [
           {
-            "type": "positive",
-            "description": "Space freed: Typically 5-50GB depending on snapshot age and size"
+            "description": "Space freed: Typically 500MB-5GB of disk space recovered",
+            "type": "positive"
           },
           {
-            "type": "warning",
-            "description": "Permanent deletion: Deleted snapshots cannot be restored (external backups unaffected)"
+            "description": "First install delay: Next package install will re-download needed packages",
+            "type": "temporary"
           },
           {
-            "type": "neutral",
-            "description": "Automatic rebuild: New snapshots will accumulate again (hourly backups resume)"
+            "description": "Clean slate: Fresh cache eliminates potential corruption issues",
+            "type": "positive"
           },
           {
-            "type": "positive",
-            "description": "System responsiveness: Mac will feel faster with more available space"
+            "description": "No project impact: Installed packages in node_modules, venv, etc. are NOT affected",
+            "type": "neutral"
           }
         ],
-        "timeline": "Operation completes in 2-5 minutes. New snapshots begin accumulating within 1 hour.",
         "side_effects": [
-          "Loss of restore points: Cannot restore to deleted snapshot timestamps",
-          "External backups safe: Time Machine backups on external drives are NOT affected",
-          "Automatic snapshots continue: macOS will create new snapshots after deletion"
-        ]
+          "Global npm packages remain installed",
+          "Virtual environments remain intact",
+          "Project dependencies remain installed"
+        ],
+        "timeline": "Operation completes in 30-60 seconds. Cache rebuilds automatically during normal development.",
+        "title": "Expected Results"
       },
       "when_to_run": [
-        "ONLY when disk is >88% full and you urgently need space",
-        "As last resort after trying other cleanup methods",
-        "Before major system updates when space is tight"
+        "Monthly to reclaim disk space from package caches",
+        "When package installs fail with cache corruption errors",
+        "After switching between major versions of Node, Python, Go, etc.",
+        "When investigating disk space issues in developer directories"
       ],
-      "safety": "high-risk",
-      "warning": "This is a destructive operation. Only use when absolutely necessary. macOS normally manages snapshots automatically - manual intervention should be rare."
-    },
-    "trim-caches": {
-      "id": "trim-caches",
-      "name": "Trim User Caches",
-      "category": "Cleanup",
       "why": {
-        "title": "Problems This Solves",
+        "context": "Package managers cache downloaded packages to speed up installs. Over time, these caches accumulate old versions and unused packages, wasting disk space and potentially causing issues.",
         "problems": [
           {
-            "symptom": "Low disk space",
-            "description": "\"Startup disk almost full\" warnings despite deleting files"
+            "description": "npm, pip, Go, Cargo, and Composer caches growing to several GB with old/unused packages",
+            "symptom": "Disk space eaten by package caches"
           },
           {
-            "symptom": "App crashes",
-            "description": "Applications crashing due to corrupted cache data"
+            "description": "Failed or corrupted packages causing npm install or pip install to fail",
+            "symptom": "Package install corruption"
           },
           {
-            "symptom": "Wrong content displayed",
-            "description": "Apps showing outdated thumbnails, previews, or cached content"
+            "description": "Old cached packages causing version conflicts or unexpected behavior",
+            "symptom": "Dependency confusion"
           }
         ],
-        "context": "Apps store temporary data (thumbnails, previews, downloads) in caches. Old caches waste disk space and can become corrupted, causing app misbehavior."
-      },
-      "what": {
-        "title": "Expected Results",
-        "outcomes": [
-          {
-            "type": "positive",
-            "description": "Space freed: Typically 2-10GB of disk space recovered"
-          },
-          {
-            "type": "temporary",
-            "description": "Brief slowdown: First time opening apps may be 1-2 seconds slower"
-          },
-          {
-            "type": "positive",
-            "description": "Automatic rebuild: Apps regenerate caches as needed (thumbnails, previews, etc.)"
-          },
-          {
-            "type": "positive",
-            "description": "Fresh data: Apps will display current content without corruption"
-          }
-        ],
-        "timeline": "Operation completes in 2-5 minutes. Caches rebuild gradually over next few days of app usage.",
-        "side_effects": [
-          "Only deletes caches older than 30 days",
-          "Recent caches (<30 days) are preserved for performance",
-          "No impact on app functionality or user data",
-          "Photo thumbnails will regenerate when viewing folders"
-        ]
-      },
-      "when_to_run": [
-        "Monthly for routine maintenance",
-        "When running low on disk space",
-        "When apps crash or display wrong content",
-        "After resolving app-specific issues"
-      ],
-      "safety": "low-risk"
-    },
-    "trim-logs": {
-      "id": "trim-logs",
-      "name": "Trim User Logs",
-      "category": "Cleanup",
-      "why": {
-        "title": "Problems This Solves",
-        "problems": [
-          {
-            "symptom": "Wasted disk space",
-            "description": "Old diagnostic logs consuming 500MB-2GB of storage"
-          },
-          {
-            "symptom": "Privacy concerns",
-            "description": "Old logs containing sensitive debugging information"
-          },
-          {
-            "symptom": "Clutter",
-            "description": "Logs from long-resolved issues filling ~/Library/Logs"
-          }
-        ],
-        "context": "Apps write diagnostic logs to track errors and activity. Old logs (>30 days) are rarely needed for troubleshooting and waste space."
-      },
-      "what": {
-        "title": "Expected Results",
-        "outcomes": [
-          {
-            "type": "positive",
-            "description": "Space freed: Typically 500MB-2GB of disk space recovered"
-          },
-          {
-            "type": "warning",
-            "description": "Permanent deletion: Old log files deleted (cannot be recovered)"
-          },
-          {
-            "type": "positive",
-            "description": "Recent logs preserved: Logs <30 days old kept for troubleshooting"
-          },
-          {
-            "type": "neutral",
-            "description": "No app impact: No effect on app functionality"
-          }
-        ],
-        "timeline": "Operation completes in 30-60 seconds. New logs accumulate normally during app usage.",
-        "side_effects": [
-          "Only deletes .log files older than 30 days",
-          "System logs in /var/log are NOT affected",
-          "Recent logs preserved for debugging",
-          "No impact on app settings or user data"
-        ]
-      },
-      "when_to_run": [
-        "Monthly for routine cleanup",
-        "When low on disk space",
-        "After resolving app issues (old diagnostic logs no longer useful)",
-        "For privacy (remove old debug information)"
-      ],
-      "safety": "low-risk"
-    },
-    "smart-check": {
-      "id": "smart-check",
-      "name": "Check SMART Status",
-      "category": "Disk Operations",
-      "why": {
-        "title": "Problems This Solves",
-        "problems": [
-          {
-            "symptom": "Unexpected data loss",
-            "description": "Disk failing without warning signs"
-          },
-          {
-            "symptom": "System instability",
-            "description": "Random crashes or file corruption due to disk issues"
-          },
-          {
-            "symptom": "Slow performance",
-            "description": "Disk struggling to read/write data efficiently"
-          }
-        ],
-        "context": "SMART (Self-Monitoring, Analysis and Reporting Technology) monitors disk health and predicts failures before they happen. Early detection allows backup before catastrophic failure."
-      },
-      "what": {
-        "title": "Expected Results",
-        "outcomes": [
-          {
-            "type": "positive",
-            "description": "Health status: Shows \"Verified\" (healthy) or \"Failing\" (replace soon)"
-          },
-          {
-            "type": "neutral",
-            "description": "No changes made: Read-only check, disk is not modified"
-          },
-          {
-            "type": "positive",
-            "description": "Instant result: Check completes in 1-2 seconds"
-          },
-          {
-            "type": "positive",
-            "description": "Peace of mind: Confirmation of disk health or early failure warning"
-          }
-        ],
-        "timeline": "Operation completes in 1-2 seconds. No waiting or background processing.",
-        "side_effects": [],
-        "status_meanings": [
-          "Verified: Disk is healthy, no predicted failures",
-          "Failing: Imminent hardware failure - backup immediately and replace disk",
-          "Not Supported: Some USB enclosures don't pass SMART data to macOS"
-        ]
-      },
-      "when_to_run": [
-        "Monthly for early warning",
-        "When disk makes unusual noises (clicking, grinding)",
-        "When Mac feels slow or files take long to open",
-        "Before major system updates"
-      ],
-      "safety": "safe",
-      "warning": "If status shows \"Failing\", backup immediately and replace disk soon. \"Failing\" means imminent hardware failure within days/weeks."
+        "title": "Problems This Solves"
+      }
     },
     "disk-repair": {
+      "category": "Disk Operations",
       "id": "disk-repair",
       "name": "Repair Disk",
-      "category": "Disk Operations",
-      "why": {
-        "title": "Problems This Solves",
-        "problems": [
-          {
-            "symptom": "File corruption",
-            "description": "Files won't open or show \"file is damaged\" errors"
-          },
-          {
-            "symptom": "Frequent crashes",
-            "description": "Mac crashing during file operations or boot"
-          },
-          {
-            "symptom": "App launch failures",
-            "description": "Applications failing to open or hanging at startup"
-          }
-        ],
-        "context": "Disk errors corrupt files and cause crashes if left unfixed. First Aid (repair) attempts to fix file system issues like corrupted metadata, directory problems, or permission errors."
-      },
+      "safety": "high-risk",
+      "warning": "This is a repair operation. Only run when Verify Disk shows errors. If repair fails repeatedly, disk may be failing physically - consider replacement.",
       "what": {
-        "title": "Expected Results",
+        "next_steps": [
+          "If repair succeeds: Problem solved, monitor with monthly SMART checks",
+          "If repair fails: Disk may be physically failing - backup and replace",
+          "If errors return quickly: Physical disk failure likely - replace disk"
+        ],
         "outcomes": [
           {
-            "type": "neutral",
-            "description": "Repair attempt: diskutil attempts to fix detected file system errors"
+            "description": "Repair attempt: diskutil attempts to fix detected file system errors",
+            "type": "neutral"
           },
           {
-            "type": "neutral",
-            "description": "Time required: 15-30 minutes for boot disk repair"
+            "description": "Time required: 15-30 minutes for boot disk repair",
+            "type": "neutral"
           },
           {
-            "type": "neutral",
-            "description": "Success or failure: Reports whether errors were fixed or persist"
+            "description": "Success or failure: Reports whether errors were fixed or persist",
+            "type": "neutral"
           },
           {
-            "type": "warning",
-            "description": "May need Recovery Mode: Boot disk repair may require booting to Recovery Mode"
+            "description": "May need Recovery Mode: Boot disk repair may require booting to Recovery Mode",
+            "type": "warning"
           }
         ],
-        "timeline": "Verification phase: 5-10 minutes. Repair phase: 10-20 minutes. Total: 15-30 minutes.",
         "side_effects": [
           "Requires exclusive access: Other apps may need to quit",
           "May require restart: Boot disk repairs often need Recovery Mode",
           "Backup recommended: Though rare, repairs can fail and cause data loss"
         ],
-        "next_steps": [
-          "If repair succeeds: Problem solved, monitor with monthly SMART checks",
-          "If repair fails: Disk may be physically failing - backup and replace",
-          "If errors return quickly: Physical disk failure likely - replace disk"
-        ]
+        "timeline": "Verification phase: 5-10 minutes. Repair phase: 10-20 minutes. Total: 15-30 minutes.",
+        "title": "Expected Results"
       },
       "when_to_run": [
         "ONLY after Verify Disk shows errors",
@@ -407,62 +274,61 @@
         "When apps won't open or files are corrupted",
         "Do NOT run preventively (unnecessary and time-consuming)"
       ],
-      "safety": "high-risk",
-      "warning": "This is a repair operation. Only run when Verify Disk shows errors. If repair fails repeatedly, disk may be failing physically - consider replacement."
-    },
-    "disk-verify": {
-      "id": "disk-verify",
-      "name": "Verify Disk",
-      "category": "Disk Operations",
       "why": {
-        "title": "Problems This Solves",
+        "context": "Disk errors corrupt files and cause crashes if left unfixed. First Aid (repair) attempts to fix file system issues like corrupted metadata, directory problems, or permission errors.",
         "problems": [
           {
-            "symptom": "Preventive diagnostics",
-            "description": "Catching disk errors before they cause data loss"
+            "description": "Files won't open or show \"file is damaged\" errors",
+            "symptom": "File corruption"
           },
           {
-            "symptom": "Crash investigation",
-            "description": "Determining if frequent crashes are disk-related"
+            "description": "Mac crashing during file operations or boot",
+            "symptom": "Frequent crashes"
           },
           {
-            "symptom": "Slow performance",
-            "description": "Identifying if sluggishness is due to disk errors"
+            "description": "Applications failing to open or hanging at startup",
+            "symptom": "App launch failures"
           }
         ],
-        "context": "Disks can develop file system errors from crashes, power loss, or hardware issues. Early detection prevents data loss and system instability."
-      },
+        "title": "Problems This Solves"
+      }
+    },
+    "disk-verify": {
+      "category": "Disk Operations",
+      "id": "disk-verify",
+      "name": "Verify Disk",
+      "safety": "safe",
       "what": {
-        "title": "Expected Results",
+        "next_steps": [
+          "If no errors found: Disk is healthy, no action needed",
+          "If errors found: Run Repair Disk to fix issues",
+          "If errors persist after repair: Consider disk replacement"
+        ],
         "outcomes": [
           {
-            "type": "positive",
-            "description": "Health report: Shows if disk has file system errors or is healthy"
+            "description": "Health report: Shows if disk has file system errors or is healthy",
+            "type": "positive"
           },
           {
-            "type": "neutral",
-            "description": "No changes made: Read-only check, disk is NOT modified"
+            "description": "No changes made: Read-only check, disk is NOT modified",
+            "type": "neutral"
           },
           {
-            "type": "positive",
-            "description": "Error details: Lists specific errors found (if any)"
+            "description": "Error details: Lists specific errors found (if any)",
+            "type": "positive"
           },
           {
-            "type": "positive",
-            "description": "Actionable guidance: Tells you if Repair Disk is needed"
+            "description": "Actionable guidance: Tells you if Repair Disk is needed",
+            "type": "positive"
           }
         ],
-        "timeline": "Operation completes in 5-10 minutes. No background processing or rebuilding.",
         "side_effects": [
           "None - completely read-only operation",
           "No disk modifications",
           "Slight CPU usage during scan (10-15%)"
         ],
-        "next_steps": [
-          "If no errors found: Disk is healthy, no action needed",
-          "If errors found: Run Repair Disk to fix issues",
-          "If errors persist after repair: Consider disk replacement"
-        ]
+        "timeline": "Operation completes in 5-10 minutes. No background processing or rebuilding.",
+        "title": "Expected Results"
       },
       "when_to_run": [
         "Monthly for preventive maintenance",
@@ -471,188 +337,61 @@
         "When files won't open or system feels slow",
         "After unexpected shutdowns (power loss, crash)"
       ],
-      "safety": "safe"
-    },
-    "space-report": {
-      "id": "space-report",
-      "name": "Disk Space Report",
-      "category": "Reports",
       "why": {
-        "title": "Problems This Solves",
+        "context": "Disks can develop file system errors from crashes, power loss, or hardware issues. Early detection prevents data loss and system instability.",
         "problems": [
           {
-            "symptom": "Mystery space usage",
-            "description": "Disk full but can't find what's using space"
+            "description": "Catching disk errors before they cause data loss",
+            "symptom": "Preventive diagnostics"
           },
           {
-            "symptom": "Cleanup prioritization",
-            "description": "Need to know which folders to target for cleanup"
+            "description": "Determining if frequent crashes are disk-related",
+            "symptom": "Crash investigation"
           },
           {
-            "symptom": "Large forgotten files",
-            "description": "Old downloads, iOS backups, or forgotten projects consuming space"
+            "description": "Identifying if sluggishness is due to disk errors",
+            "symptom": "Slow performance"
           }
         ],
-        "context": "Shows exactly where disk space is being used by scanning all files and folders. Helps identify space hogs like old backups, cached data, or forgotten files."
-      },
-      "what": {
-        "title": "Expected Results",
-        "outcomes": [
-          {
-            "type": "positive",
-            "description": "Detailed report: Shows largest folders and files sorted by size"
-          },
-          {
-            "type": "positive",
-            "description": "Space breakdown: Categorizes usage (applications, documents, system, etc.)"
-          },
-          {
-            "type": "neutral",
-            "description": "No changes made: Read-only analysis, no deletions"
-          },
-          {
-            "type": "positive",
-            "description": "Actionable insights: Identifies specific targets for cleanup"
-          }
-        ],
-        "timeline": "Scanning takes 2-5 minutes. Report generated immediately after scan. No background processing.",
-        "side_effects": [
-          "Temporary CPU usage during scan (20-30%)",
-          "Brief disk activity (reading file sizes)",
-          "No modifications to disk"
-        ],
-        "common_findings": [
-          "Large folders: ~/Downloads (10-50GB), ~/Library/Caches (5-20GB)",
-          "iOS backups: ~/Library/Application Support/MobileSync (20-100GB per device)",
-          "Old projects: Forgotten code projects, video files, disk images",
-          "Duplicate files: Multiple copies of large files in different locations"
-        ]
-      },
-      "when_to_run": [
-        "When running low on disk space",
-        "Before cleanup operations to prioritize targets",
-        "Monthly to monitor space usage trends",
-        "When investigating unexpected space usage"
-      ],
-      "safety": "safe"
-    },
-    "spotlight-status": {
-      "id": "spotlight-status",
-      "name": "Check Spotlight Status",
-      "category": "System Operations",
-      "why": {
-        "title": "Problems This Solves",
-        "problems": [
-          {
-            "symptom": "Search not working",
-            "description": "Spotlight returns no results for files you know exist"
-          },
-          {
-            "symptom": "Search diagnostics",
-            "description": "Determining if search problems require reindexing"
-          },
-          {
-            "symptom": "Performance investigation",
-            "description": "Checking if Spotlight is consuming CPU/battery"
-          }
-        ],
-        "context": "Spotlight indexes all files for instant search. Checking status helps diagnose search problems without reindexing unnecessarily."
-      },
-      "what": {
-        "title": "Expected Results",
-        "outcomes": [
-          {
-            "type": "positive",
-            "description": "Indexing status: Shows if Spotlight is indexing, idle, or disabled"
-          },
-          {
-            "type": "neutral",
-            "description": "No changes made: Read-only check, index is NOT modified"
-          },
-          {
-            "type": "positive",
-            "description": "Instant result: Check completes in 1 second"
-          },
-          {
-            "type": "positive",
-            "description": "Problem diagnosis: Determines if reindex is needed"
-          }
-        ],
-        "timeline": "Operation completes in 1 second. No waiting or background processing.",
-        "side_effects": [],
-        "status_meanings": [
-          "Indexing enabled: Spotlight is active and building/maintaining index",
-          "Indexing disabled: Spotlight is turned off for this volume",
-          "Indexing in progress: Currently rebuilding index (X% complete)",
-          "Idle: Index is up-to-date, no current activity"
-        ],
-        "next_steps": [
-          "If status is healthy: Problem is likely not Spotlight-related",
-          "If disabled: Re-enable Spotlight in System Settings",
-          "If problems persist: Consider Rebuild Spotlight Index"
-        ]
-      },
-      "when_to_run": [
-        "When Spotlight search returns no results",
-        "When you can't find files you know exist",
-        "After adding large amounts of data (check if indexing)",
-        "To verify Spotlight is enabled"
-      ],
-      "safety": "safe"
+        "title": "Problems This Solves"
+      }
     },
     "dns-flush": {
+      "category": "System Operations",
       "id": "dns-flush",
       "name": "Flush DNS Cache",
-      "category": "System Operations",
-      "why": {
-        "title": "Problems This Solves",
-        "problems": [
-          {
-            "symptom": "Websites won't load",
-            "description": "Browsers showing \"server not found\" despite working internet"
-          },
-          {
-            "symptom": "VPN connection issues",
-            "description": "Can't reach websites after connecting to VPN"
-          },
-          {
-            "symptom": "Network changes",
-            "description": "Problems after switching WiFi networks or changing DNS settings"
-          }
-        ],
-        "context": "macOS caches DNS lookups (website names to IP addresses) to speed up connections. Stale cache causes connection failures when DNS records change or after network configuration changes."
-      },
+      "safety": "low-risk",
       "what": {
-        "title": "Expected Results",
+        "not_solution_for": [
+          "General internet connectivity problems (check router/modem)",
+          "ISP outages",
+          "Website outages (test with multiple sites)"
+        ],
         "outcomes": [
           {
-            "type": "positive",
-            "description": "Cache cleared: All DNS entries flushed immediately"
+            "description": "Cache cleared: All DNS entries flushed immediately",
+            "type": "positive"
           },
           {
-            "type": "temporary",
-            "description": "Slight initial delay: First website visit adds ~50ms for DNS lookup"
+            "description": "Slight initial delay: First website visit adds ~50ms for DNS lookup",
+            "type": "temporary"
           },
           {
-            "type": "positive",
-            "description": "Automatic rebuild: Cache rebuilds normally during browsing"
+            "description": "Automatic rebuild: Cache rebuilds normally during browsing",
+            "type": "positive"
           },
           {
-            "type": "positive",
-            "description": "Fixed connections: Resolves \"server not found\" errors caused by stale DNS"
+            "description": "Fixed connections: Resolves \"server not found\" errors caused by stale DNS",
+            "type": "positive"
           }
         ],
-        "timeline": "Operation completes in 1-2 seconds. Cache rebuilds automatically during normal browsing.",
         "side_effects": [
           "Brief 50ms delay on first visit to each website",
           "No other impact on system or applications",
           "Cache rebuilds automatically"
         ],
-        "not_solution_for": [
-          "General internet connectivity problems (check router/modem)",
-          "ISP outages",
-          "Website outages (test with multiple sites)"
-        ]
+        "timeline": "Operation completes in 1-2 seconds. Cache rebuilds automatically during normal browsing.",
+        "title": "Expected Results"
       },
       "when_to_run": [
         "When websites won't load but internet works",
@@ -660,57 +399,182 @@
         "After changing DNS settings or VPN",
         "After network changes (new WiFi, router changes)"
       ],
-      "safety": "low-risk"
-    },
-    "mail-optimize": {
-      "id": "mail-optimize",
-      "name": "Optimize Mail Database",
-      "category": "System Operations",
       "why": {
-        "title": "Problems This Solves",
+        "context": "macOS caches DNS lookups (website names to IP addresses) to speed up connections. Stale cache causes connection failures when DNS records change or after network configuration changes.",
         "problems": [
           {
-            "symptom": "Mail feels slow",
-            "description": "Messages taking 3-5 seconds to open or mark as read"
+            "description": "Browsers showing \"server not found\" despite working internet",
+            "symptom": "Websites won't load"
           },
           {
-            "symptom": "Wrong search results",
-            "description": "Searches missing emails or showing deleted ones"
+            "description": "Can't reach websites after connecting to VPN",
+            "symptom": "VPN connection issues"
           },
           {
-            "symptom": "Messages incomplete",
-            "description": "Emails showing partial content or missing attachments"
+            "description": "Problems after switching WiFi networks or changing DNS settings",
+            "symptom": "Network changes"
           }
         ],
-        "context": "Mail.app indexes emails for fast searching. Over time, the index can become fragmented or corrupted, causing slow performance and search issues."
-      },
+        "title": "Problems This Solves"
+      }
+    },
+    "macos-check": {
+      "category": "System Updates",
+      "id": "macos-check",
+      "name": "Check macOS Updates",
+      "safety": "safe",
       "what": {
-        "title": "Expected Results",
+        "next_steps": [
+          "If critical security updates shown: Consider installing soon",
+          "If feature updates shown: Plan maintenance window",
+          "If no updates: System is current"
+        ],
         "outcomes": [
           {
-            "type": "positive",
-            "description": "Index rebuild: Mail rebuilds envelope index on next launch"
+            "description": "Update list: Shows all available macOS updates with descriptions",
+            "type": "positive"
           },
           {
-            "type": "neutral",
-            "description": "Rebuild time: 5-30 minutes depending on mailbox size"
+            "description": "No changes made: Read-only check, nothing is installed",
+            "type": "neutral"
           },
           {
-            "type": "positive",
-            "description": "Faster searches: Search results more accurate and faster"
+            "description": "Size information: Shows download size for each update",
+            "type": "positive"
           },
           {
-            "type": "positive",
-            "description": "Improved performance: Mail opens messages faster"
+            "description": "Instant result: Check completes in 5-10 seconds",
+            "type": "positive"
           }
         ],
-        "timeline": "Index deletion: instant. Rebuild on next Mail launch: 5-30 minutes. Rebuild happens in background (Mail remains usable).",
+        "side_effects": [],
+        "timeline": "Operation completes in 5-10 seconds. No background processing or downloads.",
+        "title": "Expected Results"
+      },
+      "when_to_run": [
+        "Weekly to check for critical security updates",
+        "Before planning major projects",
+        "When Apple announces important fixes",
+        "Before deciding to install updates"
+      ],
+      "why": {
+        "context": "Apple releases security patches, bug fixes, and feature updates regularly. Staying informed helps plan maintenance and address critical vulnerabilities.",
+        "problems": [
+          {
+            "description": "Knowing if critical security patches are available",
+            "symptom": "Security vulnerability awareness"
+          },
+          {
+            "description": "Planning maintenance windows around available updates",
+            "symptom": "Update planning"
+          },
+          {
+            "description": "Checking if known issues have been patched",
+            "symptom": "Bug fix availability"
+          }
+        ],
+        "title": "Problems This Solves"
+      }
+    },
+    "macos-install": {
+      "category": "System Updates",
+      "id": "macos-install",
+      "name": "Install macOS Updates",
+      "safety": "medium-risk",
+      "warning": "Backup first before major updates. Use Time Machine or other backup solution. Some updates are large (5-12GB) and require significant disk space.",
+      "what": {
+        "best_practices": [
+          "Check disk space (need 20-40GB free)",
+          "Backup important data first",
+          "Close all applications",
+          "Plug in to AC power",
+          "Allow 1 hour of uninterrupted time"
+        ],
+        "outcomes": [
+          {
+            "description": "Updates installed: All available macOS updates applied",
+            "type": "positive"
+          },
+          {
+            "description": "Time required: 15-60 minutes depending on update size",
+            "type": "neutral"
+          },
+          {
+            "description": "Restart required: Most updates require restart",
+            "type": "warning"
+          },
+          {
+            "description": "Improved security: Security vulnerabilities patched",
+            "type": "positive"
+          }
+        ],
+        "side_effects": [
+          "Restart required: Mac will restart during installation",
+          "Save work first: Close all apps and save work",
+          "App compatibility: Some apps may need updating after macOS update",
+          "Settings preserved: All settings and data remain intact"
+        ],
+        "timeline": "Download: 5-20 minutes (depends on internet speed). Installation: 10-30 minutes. Restart: 5-10 minutes. Total: 20-60 minutes.",
+        "title": "Expected Results"
+      },
+      "when_to_run": [
+        "When Check Updates shows critical security patches",
+        "During planned maintenance (not before important work)",
+        "When experiencing bugs that updates might fix",
+        "Monthly for security (if updates available)"
+      ],
+      "why": {
+        "context": "macOS updates fix critical security vulnerabilities, patch bugs, and improve stability. Delayed updates leave your Mac vulnerable to attacks.",
+        "problems": [
+          {
+            "description": "System exposed to known exploits without patches",
+            "symptom": "Security vulnerabilities"
+          },
+          {
+            "description": "Crashes, freezes, or glitches that updates resolve",
+            "symptom": "Bug fixes"
+          },
+          {
+            "description": "Apps requiring newer macOS versions",
+            "symptom": "Compatibility issues"
+          }
+        ],
+        "title": "Problems This Solves"
+      }
+    },
+    "mail-optimize": {
+      "category": "System Operations",
+      "id": "mail-optimize",
+      "name": "Optimize Mail Database",
+      "note": "Close Mail.app before running this operation. Mail will automatically rebuild the index when you next open it.",
+      "safety": "low-risk",
+      "what": {
+        "outcomes": [
+          {
+            "description": "Index rebuild: Mail rebuilds envelope index on next launch",
+            "type": "positive"
+          },
+          {
+            "description": "Rebuild time: 5-30 minutes depending on mailbox size",
+            "type": "neutral"
+          },
+          {
+            "description": "Faster searches: Search results more accurate and faster",
+            "type": "positive"
+          },
+          {
+            "description": "Improved performance: Mail opens messages faster",
+            "type": "positive"
+          }
+        ],
         "side_effects": [
           "Close Mail first: Mail must be quit before running",
           "Rebuild on launch: Mail will rebuild index on next open",
           "Temporary slowness: Mail may be slower during rebuild",
           "CPU usage: Increased CPU usage during rebuild (10-20%)"
-        ]
+        ],
+        "timeline": "Index deletion: instant. Rebuild on next Mail launch: 5-30 minutes. Rebuild happens in background (Mail remains usable).",
+        "title": "Expected Results"
       },
       "when_to_run": [
         "Quarterly for maintenance",
@@ -719,247 +583,58 @@
         "When messages appear incomplete",
         "When mailboxes won't open"
       ],
-      "safety": "low-risk",
-      "note": "Close Mail.app before running this operation. Mail will automatically rebuild the index when you next open it."
-    },
-    "spotlight-reindex": {
-      "id": "spotlight-reindex",
-      "name": "Rebuild Spotlight Index",
-      "category": "System Operations",
       "why": {
-        "title": "Problems This Solves",
+        "context": "Mail.app indexes emails for fast searching. Over time, the index can become fragmented or corrupted, causing slow performance and search issues.",
         "problems": [
           {
-            "symptom": "Wrong search results",
-            "description": "Spotlight finding deleted files or missing existing ones"
+            "description": "Messages taking 3-5 seconds to open or mark as read",
+            "symptom": "Mail feels slow"
           },
           {
-            "symptom": "No search results",
-            "description": "Spotlight returns nothing despite files existing"
+            "description": "Searches missing emails or showing deleted ones",
+            "symptom": "Wrong search results"
           },
           {
-            "symptom": "Index corruption",
-            "description": "Search shows outdated or corrupted file information"
+            "description": "Emails showing partial content or missing attachments",
+            "symptom": "Messages incomplete"
           }
         ],
-        "context": "Spotlight index can become corrupted, causing wrong search results or missing files. Rebuilding fixes the index by deleting and recreating it from scratch."
-      },
-      "what": {
-        "title": "Expected Results",
-        "outcomes": [
-          {
-            "type": "warning",
-            "description": "Index deleted: Entire search index removed immediately"
-          },
-          {
-            "type": "neutral",
-            "description": "Rebuild started: Spotlight begins reindexing all files"
-          },
-          {
-            "type": "warning",
-            "description": "Searches disabled: Search won't work until rebuild completes"
-          },
-          {
-            "type": "warning",
-            "description": "Heavy CPU usage: CPU and battery usage will be high during rebuild"
-          }
-        ],
-        "timeline": "Index deletion: instant. Rebuild time: 1-3 hours for typical Mac. Longer for large drives (500GB+) or millions of files.",
-        "side_effects": [
-          "Mac slower: System performance degraded during rebuild",
-          "Search disabled: Spotlight search won't work until complete",
-          "High CPU usage: 30-50% CPU usage during indexing",
-          "Battery drain: Significant battery usage on laptops",
-          "Avoid during work: Very disruptive to productivity"
-        ],
-        "next_steps": [
-          "Let rebuild complete uninterrupted (check progress with Spotlight Status)",
-          "Avoid closing laptop lid (pauses indexing)",
-          "Keep Mac plugged in during rebuild"
-        ]
-      },
-      "when_to_run": [
-        "ONLY when searches consistently return wrong results",
-        "When files don't appear in search but exist",
-        "When Spotlight Status shows errors",
-        "Do NOT run preventively (very disruptive)"
-      ],
-      "safety": "high-risk",
-      "warning": "This is a heavyweight operation. Only run when absolutely necessary. Rebuild takes 1-3 hours and significantly impacts system performance. Avoid during important work."
-    },
-    "macos-check": {
-      "id": "macos-check",
-      "name": "Check macOS Updates",
-      "category": "System Updates",
-      "why": {
-        "title": "Problems This Solves",
-        "problems": [
-          {
-            "symptom": "Security vulnerability awareness",
-            "description": "Knowing if critical security patches are available"
-          },
-          {
-            "symptom": "Update planning",
-            "description": "Planning maintenance windows around available updates"
-          },
-          {
-            "symptom": "Bug fix availability",
-            "description": "Checking if known issues have been patched"
-          }
-        ],
-        "context": "Apple releases security patches, bug fixes, and feature updates regularly. Staying informed helps plan maintenance and address critical vulnerabilities."
-      },
-      "what": {
-        "title": "Expected Results",
-        "outcomes": [
-          {
-            "type": "positive",
-            "description": "Update list: Shows all available macOS updates with descriptions"
-          },
-          {
-            "type": "neutral",
-            "description": "No changes made: Read-only check, nothing is installed"
-          },
-          {
-            "type": "positive",
-            "description": "Size information: Shows download size for each update"
-          },
-          {
-            "type": "positive",
-            "description": "Instant result: Check completes in 5-10 seconds"
-          }
-        ],
-        "timeline": "Operation completes in 5-10 seconds. No background processing or downloads.",
-        "side_effects": [],
-        "next_steps": [
-          "If critical security updates shown: Consider installing soon",
-          "If feature updates shown: Plan maintenance window",
-          "If no updates: System is current"
-        ]
-      },
-      "when_to_run": [
-        "Weekly to check for critical security updates",
-        "Before planning major projects",
-        "When Apple announces important fixes",
-        "Before deciding to install updates"
-      ],
-      "safety": "safe"
-    },
-    "macos-install": {
-      "id": "macos-install",
-      "name": "Install macOS Updates",
-      "category": "System Updates",
-      "why": {
-        "title": "Problems This Solves",
-        "problems": [
-          {
-            "symptom": "Security vulnerabilities",
-            "description": "System exposed to known exploits without patches"
-          },
-          {
-            "symptom": "Bug fixes",
-            "description": "Crashes, freezes, or glitches that updates resolve"
-          },
-          {
-            "symptom": "Compatibility issues",
-            "description": "Apps requiring newer macOS versions"
-          }
-        ],
-        "context": "macOS updates fix critical security vulnerabilities, patch bugs, and improve stability. Delayed updates leave your Mac vulnerable to attacks."
-      },
-      "what": {
-        "title": "Expected Results",
-        "outcomes": [
-          {
-            "type": "positive",
-            "description": "Updates installed: All available macOS updates applied"
-          },
-          {
-            "type": "neutral",
-            "description": "Time required: 15-60 minutes depending on update size"
-          },
-          {
-            "type": "warning",
-            "description": "Restart required: Most updates require restart"
-          },
-          {
-            "type": "positive",
-            "description": "Improved security: Security vulnerabilities patched"
-          }
-        ],
-        "timeline": "Download: 5-20 minutes (depends on internet speed). Installation: 10-30 minutes. Restart: 5-10 minutes. Total: 20-60 minutes.",
-        "side_effects": [
-          "Restart required: Mac will restart during installation",
-          "Save work first: Close all apps and save work",
-          "App compatibility: Some apps may need updating after macOS update",
-          "Settings preserved: All settings and data remain intact"
-        ],
-        "best_practices": [
-          "Check disk space (need 20-40GB free)",
-          "Backup important data first",
-          "Close all applications",
-          "Plug in to AC power",
-          "Allow 1 hour of uninterrupted time"
-        ]
-      },
-      "when_to_run": [
-        "When Check Updates shows critical security patches",
-        "During planned maintenance (not before important work)",
-        "When experiencing bugs that updates might fix",
-        "Monthly for security (if updates available)"
-      ],
-      "safety": "medium-risk",
-      "warning": "Backup first before major updates. Use Time Machine or other backup solution. Some updates are large (5-12GB) and require significant disk space."
+        "title": "Problems This Solves"
+      }
     },
     "mas-update": {
+      "category": "System Updates",
       "id": "mas-update",
       "name": "Update App Store Apps",
-      "category": "System Updates",
-      "why": {
-        "title": "Problems This Solves",
-        "problems": [
-          {
-            "symptom": "App crashes",
-            "description": "Outdated apps crashing due to unpatched bugs"
-          },
-          {
-            "symptom": "Missing features",
-            "description": "New features available in updated versions"
-          },
-          {
-            "symptom": "Security vulnerabilities",
-            "description": "Old app versions with known security issues"
-          }
-        ],
-        "context": "App Store apps receive bug fixes, security patches, and new features through updates. Outdated apps may crash or have vulnerabilities."
-      },
+      "note": "Save work in all apps before updating. Some apps close during update and may lose unsaved work.",
+      "safety": "low-risk",
       "what": {
-        "title": "Expected Results",
         "outcomes": [
           {
-            "type": "positive",
-            "description": "Apps updated: All App Store apps updated to latest versions"
+            "description": "Apps updated: All App Store apps updated to latest versions",
+            "type": "positive"
           },
           {
-            "type": "neutral",
-            "description": "Time required: 5-20 minutes depending on update sizes"
+            "description": "Time required: 5-20 minutes depending on update sizes",
+            "type": "neutral"
           },
           {
-            "type": "neutral",
-            "description": "Automatic downloads: Updates download and install automatically"
+            "description": "Automatic downloads: Updates download and install automatically",
+            "type": "neutral"
           },
           {
-            "type": "temporary",
-            "description": "Apps may reopen: Some apps require reopening to see changes"
+            "description": "Apps may reopen: Some apps require reopening to see changes",
+            "type": "temporary"
           }
         ],
-        "timeline": "Checking for updates: 5-10 seconds. Downloading: 2-10 minutes (depends on sizes and internet). Installing: 3-10 minutes. Total: 5-20 minutes.",
         "side_effects": [
           "Apps may restart: Some apps close and reopen after update",
           "Interface changes: Updated apps may look slightly different",
           "New features: May need to learn new features or UI changes",
           "Settings preserved: App settings and data remain intact"
-        ]
+        ],
+        "timeline": "Checking for updates: 5-10 seconds. Downloading: 2-10 minutes (depends on sizes and internet). Installing: 3-10 minutes. Total: 5-20 minutes.",
+        "title": "Expected Results"
       },
       "when_to_run": [
         "Weekly for routine maintenance",
@@ -967,124 +642,537 @@
         "Before important work (to ensure apps are stable)",
         "When apps are crashing or behaving strangely"
       ],
-      "safety": "low-risk",
-      "note": "Save work in all apps before updating. Some apps close during update and may lose unsaved work."
-    },
-    "brew-update": {
-      "id": "brew-update",
-      "name": "Update Homebrew",
-      "category": "System Updates",
       "why": {
-        "title": "Problems This Solves",
+        "context": "App Store apps receive bug fixes, security patches, and new features through updates. Outdated apps may crash or have vulnerabilities.",
         "problems": [
           {
-            "symptom": "Security vulnerabilities",
-            "description": "Outdated packages with known security issues"
+            "description": "Outdated apps crashing due to unpatched bugs",
+            "symptom": "App crashes"
           },
           {
-            "symptom": "Package conflicts",
-            "description": "Installing new packages fails due to outdated dependencies"
+            "description": "New features available in updated versions",
+            "symptom": "Missing features"
           },
           {
-            "symptom": "Missing bug fixes",
-            "description": "Bugs in command-line tools that have been patched"
+            "description": "Old app versions with known security issues",
+            "symptom": "Security vulnerabilities"
           }
         ],
-        "context": "Homebrew packages receive security fixes, bug fixes, and new features regularly. Outdated packages have known vulnerabilities and may cause conflicts."
-      },
-      "what": {
-        "title": "Expected Results",
-        "outcomes": [
-          {
-            "type": "positive",
-            "description": "Packages updated: All Homebrew packages updated to latest versions"
-          },
-          {
-            "type": "neutral",
-            "description": "Time required: 5-15 minutes depending on number of packages"
-          },
-          {
-            "type": "positive",
-            "description": "Old versions removed: Cleanup removes old package versions"
-          },
-          {
-            "type": "neutral",
-            "description": "Doctor check: Reports any configuration issues"
-          }
-        ],
-        "timeline": "Update Homebrew: 1-2 minutes. Upgrade packages: 3-10 minutes. Cleanup: 1-3 minutes. Doctor check: 30 seconds. Total: 5-15 minutes.",
-        "side_effects": [
-          "Package versions change: Commands may have new options or changed behavior",
-          "Config warnings: Doctor may report minor configuration issues (usually safe to ignore)",
-          "Disk space freed: Cleanup removes old versions (500MB-2GB)",
-          "Minor disruption: Terminal commands may need reopening"
-        ]
-      },
-      "when_to_run": [
-        "Weekly for security",
-        "Before installing new packages (to avoid conflicts)",
-        "When brew commands fail",
-        "After macOS updates (check compatibility)"
-      ],
-      "safety": "low-risk",
-      "note": "Some packages may have breaking changes in updates. Check release notes if you rely on specific package versions for development. After running, review 'brew doctor' output for any issues and test critical command-line tools you depend on."
+        "title": "Problems This Solves"
+      }
     },
-    "dev-tools-cache": {
-      "id": "dev-tools-cache",
-      "name": "Clear Dev Tools Caches",
+    "messages-cache": {
       "category": "Cleanup",
-      "why": {
-        "title": "Problems This Solves",
-        "problems": [
-          {
-            "symptom": "Disk space eaten by package caches",
-            "description": "npm, pip, Go, Cargo, and Composer caches growing to several GB with old/unused packages"
-          },
-          {
-            "symptom": "Package install corruption",
-            "description": "Failed or corrupted packages causing npm install or pip install to fail"
-          },
-          {
-            "symptom": "Dependency confusion",
-            "description": "Old cached packages causing version conflicts or unexpected behavior"
-          }
-        ],
-        "context": "Package managers cache downloaded packages to speed up installs. Over time, these caches accumulate old versions and unused packages, wasting disk space and potentially causing issues."
-      },
+      "id": "messages-cache",
+      "name": "Clear Messages Caches",
+      "safety": "low-risk",
       "what": {
-        "title": "Expected Results",
         "outcomes": [
           {
-            "type": "positive",
-            "description": "Space freed: Typically 500MB-5GB of disk space recovered"
+            "description": "Space freed: Often multiple GB recovered immediately (depending on cache size).",
+            "type": "positive"
           },
           {
-            "type": "temporary",
-            "description": "First install delay: Next package install will re-download needed packages"
+            "description": "Previews may regenerate over time as you browse conversations/attachments.",
+            "type": "temporary"
           },
           {
-            "type": "positive",
-            "description": "Clean slate: Fresh cache eliminates potential corruption issues"
-          },
-          {
-            "type": "neutral",
-            "description": "No project impact: Installed packages in node_modules, venv, etc. are NOT affected"
+            "description": "Chat history preserved: Does not delete your Messages database.",
+            "type": "positive"
           }
         ],
-        "timeline": "Operation completes in 30-60 seconds. Cache rebuilds automatically during normal development.",
         "side_effects": [
-          "Global npm packages remain installed",
-          "Virtual environments remain intact",
-          "Project dependencies remain installed"
-        ]
+          "May temporarily reduce preview availability until regenerated",
+          "No impact on chat content"
+        ],
+        "timeline": "Operation completes in seconds to a couple minutes depending on cache size.",
+        "title": "Expected Results"
       },
       "when_to_run": [
-        "Monthly to reclaim disk space from package caches",
-        "When package installs fail with cache corruption errors",
-        "After switching between major versions of Node, Python, Go, etc.",
-        "When investigating disk space issues in developer directories"
+        "When running low on disk space",
+        "When ~/Library/Messages is unusually large"
       ],
-      "safety": "low-risk"
+      "why": {
+        "context": "Messages stores preview renderings and other cache data under ~/Library/Messages/Caches. This operation removes only cache files, not your chat database.",
+        "problems": [
+          {
+            "description": "Messages preview caches can grow into many gigabytes over time.",
+            "symptom": "Low disk space"
+          },
+          {
+            "description": "Old preview thumbnails and cache files accumulate and are rarely needed.",
+            "symptom": "Bloated previews"
+          }
+        ],
+        "title": "Problems This Solves"
+      }
+    },
+    "smart-check": {
+      "category": "Disk Operations",
+      "id": "smart-check",
+      "name": "Check SMART Status",
+      "safety": "safe",
+      "warning": "If status shows \"Failing\", backup immediately and replace disk soon. \"Failing\" means imminent hardware failure within days/weeks.",
+      "what": {
+        "outcomes": [
+          {
+            "description": "Health status: Shows \"Verified\" (healthy) or \"Failing\" (replace soon)",
+            "type": "positive"
+          },
+          {
+            "description": "No changes made: Read-only check, disk is not modified",
+            "type": "neutral"
+          },
+          {
+            "description": "Instant result: Check completes in 1-2 seconds",
+            "type": "positive"
+          },
+          {
+            "description": "Peace of mind: Confirmation of disk health or early failure warning",
+            "type": "positive"
+          }
+        ],
+        "side_effects": [],
+        "status_meanings": [
+          "Verified: Disk is healthy, no predicted failures",
+          "Failing: Imminent hardware failure - backup immediately and replace disk",
+          "Not Supported: Some USB enclosures don't pass SMART data to macOS"
+        ],
+        "timeline": "Operation completes in 1-2 seconds. No waiting or background processing.",
+        "title": "Expected Results"
+      },
+      "when_to_run": [
+        "Monthly for early warning",
+        "When disk makes unusual noises (clicking, grinding)",
+        "When Mac feels slow or files take long to open",
+        "Before major system updates"
+      ],
+      "why": {
+        "context": "SMART (Self-Monitoring, Analysis and Reporting Technology) monitors disk health and predicts failures before they happen. Early detection allows backup before catastrophic failure.",
+        "problems": [
+          {
+            "description": "Disk failing without warning signs",
+            "symptom": "Unexpected data loss"
+          },
+          {
+            "description": "Random crashes or file corruption due to disk issues",
+            "symptom": "System instability"
+          },
+          {
+            "description": "Disk struggling to read/write data efficiently",
+            "symptom": "Slow performance"
+          }
+        ],
+        "title": "Problems This Solves"
+      }
+    },
+    "space-report": {
+      "category": "Reports",
+      "id": "space-report",
+      "name": "Disk Space Report",
+      "safety": "safe",
+      "what": {
+        "common_findings": [
+          "Large folders: ~/Downloads (10-50GB), ~/Library/Caches (5-20GB)",
+          "iOS backups: ~/Library/Application Support/MobileSync (20-100GB per device)",
+          "Old projects: Forgotten code projects, video files, disk images",
+          "Duplicate files: Multiple copies of large files in different locations"
+        ],
+        "outcomes": [
+          {
+            "description": "Detailed report: Shows largest folders and files sorted by size",
+            "type": "positive"
+          },
+          {
+            "description": "Space breakdown: Categorizes usage (applications, documents, system, etc.)",
+            "type": "positive"
+          },
+          {
+            "description": "No changes made: Read-only analysis, no deletions",
+            "type": "neutral"
+          },
+          {
+            "description": "Actionable insights: Identifies specific targets for cleanup",
+            "type": "positive"
+          }
+        ],
+        "side_effects": [
+          "Temporary CPU usage during scan (20-30%)",
+          "Brief disk activity (reading file sizes)",
+          "No modifications to disk"
+        ],
+        "timeline": "Scanning takes 2-5 minutes. Report generated immediately after scan. No background processing.",
+        "title": "Expected Results"
+      },
+      "when_to_run": [
+        "When running low on disk space",
+        "Before cleanup operations to prioritize targets",
+        "Monthly to monitor space usage trends",
+        "When investigating unexpected space usage"
+      ],
+      "why": {
+        "context": "Shows exactly where disk space is being used by scanning all files and folders. Helps identify space hogs like old backups, cached data, or forgotten files.",
+        "problems": [
+          {
+            "description": "Disk full but can't find what's using space",
+            "symptom": "Mystery space usage"
+          },
+          {
+            "description": "Need to know which folders to target for cleanup",
+            "symptom": "Cleanup prioritization"
+          },
+          {
+            "description": "Old downloads, iOS backups, or forgotten projects consuming space",
+            "symptom": "Large forgotten files"
+          }
+        ],
+        "title": "Problems This Solves"
+      }
+    },
+    "spotlight-reindex": {
+      "category": "System Operations",
+      "id": "spotlight-reindex",
+      "name": "Rebuild Spotlight Index",
+      "safety": "high-risk",
+      "warning": "This is a heavyweight operation. Only run when absolutely necessary. Rebuild takes 1-3 hours and significantly impacts system performance. Avoid during important work.",
+      "what": {
+        "next_steps": [
+          "Let rebuild complete uninterrupted (check progress with Spotlight Status)",
+          "Avoid closing laptop lid (pauses indexing)",
+          "Keep Mac plugged in during rebuild"
+        ],
+        "outcomes": [
+          {
+            "description": "Index deleted: Entire search index removed immediately",
+            "type": "warning"
+          },
+          {
+            "description": "Rebuild started: Spotlight begins reindexing all files",
+            "type": "neutral"
+          },
+          {
+            "description": "Searches disabled: Search won't work until rebuild completes",
+            "type": "warning"
+          },
+          {
+            "description": "Heavy CPU usage: CPU and battery usage will be high during rebuild",
+            "type": "warning"
+          }
+        ],
+        "side_effects": [
+          "Mac slower: System performance degraded during rebuild",
+          "Search disabled: Spotlight search won't work until complete",
+          "High CPU usage: 30-50% CPU usage during indexing",
+          "Battery drain: Significant battery usage on laptops",
+          "Avoid during work: Very disruptive to productivity"
+        ],
+        "timeline": "Index deletion: instant. Rebuild time: 1-3 hours for typical Mac. Longer for large drives (500GB+) or millions of files.",
+        "title": "Expected Results"
+      },
+      "when_to_run": [
+        "ONLY when searches consistently return wrong results",
+        "When files don't appear in search but exist",
+        "When Spotlight Status shows errors",
+        "Do NOT run preventively (very disruptive)"
+      ],
+      "why": {
+        "context": "Spotlight index can become corrupted, causing wrong search results or missing files. Rebuilding fixes the index by deleting and recreating it from scratch.",
+        "problems": [
+          {
+            "description": "Spotlight finding deleted files or missing existing ones",
+            "symptom": "Wrong search results"
+          },
+          {
+            "description": "Spotlight returns nothing despite files existing",
+            "symptom": "No search results"
+          },
+          {
+            "description": "Search shows outdated or corrupted file information",
+            "symptom": "Index corruption"
+          }
+        ],
+        "title": "Problems This Solves"
+      }
+    },
+    "spotlight-status": {
+      "category": "System Operations",
+      "id": "spotlight-status",
+      "name": "Check Spotlight Status",
+      "safety": "safe",
+      "what": {
+        "next_steps": [
+          "If status is healthy: Problem is likely not Spotlight-related",
+          "If disabled: Re-enable Spotlight in System Settings",
+          "If problems persist: Consider Rebuild Spotlight Index"
+        ],
+        "outcomes": [
+          {
+            "description": "Indexing status: Shows if Spotlight is indexing, idle, or disabled",
+            "type": "positive"
+          },
+          {
+            "description": "No changes made: Read-only check, index is NOT modified",
+            "type": "neutral"
+          },
+          {
+            "description": "Instant result: Check completes in 1 second",
+            "type": "positive"
+          },
+          {
+            "description": "Problem diagnosis: Determines if reindex is needed",
+            "type": "positive"
+          }
+        ],
+        "side_effects": [],
+        "status_meanings": [
+          "Indexing enabled: Spotlight is active and building/maintaining index",
+          "Indexing disabled: Spotlight is turned off for this volume",
+          "Indexing in progress: Currently rebuilding index (X% complete)",
+          "Idle: Index is up-to-date, no current activity"
+        ],
+        "timeline": "Operation completes in 1 second. No waiting or background processing.",
+        "title": "Expected Results"
+      },
+      "when_to_run": [
+        "When Spotlight search returns no results",
+        "When you can't find files you know exist",
+        "After adding large amounts of data (check if indexing)",
+        "To verify Spotlight is enabled"
+      ],
+      "why": {
+        "context": "Spotlight indexes all files for instant search. Checking status helps diagnose search problems without reindexing unnecessarily.",
+        "problems": [
+          {
+            "description": "Spotlight returns no results for files you know exist",
+            "symptom": "Search not working"
+          },
+          {
+            "description": "Determining if search problems require reindexing",
+            "symptom": "Search diagnostics"
+          },
+          {
+            "description": "Checking if Spotlight is consuming CPU/battery",
+            "symptom": "Performance investigation"
+          }
+        ],
+        "title": "Problems This Solves"
+      }
+    },
+    "thin-tm": {
+      "category": "Cleanup",
+      "id": "thin-tm",
+      "name": "Thin Time Machine Snapshots",
+      "safety": "high-risk",
+      "warning": "This is a destructive operation. Only use when absolutely necessary. macOS normally manages snapshots automatically - manual intervention should be rare.",
+      "what": {
+        "outcomes": [
+          {
+            "description": "Space freed: Typically 5-50GB depending on snapshot age and size",
+            "type": "positive"
+          },
+          {
+            "description": "Permanent deletion: Deleted snapshots cannot be restored (external backups unaffected)",
+            "type": "warning"
+          },
+          {
+            "description": "Automatic rebuild: New snapshots will accumulate again (hourly backups resume)",
+            "type": "neutral"
+          },
+          {
+            "description": "System responsiveness: Mac will feel faster with more available space",
+            "type": "positive"
+          }
+        ],
+        "side_effects": [
+          "Loss of restore points: Cannot restore to deleted snapshot timestamps",
+          "External backups safe: Time Machine backups on external drives are NOT affected",
+          "Automatic snapshots continue: macOS will create new snapshots after deletion"
+        ],
+        "timeline": "Operation completes in 2-5 minutes. New snapshots begin accumulating within 1 hour.",
+        "title": "Expected Results"
+      },
+      "when_to_run": [
+        "ONLY when disk is >88% full and you urgently need space",
+        "As last resort after trying other cleanup methods",
+        "Before major system updates when space is tight"
+      ],
+      "why": {
+        "context": "Time Machine stores local snapshots on your disk for quick restores. macOS usually manages these automatically, deleting old snapshots when space runs low.",
+        "problems": [
+          {
+            "description": "Disk >88% full with urgent need for space",
+            "symptom": "Critical disk space shortage"
+          },
+          {
+            "description": "macOS throttling performance due to low disk space",
+            "symptom": "System slowdown"
+          },
+          {
+            "description": "Not enough space for macOS updates (20-40GB needed)",
+            "symptom": "Cannot install updates"
+          }
+        ],
+        "title": "Problems This Solves"
+      }
+    },
+    "trim-caches": {
+      "category": "Cleanup",
+      "id": "trim-caches",
+      "name": "Trim User Caches",
+      "safety": "low-risk",
+      "what": {
+        "outcomes": [
+          {
+            "description": "Space freed: Typically 2-10GB of disk space recovered",
+            "type": "positive"
+          },
+          {
+            "description": "Brief slowdown: First time opening apps may be 1-2 seconds slower",
+            "type": "temporary"
+          },
+          {
+            "description": "Automatic rebuild: Apps regenerate caches as needed (thumbnails, previews, etc.)",
+            "type": "positive"
+          },
+          {
+            "description": "Fresh data: Apps will display current content without corruption",
+            "type": "positive"
+          }
+        ],
+        "side_effects": [
+          "Only deletes caches older than 30 days",
+          "Recent caches (<30 days) are preserved for performance",
+          "No impact on app functionality or user data",
+          "Photo thumbnails will regenerate when viewing folders"
+        ],
+        "timeline": "Operation completes in 2-5 minutes. Caches rebuild gradually over next few days of app usage.",
+        "title": "Expected Results"
+      },
+      "when_to_run": [
+        "Monthly for routine maintenance",
+        "When running low on disk space",
+        "When apps crash or display wrong content",
+        "After resolving app-specific issues"
+      ],
+      "why": {
+        "context": "Apps store temporary data (thumbnails, previews, downloads) in caches. Old caches waste disk space and can become corrupted, causing app misbehavior.",
+        "problems": [
+          {
+            "description": "\"Startup disk almost full\" warnings despite deleting files",
+            "symptom": "Low disk space"
+          },
+          {
+            "description": "Applications crashing due to corrupted cache data",
+            "symptom": "App crashes"
+          },
+          {
+            "description": "Apps showing outdated thumbnails, previews, or cached content",
+            "symptom": "Wrong content displayed"
+          }
+        ],
+        "title": "Problems This Solves"
+      }
+    },
+    "trim-logs": {
+      "category": "Cleanup",
+      "id": "trim-logs",
+      "name": "Trim User Logs",
+      "safety": "low-risk",
+      "what": {
+        "outcomes": [
+          {
+            "description": "Space freed: Typically 500MB-2GB of disk space recovered",
+            "type": "positive"
+          },
+          {
+            "description": "Permanent deletion: Old log files deleted (cannot be recovered)",
+            "type": "warning"
+          },
+          {
+            "description": "Recent logs preserved: Logs <30 days old kept for troubleshooting",
+            "type": "positive"
+          },
+          {
+            "description": "No app impact: No effect on app functionality",
+            "type": "neutral"
+          }
+        ],
+        "side_effects": [
+          "Only deletes .log files older than 30 days",
+          "System logs in /var/log are NOT affected",
+          "Recent logs preserved for debugging",
+          "No impact on app settings or user data"
+        ],
+        "timeline": "Operation completes in 30-60 seconds. New logs accumulate normally during app usage.",
+        "title": "Expected Results"
+      },
+      "when_to_run": [
+        "Monthly for routine cleanup",
+        "When low on disk space",
+        "After resolving app issues (old diagnostic logs no longer useful)",
+        "For privacy (remove old debug information)"
+      ],
+      "why": {
+        "context": "Apps write diagnostic logs to track errors and activity. Old logs (>30 days) are rarely needed for troubleshooting and waste space.",
+        "problems": [
+          {
+            "description": "Old diagnostic logs consuming 500MB-2GB of storage",
+            "symptom": "Wasted disk space"
+          },
+          {
+            "description": "Old logs containing sensitive debugging information",
+            "symptom": "Privacy concerns"
+          },
+          {
+            "description": "Logs from long-resolved issues filling ~/Library/Logs",
+            "symptom": "Clutter"
+          }
+        ],
+        "title": "Problems This Solves"
+      }
+    },
+    "wallpaper-aerials": {
+      "category": "Cleanup",
+      "id": "wallpaper-aerials",
+      "name": "Remove Aerial Wallpaper Videos",
+      "safety": "low-risk",
+      "what": {
+        "outcomes": [
+          {
+            "description": "Space freed: Can reclaim tens of GB immediately if Aerial videos are present.",
+            "type": "positive"
+          },
+          {
+            "description": "If you keep using Aerial wallpapers, macOS may download them again later.",
+            "type": "neutral"
+          }
+        ],
+        "side_effects": [
+          "Aerial wallpapers/screensavers may re-download content later",
+          "Does not affect your personal photos or files"
+        ],
+        "timeline": "Operation completes in seconds to a few minutes depending on size.",
+        "title": "Expected Results"
+      },
+      "when_to_run": [
+        "When disk space is low and Aerial videos are taking significant space",
+        "After confirming ~/Library/Application Support/com.apple.wallpaper is large"
+      ],
+      "why": {
+        "context": "macOS can download high-resolution Aerial videos used for wallpapers/screensavers. They live at ~/Library/Application Support/com.apple.wallpaper/aerials/videos.",
+        "problems": [
+          {
+            "description": "Downloaded Aerial videos can consume tens of GB in the background.",
+            "symptom": "Massive hidden disk usage"
+          },
+          {
+            "description": "These videos are large and often safe to remove when you need quick space.",
+            "symptom": "Startup disk almost full"
+          }
+        ],
+        "title": "Problems This Solves"
+      }
     }
-  }
+  },
+  "version": "1.0"
 }
