@@ -119,6 +119,9 @@ Real-time system overview. CPU, memory, disk, health score, top processes—all 
 ### Maintenance Operations
 20 operations, each explaining **why** you'd run it and **what to expect**. No guesswork, no scary warnings.
 
+### Roadmap
+Operator-first backlog: `docs/ROADMAP.md`
+
 ![Operations](docs/screenshots/maintenance.png)
 
 ### Storage Analysis
