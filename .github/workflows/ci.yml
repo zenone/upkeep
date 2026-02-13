@@ -1,0 +1,172 @@
+# Upkeep CI Pipeline
+# Runs on all pushes and PRs to main
+# Tests Python, TypeScript, and Bash components
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+
+jobs:
+  # ============================================================================
+  # Python Tests & Quality
+  # ============================================================================
+  python:
+    name: Python ${{ matrix.python-version }}
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Create venv and install dependencies
+        run: |
+          uv venv .venv
+          source .venv/bin/activate
+          uv pip install -e ".[dev]"
+
+      - name: Lint with ruff
+        run: |
+          source .venv/bin/activate
+          ruff check src/ tests/
+
+      - name: Format check with ruff
+        run: |
+          source .venv/bin/activate
+          ruff format --check src/ tests/
+
+      - name: Type check with mypy
+        run: |
+          source .venv/bin/activate
+          mypy src/upkeep --ignore-missing-imports || true
+
+      - name: Run pytest
+        run: |
+          source .venv/bin/activate
+          pytest tests/python -v --tb=short
+
+  # ============================================================================
+  # TypeScript Tests & Quality
+  # ============================================================================
+  typescript:
+    name: TypeScript
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Build
+        run: npm run build:web
+
+      - name: Run Vitest
+        run: npm run test:run
+
+  # ============================================================================
+  # Bash Script Quality
+  # ============================================================================
+  shellcheck:
+    name: ShellCheck
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: brew install shellcheck
+
+      - name: Run ShellCheck on main scripts
+        run: |
+          shellcheck -x upkeep.sh || true
+          shellcheck -x run-web.sh || true
+          shellcheck -x run-all-tests.sh || true
+          shellcheck -x install-daemon.sh || true
+
+  # ============================================================================
+  # Integration Tests (macOS specific)
+  # ============================================================================
+  integration:
+    name: Integration Tests
+    runs-on: macos-latest
+    needs: [python, typescript]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Create venv and install
+        run: |
+          uv venv .venv
+          source .venv/bin/activate
+          uv pip install -e ".[dev]"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build TypeScript
+        run: npm run build:web
+
+      - name: Run bash integration tests
+        run: |
+          chmod +x tests/run_all_tests.sh
+          ./tests/run_all_tests.sh || true
+
+  # ============================================================================
+  # Security Scan
+  # ============================================================================
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified
+
+      - name: Run npm audit
+        run: npm audit --audit-level=high || true

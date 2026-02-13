@@ -1,0 +1,93 @@
+# Pre-commit hooks for Upkeep
+# Install: pre-commit install
+# Run manually: pre-commit run --all-files
+#
+# See https://pre-commit.com for more information
+
+default_language_version:
+  python: python3.12
+
+repos:
+  # ============================================================================
+  # General
+  # ============================================================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: no-commit-to-branch
+        args: ['--branch', 'main']
+        stages: [commit]
+
+  # ============================================================================
+  # Python - Ruff (replaces flake8, isort, black)
+  # ============================================================================
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.9
+    hooks:
+      # Run the linter
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        types_or: [python, pyi]
+      # Run the formatter
+      - id: ruff-format
+        types_or: [python, pyi]
+
+  # ============================================================================
+  # Python - Type checking (optional, can be slow)
+  # ============================================================================
+  # Uncomment to enable mypy in pre-commit (adds ~5-10 seconds)
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.11.0
+  #   hooks:
+  #     - id: mypy
+  #       additional_dependencies: [types-all]
+  #       args: [--ignore-missing-imports]
+
+  # ============================================================================
+  # Shell Scripts
+  # ============================================================================
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        args: [-x]
+        files: \.(sh|bash)$
+        # Exclude test scripts that may have intentional edge cases
+        exclude: ^tests/.*\.sh$
+
+  # ============================================================================
+  # Security
+  # ============================================================================
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: package-lock.json
+
+  # ============================================================================
+  # Commit Message
+  # ============================================================================
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.4.1
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
+
+# ============================================================================
+# CI Configuration
+# ============================================================================
+ci:
+  autofix_commit_msg: 'style: auto-fix by pre-commit hooks'
+  autofix_prs: true
+  autoupdate_branch: 'main'
+  autoupdate_commit_msg: 'chore: pre-commit autoupdate'
+  autoupdate_schedule: monthly
