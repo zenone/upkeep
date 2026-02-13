@@ -7,7 +7,6 @@ This module provides functions for gathering system information on macOS.
 import os
 import platform
 import subprocess
-from typing import Dict, Optional
 
 
 def get_macos_version() -> str:
@@ -68,7 +67,7 @@ def get_username() -> str:
         Username string (e.g., "szenone")
     """
     # Try environment variables first
-    username = os.environ.get('USER') or os.environ.get('LOGNAME')
+    username = os.environ.get("USER") or os.environ.get("LOGNAME")
 
     # Fallback to whoami command
     if not username:
@@ -86,7 +85,7 @@ def get_username() -> str:
     return username
 
 
-def get_system_info() -> Dict[str, str]:
+def get_system_info() -> dict[str, str]:
     """
     Get comprehensive system information.
 

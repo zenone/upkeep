@@ -4,7 +4,6 @@ Provides reliable port conflict detection and automatic fallback.
 """
 
 import socket
-from typing import Optional
 
 
 def is_port_available(port: int, host: str = "127.0.0.1") -> bool:
@@ -39,10 +38,8 @@ def is_port_available(port: int, host: str = "127.0.0.1") -> bool:
 
 
 def find_available_port(
-    start_port: int = 8080,
-    end_port: int = 8089,
-    host: str = "127.0.0.1"
-) -> Optional[int]:
+    start_port: int = 8080, end_port: int = 8089, host: str = "127.0.0.1"
+) -> int | None:
     """Find the first available port in a range.
 
     Tries ports sequentially from start_port to end_port (inclusive).

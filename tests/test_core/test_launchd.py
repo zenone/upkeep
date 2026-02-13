@@ -4,23 +4,20 @@ TDD approach: These tests define the expected behavior of LaunchdGenerator
 before implementation.
 """
 
-import pytest
-import tempfile
-from pathlib import Path
-from datetime import time as time_type
-from unittest.mock import Mock, patch, MagicMock
 import plistlib
+import tempfile
+from datetime import time as time_type
+from pathlib import Path
+from unittest.mock import Mock, patch
 
-from upkeep.core.launchd import LaunchdGenerator
+import pytest
+
 from upkeep.api.models.schedule import (
+    DayOfWeek,
     ScheduleConfig,
     ScheduleFrequency,
-    DayOfWeek,
 )
-from upkeep.core.exceptions import (
-    ValidationError,
-    DaemonNotAvailableError,
-)
+from upkeep.core.launchd import LaunchdGenerator
 
 
 class TestLaunchdGenerator:
@@ -46,7 +43,7 @@ class TestLaunchdGenerator:
             operations=["trim_logs", "flush_dns"],
             frequency=ScheduleFrequency.DAILY,
             time_of_day=time_type(3, 0, 0),
-            enabled=True
+            enabled=True,
         )
         schedule.generate_id()
         return schedule
@@ -60,7 +57,7 @@ class TestLaunchdGenerator:
             frequency=ScheduleFrequency.WEEKLY,
             time_of_day=time_type(3, 0, 0),
             days_of_week=[DayOfWeek.SUNDAY, DayOfWeek.WEDNESDAY],
-            enabled=True
+            enabled=True,
         )
         schedule.generate_id()
         return schedule
@@ -74,7 +71,7 @@ class TestLaunchdGenerator:
             frequency=ScheduleFrequency.MONTHLY,
             time_of_day=time_type(4, 0, 0),
             day_of_month=15,
-            enabled=True
+            enabled=True,
         )
         schedule.generate_id()
         return schedule
@@ -184,7 +181,7 @@ class TestLaunchdGenerator:
         assert plist_path.name == f"com.upkeep.schedule.{daily_schedule.id}.plist"
 
         # Verify file is valid plist
-        with open(plist_path, 'rb') as f:
+        with open(plist_path, "rb") as f:
             plist_data = plistlib.load(f)
             assert "Label" in plist_data
 
@@ -199,7 +196,7 @@ class TestLaunchdGenerator:
             assert nonexistent_dir.exists()
             assert plist_path.exists()
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_register_schedule(self, mock_run, generator, daily_schedule):
         """Should register schedule with launchctl."""
         # Mock successful launchctl load
@@ -222,7 +219,7 @@ class TestLaunchdGenerator:
         assert "bootstrap" in args or "load" in args
         assert str(plist_path) in args
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_register_schedule_requires_sudo(self, mock_run, generator, daily_schedule):
         """LaunchAgents should not require sudo for registration."""
         mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
@@ -234,22 +231,18 @@ class TestLaunchdGenerator:
         assert args[0] != "sudo"
         assert "launchctl" in args
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_register_schedule_failure(self, mock_run, generator, daily_schedule):
         """Should handle launchctl failure."""
         # Mock failed launchctl load
-        mock_run.return_value = Mock(
-            returncode=1,
-            stdout="",
-            stderr="Operation not permitted"
-        )
+        mock_run.return_value = Mock(returncode=1, stdout="", stderr="Operation not permitted")
 
         generator.save_plist(daily_schedule)
         result = generator.register_schedule(daily_schedule.id)
 
         assert result is False
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_unregister_schedule(self, mock_run, generator, daily_schedule):
         """Should unregister schedule with launchctl."""
         mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
@@ -265,7 +258,7 @@ class TestLaunchdGenerator:
         assert "launchctl" in args
         assert "bootout" in args or "unload" in args
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_remove_plist(self, mock_run, generator, daily_schedule):
         """Should remove plist file after unregistering."""
         mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
@@ -302,7 +295,9 @@ class TestLaunchdGenerator:
         """Should validate schedule ID format."""
         # Valid IDs
         assert generator.validate_schedule_id("schedule-abc123") is True
-        assert generator.validate_schedule_id("schedule-12345678-1234-1234-1234-123456789012") is True
+        assert (
+            generator.validate_schedule_id("schedule-12345678-1234-1234-1234-123456789012") is True
+        )
 
         # Invalid IDs
         assert generator.validate_schedule_id("invalid") is False
@@ -329,10 +324,11 @@ class TestSchedulerEntryPoint:
     def test_entry_point_exists(self):
         """Scheduler entry point script should exist."""
         from upkeep.core.launchd import run_scheduled_task
+
         assert run_scheduled_task is not None
 
-    @patch('upkeep.api.schedule.ScheduleAPI')
-    @patch('upkeep.api.maintenance.MaintenanceAPI')
+    @patch("upkeep.api.schedule.ScheduleAPI")
+    @patch("upkeep.api.maintenance.MaintenanceAPI")
     def test_run_scheduled_task(self, mock_maintenance_api, mock_schedule_api):
         """Should load schedule and execute operations."""
         from upkeep.core.launchd import run_scheduled_task
@@ -343,7 +339,7 @@ class TestSchedulerEntryPoint:
             name="Test Schedule",
             operations=["trim_logs", "flush_dns"],
             frequency=ScheduleFrequency.DAILY,
-            time_of_day=time_type(3, 0, 0)
+            time_of_day=time_type(3, 0, 0),
         )
 
         # Mock API responses
@@ -358,7 +354,7 @@ class TestSchedulerEntryPoint:
         # Verify schedule was loaded
         mock_schedule_api.return_value.get_schedule.assert_called_once_with("schedule-test")
 
-    @patch('upkeep.api.schedule.ScheduleAPI')
+    @patch("upkeep.api.schedule.ScheduleAPI")
     def test_run_scheduled_task_not_found(self, mock_schedule_api):
         """Should handle schedule not found."""
         from upkeep.core.launchd import run_scheduled_task
@@ -371,18 +367,18 @@ class TestSchedulerEntryPoint:
 
         assert result is False
 
-    @patch('upkeep.api.schedule.ScheduleAPI')
+    @patch("upkeep.api.schedule.ScheduleAPI")
     def test_run_scheduled_task_updates_last_run(self, mock_schedule_api):
         """Should update schedule last_run timestamp after execution."""
+
         from upkeep.core.launchd import run_scheduled_task
-        from datetime import datetime
 
         schedule = ScheduleConfig(
             id="schedule-test",
             name="Test Schedule",
             operations=["trim_logs"],
             frequency=ScheduleFrequency.DAILY,
-            time_of_day=time_type(3, 0, 0)
+            time_of_day=time_type(3, 0, 0),
         )
 
         mock_schedule_api.return_value.get_schedule.return_value.success = True

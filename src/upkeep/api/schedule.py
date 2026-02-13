@@ -5,23 +5,23 @@ Used by Web GUI, CLI, and Web.
 """
 
 import json
+from datetime import datetime, timedelta
+from datetime import time as time_type
 from pathlib import Path
-from typing import Dict, List, Optional, Any
-from datetime import datetime, time as time_type, timedelta
+from typing import Any
 
-from .base import BaseAPI
 from upkeep.api.models.schedule import (
+    DayOfWeek,
     ScheduleConfig,
     ScheduleFrequency,
-    DayOfWeek,
-    ScheduleResponse,
     ScheduleListResponse,
+    ScheduleResponse,
 )
 from upkeep.core.exceptions import (
     ValidationError,
-    NotFoundError,
-    ConflictError,
 )
+
+from .base import BaseAPI
 
 
 class ScheduleAPI(BaseAPI):
@@ -36,7 +36,7 @@ class ScheduleAPI(BaseAPI):
     Design Pattern: Repository pattern with in-memory + file storage
     """
 
-    def __init__(self, storage_path: Optional[Path] = None):
+    def __init__(self, storage_path: Path | None = None):
         """Initialize ScheduleAPI.
 
         Args:
@@ -59,7 +59,7 @@ class ScheduleAPI(BaseAPI):
 
         self.logger.info(f"ScheduleAPI initialized with storage: {self.storage_path}")
 
-    def _load_schedules(self) -> List[ScheduleConfig]:
+    def _load_schedules(self) -> list[ScheduleConfig]:
         """Load all schedules from JSON storage.
 
         Returns:
@@ -71,16 +71,16 @@ class ScheduleAPI(BaseAPI):
 
             for item in data:
                 # Convert time string back to time object
-                if isinstance(item.get('time_of_day'), str):
-                    time_parts = item['time_of_day'].split(':')
-                    item['time_of_day'] = time_type(
+                if isinstance(item.get("time_of_day"), str):
+                    time_parts = item["time_of_day"].split(":")
+                    item["time_of_day"] = time_type(
                         int(time_parts[0]),
                         int(time_parts[1]),
-                        int(time_parts[2]) if len(time_parts) > 2 else 0
+                        int(time_parts[2]) if len(time_parts) > 2 else 0,
                     )
 
                 # Convert datetime strings back to datetime objects
-                for field in ['created_at', 'updated_at', 'last_run', 'next_run']:
+                for field in ["created_at", "updated_at", "last_run", "next_run"]:
                     if item.get(field) and isinstance(item[field], str):
                         item[field] = datetime.fromisoformat(item[field])
 
@@ -94,7 +94,7 @@ class ScheduleAPI(BaseAPI):
             self.logger.error(f"Failed to load schedules: {e}")
             return []
 
-    def _save_schedules(self, schedules: List[ScheduleConfig]) -> None:
+    def _save_schedules(self, schedules: list[ScheduleConfig]) -> None:
         """Save all schedules to JSON storage.
 
         Args:
@@ -107,11 +107,11 @@ class ScheduleAPI(BaseAPI):
                 schedule_dict = schedule.model_dump()
 
                 # Convert time object to string
-                if isinstance(schedule_dict.get('time_of_day'), time_type):
-                    schedule_dict['time_of_day'] = schedule_dict['time_of_day'].strftime('%H:%M:%S')
+                if isinstance(schedule_dict.get("time_of_day"), time_type):
+                    schedule_dict["time_of_day"] = schedule_dict["time_of_day"].strftime("%H:%M:%S")
 
                 # Convert datetime objects to ISO format strings
-                for field in ['created_at', 'updated_at', 'last_run', 'next_run']:
+                for field in ["created_at", "updated_at", "last_run", "next_run"]:
                     if schedule_dict.get(field) and isinstance(schedule_dict[field], datetime):
                         schedule_dict[field] = schedule_dict[field].isoformat()
 
@@ -125,7 +125,7 @@ class ScheduleAPI(BaseAPI):
             self.logger.error(f"Failed to save schedules: {e}")
             raise
 
-    def create_schedule(self, schedule_data: Dict[str, Any]) -> ScheduleResponse:
+    def create_schedule(self, schedule_data: dict[str, Any]) -> ScheduleResponse:
         """Create a new schedule.
 
         Args:
@@ -141,12 +141,12 @@ class ScheduleAPI(BaseAPI):
 
         try:
             # Convert time string to time object if needed
-            if 'time_of_day' in schedule_data and isinstance(schedule_data['time_of_day'], str):
-                time_parts = schedule_data['time_of_day'].split(':')
-                schedule_data['time_of_day'] = time_type(
+            if "time_of_day" in schedule_data and isinstance(schedule_data["time_of_day"], str):
+                time_parts = schedule_data["time_of_day"].split(":")
+                schedule_data["time_of_day"] = time_type(
                     int(time_parts[0]),
                     int(time_parts[1]),
-                    int(time_parts[2]) if len(time_parts) > 2 else 0
+                    int(time_parts[2]) if len(time_parts) > 2 else 0,
                 )
 
             # Create ScheduleConfig (validates automatically via Pydantic)
@@ -166,7 +166,11 @@ class ScheduleAPI(BaseAPI):
             # If a schedule with the same name already exists, update it instead of creating a new UUID.
             # This prevents schedule-spam (dozens of LaunchAgents showing up as "python3" login items).
             existing_by_name = next(
-                (s for s in schedules if (s.name or "").strip().lower() == (schedule.name or "").strip().lower()),
+                (
+                    s
+                    for s in schedules
+                    if (s.name or "").strip().lower() == (schedule.name or "").strip().lower()
+                ),
                 None,
             )
 
@@ -192,7 +196,7 @@ class ScheduleAPI(BaseAPI):
                     success=True,
                     schedule=schedule,
                     error=None,
-                    message=(conflict_message or "Updated existing schedule (same name)")
+                    message=(conflict_message or "Updated existing schedule (same name)"),
                 )
 
             # Check for conflicts
@@ -205,27 +209,14 @@ class ScheduleAPI(BaseAPI):
             self._save_schedules(schedules)
 
             return ScheduleResponse(
-                success=True,
-                schedule=schedule,
-                error=None,
-                message=conflict_message
+                success=True, schedule=schedule, error=None, message=conflict_message
             )
 
         except ValidationError as e:
-            return ScheduleResponse(
-                success=False,
-                schedule=None,
-                error=str(e),
-                message=None
-            )
+            return ScheduleResponse(success=False, schedule=None, error=str(e), message=None)
         except Exception as e:
             self.logger.error(f"Failed to create schedule: {e}")
-            return ScheduleResponse(
-                success=False,
-                schedule=None,
-                error=str(e),
-                message=None
-            )
+            return ScheduleResponse(success=False, schedule=None, error=str(e), message=None)
 
     def get_schedule(self, schedule_id: str) -> ScheduleResponse:
         """Get a schedule by ID.
@@ -242,18 +233,10 @@ class ScheduleAPI(BaseAPI):
 
         for schedule in schedules:
             if schedule.id == schedule_id:
-                return ScheduleResponse(
-                    success=True,
-                    schedule=schedule,
-                    error=None,
-                    message=None
-                )
+                return ScheduleResponse(success=True, schedule=schedule, error=None, message=None)
 
         return ScheduleResponse(
-            success=False,
-            schedule=None,
-            error=f"Schedule not found: {schedule_id}",
-            message=None
+            success=False, schedule=None, error=f"Schedule not found: {schedule_id}", message=None
         )
 
     def list_schedules(self) -> ScheduleListResponse:
@@ -268,22 +251,14 @@ class ScheduleAPI(BaseAPI):
             schedules = self._load_schedules()
 
             return ScheduleListResponse(
-                success=True,
-                schedules=schedules,
-                count=len(schedules),
-                error=None
+                success=True, schedules=schedules, count=len(schedules), error=None
             )
 
         except Exception as e:
             self.logger.error(f"Failed to list schedules: {e}")
-            return ScheduleListResponse(
-                success=False,
-                schedules=[],
-                count=0,
-                error=str(e)
-            )
+            return ScheduleListResponse(success=False, schedules=[], count=0, error=str(e))
 
-    def update_schedule(self, schedule_id: str, updates: Dict[str, Any]) -> ScheduleResponse:
+    def update_schedule(self, schedule_id: str, updates: dict[str, Any]) -> ScheduleResponse:
         """Update an existing schedule.
 
         Args:
@@ -310,23 +285,23 @@ class ScheduleAPI(BaseAPI):
                     success=False,
                     schedule=None,
                     error=f"Schedule not found: {schedule_id}",
-                    message=None
+                    message=None,
                 )
 
             # Get existing schedule
             schedule = schedules[schedule_index]
 
             # Convert time string if present
-            if 'time_of_day' in updates and isinstance(updates['time_of_day'], str):
-                time_parts = updates['time_of_day'].split(':')
-                updates['time_of_day'] = time_type(
+            if "time_of_day" in updates and isinstance(updates["time_of_day"], str):
+                time_parts = updates["time_of_day"].split(":")
+                updates["time_of_day"] = time_type(
                     int(time_parts[0]),
                     int(time_parts[1]),
-                    int(time_parts[2]) if len(time_parts) > 2 else 0
+                    int(time_parts[2]) if len(time_parts) > 2 else 0,
                 )
 
             # Convert datetime string if present
-            if 'last_run' in updates and isinstance(updates['last_run'], datetime):
+            if "last_run" in updates and isinstance(updates["last_run"], datetime):
                 # Already a datetime object, keep as-is
                 pass
 
@@ -341,7 +316,10 @@ class ScheduleAPI(BaseAPI):
             updated_schedule.set_timestamps(is_new=False)
 
             # Recalculate next run if schedule changed
-            if any(key in updates for key in ['frequency', 'time_of_day', 'days_of_week', 'day_of_month']):
+            if any(
+                key in updates
+                for key in ["frequency", "time_of_day", "days_of_week", "day_of_month"]
+            ):
                 updated_schedule.next_run = self.calculate_next_run(updated_schedule)
 
             # Replace in list
@@ -351,27 +329,14 @@ class ScheduleAPI(BaseAPI):
             self._save_schedules(schedules)
 
             return ScheduleResponse(
-                success=True,
-                schedule=updated_schedule,
-                error=None,
-                message=None
+                success=True, schedule=updated_schedule, error=None, message=None
             )
 
         except ValidationError as e:
-            return ScheduleResponse(
-                success=False,
-                schedule=None,
-                error=str(e),
-                message=None
-            )
+            return ScheduleResponse(success=False, schedule=None, error=str(e), message=None)
         except Exception as e:
             self.logger.error(f"Failed to update schedule: {e}")
-            return ScheduleResponse(
-                success=False,
-                schedule=None,
-                error=str(e),
-                message=None
-            )
+            return ScheduleResponse(success=False, schedule=None, error=str(e), message=None)
 
     def delete_schedule(self, schedule_id: str) -> ScheduleResponse:
         """Delete a schedule.
@@ -396,27 +361,19 @@ class ScheduleAPI(BaseAPI):
                     success=False,
                     schedule=None,
                     error=f"Schedule not found: {schedule_id}",
-                    message=None
+                    message=None,
                 )
 
             # Save
             self._save_schedules(schedules)
 
             return ScheduleResponse(
-                success=True,
-                schedule=None,
-                error=None,
-                message=f"Schedule {schedule_id} deleted"
+                success=True, schedule=None, error=None, message=f"Schedule {schedule_id} deleted"
             )
 
         except Exception as e:
             self.logger.error(f"Failed to delete schedule: {e}")
-            return ScheduleResponse(
-                success=False,
-                schedule=None,
-                error=str(e),
-                message=None
-            )
+            return ScheduleResponse(success=False, schedule=None, error=str(e), message=None)
 
     def calculate_next_run(self, schedule: ScheduleConfig) -> datetime:
         """Calculate the next run time for a schedule.
@@ -494,7 +451,9 @@ class ScheduleAPI(BaseAPI):
                 next_year += 1
 
             try:
-                next_date = today.replace(year=next_year, month=next_month, day=schedule.day_of_month)
+                next_date = today.replace(
+                    year=next_year, month=next_month, day=schedule.day_of_month
+                )
                 return datetime.combine(next_date, schedule.time_of_day)
             except ValueError:
                 # Day doesn't exist in next month either, try month after
@@ -502,14 +461,18 @@ class ScheduleAPI(BaseAPI):
                 if next_month > 12:
                     next_month = 1
                     next_year += 1
-                next_date = today.replace(year=next_year, month=next_month, day=schedule.day_of_month)
+                next_date = today.replace(
+                    year=next_year, month=next_month, day=schedule.day_of_month
+                )
                 return datetime.combine(next_date, schedule.time_of_day)
 
         else:
             # Custom frequency not implemented yet
             raise ValidationError(f"Frequency {schedule.frequency} not supported yet")
 
-    def _check_conflicts(self, schedule: ScheduleConfig, existing_schedules: List[ScheduleConfig]) -> Optional[str]:
+    def _check_conflicts(
+        self, schedule: ScheduleConfig, existing_schedules: list[ScheduleConfig]
+    ) -> str | None:
         """Check if schedule conflicts with existing schedules.
 
         Args:
@@ -547,7 +510,7 @@ class ScheduleAPI(BaseAPI):
 
         return None
 
-    def get_conflicts(self) -> List[Dict[str, Any]]:
+    def get_conflicts(self) -> list[dict[str, Any]]:
         """Get list of all schedule conflicts.
 
         Returns:
@@ -563,7 +526,7 @@ class ScheduleAPI(BaseAPI):
             if not schedule1.enabled:
                 continue
 
-            for schedule2 in schedules[i+1:]:
+            for schedule2 in schedules[i + 1 :]:
                 if not schedule2.enabled:
                     continue
 
@@ -583,10 +546,12 @@ class ScheduleAPI(BaseAPI):
                             conflict_detected = True
 
                     if conflict_detected:
-                        conflicts.append({
-                            'schedule_ids': [schedule1.id, schedule2.id],
-                            'schedules': [schedule1.name, schedule2.name],
-                            'time_of_day': schedule1.time_of_day.strftime('%H:%M:%S')
-                        })
+                        conflicts.append(
+                            {
+                                "schedule_ids": [schedule1.id, schedule2.id],
+                                "schedules": [schedule1.name, schedule2.name],
+                                "time_of_day": schedule1.time_of_day.strftime("%H:%M:%S"),
+                            }
+                        )
 
         return conflicts

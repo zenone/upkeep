@@ -8,8 +8,8 @@ Usage:
     python3 run_schedule.py <schedule_id>
 """
 
-import sys
 import logging
+import sys
 from pathlib import Path
 
 # Setup logging
@@ -18,11 +18,8 @@ log_dir.mkdir(parents=True, exist_ok=True)
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_dir / "scheduler.log"),
-        logging.StreamHandler()
-    ]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler(log_dir / "scheduler.log"), logging.StreamHandler()],
 )
 
 logger = logging.getLogger(__name__)

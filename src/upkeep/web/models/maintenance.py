@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -15,14 +15,24 @@ class MaintenanceOperation(BaseModel):
     description: str = Field(..., description="Operation description")
     category: str = Field(..., description="Operation category")
     recommended: bool = Field(default=False, description="Whether this operation is recommended")
-    requires_sudo: bool = Field(default=True, description="Whether this operation requires sudo privileges")
+    requires_sudo: bool = Field(
+        default=True, description="Whether this operation requires sudo privileges"
+    )
 
     # WHY/WHAT information for user guidance
-    why: Optional[Dict[str, Any]] = Field(default=None, description="Why to run this operation (problems it solves)")
-    what: Optional[Dict[str, Any]] = Field(default=None, description="What to expect (outcomes and timeline)")
-    when_to_run: Optional[List[str]] = Field(default=None, description="When to run this operation")
-    safety: Optional[str] = Field(default=None, description="Safety level: low-risk, medium-risk, high-risk")
-    guidance: Optional[str] = Field(default=None, description="Legacy guidance field (deprecated, use why/what instead)")
+    why: dict[str, Any] | None = Field(
+        default=None, description="Why to run this operation (problems it solves)"
+    )
+    what: dict[str, Any] | None = Field(
+        default=None, description="What to expect (outcomes and timeline)"
+    )
+    when_to_run: list[str] | None = Field(default=None, description="When to run this operation")
+    safety: str | None = Field(
+        default=None, description="Safety level: low-risk, medium-risk, high-risk"
+    )
+    guidance: str | None = Field(
+        default=None, description="Legacy guidance field (deprecated, use why/what instead)"
+    )
 
 
 class OperationsListResponse(BaseModel):
@@ -53,21 +63,33 @@ class OperationsListResponse(BaseModel):
         }
     )
 
-    operations: List[MaintenanceOperation] = Field(..., description="Available operations")
+    operations: list[MaintenanceOperation] = Field(..., description="Available operations")
 
 
 class OperationHistory(BaseModel):
     """History of a single operation."""
 
-    last_run: Optional[str] = Field(None, description="ISO 8601 timestamp of last run")
-    last_run_relative: str = Field(..., description="Human-readable relative time (e.g., '2 hours ago')")
-    success: Optional[bool] = Field(None, description="Whether last run was successful")
-    last_duration_seconds: Optional[float] = Field(None, description="Duration of last run in seconds", ge=0)
-    typical_seconds: Optional[float] = Field(None, description="Median duration in seconds (for ETA)")
-    typical_display: Optional[str] = Field(None, description="Human-readable typical duration (e.g., '12s')")
-    typical_runs: Optional[int] = Field(None, description="Number of successful runs used for typical calculation")
-    typical_runs_all: Optional[int] = Field(None, description="Number of all runs recorded")
-    typical_basis: Optional[str] = Field(None, description="Which data was used: 'success' or 'all'")
+    last_run: str | None = Field(None, description="ISO 8601 timestamp of last run")
+    last_run_relative: str = Field(
+        ..., description="Human-readable relative time (e.g., '2 hours ago')"
+    )
+    success: bool | None = Field(None, description="Whether last run was successful")
+    last_duration_seconds: float | None = Field(
+        None, description="Duration of last run in seconds", ge=0
+    )
+    typical_seconds: float | None = Field(
+        None, description="Median duration in seconds (for ETA)"
+    )
+    typical_display: str | None = Field(
+        None, description="Human-readable typical duration (e.g., '12s')"
+    )
+    typical_runs: int | None = Field(
+        None, description="Number of successful runs used for typical calculation"
+    )
+    typical_runs_all: int | None = Field(None, description="Number of all runs recorded")
+    typical_basis: str | None = Field(
+        None, description="Which data was used: 'success' or 'all'"
+    )
 
 
 class LastRunResponse(BaseModel):
@@ -109,10 +131,12 @@ class LastRunResponse(BaseModel):
     )
 
     success: bool = Field(True, description="Request succeeded")
-    global_last_run: Optional[str] = Field(None, description="ISO 8601 timestamp of most recent operation")
+    global_last_run: str | None = Field(
+        None, description="ISO 8601 timestamp of most recent operation"
+    )
     global_last_run_relative: str = Field(..., description="Relative time of most recent operation")
     status: str = Field(..., description="Status: completed, never, or error")
-    operations: Dict[str, OperationHistory] = Field(
+    operations: dict[str, OperationHistory] = Field(
         default_factory=dict, description="Per-operation history keyed by operation ID"
     )
 
@@ -122,11 +146,13 @@ class RunOperationsRequest(BaseModel):
 
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {"operation_ids": ["clear_user_caches", "clear_system_caches", "repair_permissions"]}
+            "example": {
+                "operation_ids": ["clear_user_caches", "clear_system_caches", "repair_permissions"]
+            }
         }
     )
 
-    operation_ids: List[str] = Field(..., description="List of operation IDs to run", min_length=1)
+    operation_ids: list[str] = Field(..., description="List of operation IDs to run", min_length=1)
 
 
 class OperationEvent(BaseModel):
@@ -145,7 +171,7 @@ class OperationEvent(BaseModel):
     )
 
     type: str = Field(..., description="Event type: start, progress, complete, skip, error, done")
-    operation_id: Optional[str] = Field(None, description="Operation identifier")
+    operation_id: str | None = Field(None, description="Operation identifier")
     message: str = Field(..., description="Event message")
-    current: Optional[int] = Field(None, description="Current operation number", ge=1)
-    total: Optional[int] = Field(None, description="Total operations", ge=1)
+    current: int | None = Field(None, description="Current operation number", ge=1)
+    total: int | None = Field(None, description="Total operations", ge=1)

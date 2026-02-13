@@ -5,11 +5,10 @@ Provides tools for analyzing disk usage, identifying large files,
 and categorizing storage by file type.
 """
 
+import fnmatch
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional, Dict
-import fnmatch
 
 
 @dataclass
@@ -40,15 +39,15 @@ class AnalysisResult:
     total_size: int  # Total size in bytes
     file_count: int
     dir_count: int
-    entries: List[FileEntry] = field(default_factory=list)
-    category_sizes: Dict[str, int] = field(default_factory=dict)
+    entries: list[FileEntry] = field(default_factory=list)
+    category_sizes: dict[str, int] = field(default_factory=dict)
 
     @property
     def total_size_gb(self) -> float:
         """Total size in gigabytes."""
         return self.total_size / (1024 * 1024 * 1024)
 
-    def get_largest_entries(self, n: int = 10) -> List[FileEntry]:
+    def get_largest_entries(self, n: int = 10) -> list[FileEntry]:
         """
         Get the N largest entries.
 
@@ -60,7 +59,7 @@ class AnalysisResult:
         """
         return sorted(self.entries, key=lambda e: e.size, reverse=True)[:n]
 
-    def get_entries_by_category(self, category: str) -> List[FileEntry]:
+    def get_entries_by_category(self, category: str) -> list[FileEntry]:
         """
         Get all entries for a specific category.
 
@@ -127,8 +126,8 @@ class DiskAnalyzer:
     def __init__(
         self,
         root_path: Path,
-        exclude_patterns: Optional[List[str]] = None,
-        max_depth: Optional[int] = None,
+        exclude_patterns: list[str] | None = None,
+        max_depth: int | None = None,
     ):
         """
         Initialize the analyzer.
@@ -172,11 +171,11 @@ class DiskAnalyzer:
         if not os.access(self.root_path, os.R_OK):
             raise PermissionError(f"Path is not readable: {self.root_path}")
 
-        entries: List[FileEntry] = []
+        entries: list[FileEntry] = []
         total_size = 0
         file_count = 0
         dir_count = 0
-        category_sizes: Dict[str, int] = {cat: 0 for cat in CATEGORY_PATTERNS.keys()}
+        category_sizes: dict[str, int] = dict.fromkeys(CATEGORY_PATTERNS.keys(), 0)
 
         for entry in self._walk_directory(self.root_path, 0):
             entries.append(entry)
@@ -190,8 +189,7 @@ class DiskAnalyzer:
                 # Categorize files
                 for category, patterns in CATEGORY_PATTERNS.items():
                     if any(
-                        fnmatch.fnmatch(entry.path.name.lower(), pattern)
-                        for pattern in patterns
+                        fnmatch.fnmatch(entry.path.name.lower(), pattern) for pattern in patterns
                     ):
                         category_sizes[category] += entry.size
                         break

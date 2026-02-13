@@ -5,13 +5,12 @@ This module provides a command-line interface that can be called from bash scrip
 to access Python functionality.
 """
 
-import sys
 import json
+import sys
 from pathlib import Path
-from typing import Any, Dict
 
-from .storage.analyzer import DiskAnalyzer
 from .core.system import get_system_info
+from .storage.analyzer import DiskAnalyzer
 
 
 def storage_analyze(path: str, max_depth: int = 3, output_json: bool = False) -> int:
@@ -109,14 +108,12 @@ def check_python_available() -> int:
     try:
         # Try to import key modules
         from . import __version__
-        from .storage.analyzer import DiskAnalyzer
-        from .core.system import get_system_info
 
         print("PYTHON_AVAILABLE=1")
         print(f"VERSION={__version__}")
         return 0
     except Exception as e:
-        print(f"PYTHON_AVAILABLE=0")
+        print("PYTHON_AVAILABLE=0")
         print(f"ERROR={e}", file=sys.stderr)
         return 1
 
@@ -148,7 +145,10 @@ def main() -> int:
 
     elif command == "analyze":
         if len(sys.argv) < 3:
-            print("Usage: python -m upkeep.bridge analyze <path> [--max-depth N] [--json]", file=sys.stderr)
+            print(
+                "Usage: python -m upkeep.bridge analyze <path> [--max-depth N] [--json]",
+                file=sys.stderr,
+            )
             return 1
 
         path = sys.argv[2]

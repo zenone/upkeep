@@ -2,13 +2,15 @@
 Tests for storage.analyzer module.
 """
 
-import pytest
 from pathlib import Path
+
+import pytest
+
 from upkeep.storage.analyzer import (
+    CATEGORY_PATTERNS,
+    AnalysisResult,
     DiskAnalyzer,
     FileEntry,
-    AnalysisResult,
-    CATEGORY_PATTERNS,
 )
 
 

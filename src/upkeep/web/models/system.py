@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import List
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -12,7 +10,7 @@ class CPUInfo(BaseModel):
 
     percent: float = Field(..., description="CPU usage percentage", ge=0, le=100)
     count: int = Field(..., description="Number of CPU cores", gt=0)
-    history: List[float] = Field(default_factory=list, description="Recent CPU usage history")
+    history: list[float] = Field(default_factory=list, description="Recent CPU usage history")
 
 
 class MemoryInfo(BaseModel):
@@ -22,7 +20,7 @@ class MemoryInfo(BaseModel):
     used_gb: float = Field(..., description="Used memory in GB", ge=0)
     available_gb: float = Field(..., description="Available memory in GB", ge=0)
     percent: float = Field(..., description="Memory usage percentage", ge=0, le=100)
-    history: List[float] = Field(default_factory=list, description="Recent memory usage history")
+    history: list[float] = Field(default_factory=list, description="Recent memory usage history")
 
 
 class DiskInfo(BaseModel):
@@ -32,7 +30,7 @@ class DiskInfo(BaseModel):
     used_gb: float = Field(..., description="Used disk space in GB", ge=0)
     free_gb: float = Field(..., description="Free disk space in GB", ge=0)
     percent: float = Field(..., description="Disk usage percentage", ge=0, le=100)
-    history: List[float] = Field(default_factory=list, description="Recent disk usage history")
+    history: list[float] = Field(default_factory=list, description="Recent disk usage history")
 
 
 class SystemInfo(BaseModel):
@@ -94,9 +92,11 @@ class SystemHealthResponse(BaseModel):
         }
     )
 
-    overall: str = Field(..., description="Overall health status", pattern="^(good|warning|critical)$")
+    overall: str = Field(
+        ..., description="Overall health status", pattern="^(good|warning|critical)$"
+    )
     score: int = Field(..., description="Health score 0-100", ge=0, le=100)
-    issues: List[str] = Field(default_factory=list, description="List of health issues")
+    issues: list[str] = Field(default_factory=list, description="List of health issues")
 
 
 class SparklineResponse(BaseModel):
@@ -112,9 +112,9 @@ class SparklineResponse(BaseModel):
         }
     )
 
-    cpu: List[float] = Field(..., description="CPU usage history")
-    memory: List[float] = Field(..., description="Memory usage history")
-    disk: List[float] = Field(..., description="Disk usage history")
+    cpu: list[float] = Field(..., description="CPU usage history")
+    memory: list[float] = Field(..., description="Memory usage history")
+    disk: list[float] = Field(..., description="Disk usage history")
 
 
 class ProcessInfo(BaseModel):
@@ -143,5 +143,5 @@ class ProcessesResponse(BaseModel):
         }
     )
 
-    top_cpu: List[ProcessInfo] = Field(..., description="Top CPU consumers")
-    top_memory: List[ProcessInfo] = Field(..., description="Top memory consumers")
+    top_cpu: list[ProcessInfo] = Field(..., description="Top CPU consumers")
+    top_memory: list[ProcessInfo] = Field(..., description="Top memory consumers")

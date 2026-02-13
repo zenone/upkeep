@@ -2,8 +2,8 @@
 Tests for CLI main module.
 """
 
-import pytest
 from click.testing import CliRunner
+
 from upkeep.cli.main import main
 
 

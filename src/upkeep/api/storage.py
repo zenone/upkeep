@@ -4,33 +4,30 @@ API-First Design: Clean interface for storage operations.
 Used by Web GUI, CLI, and Web.
 """
 
-from pathlib import Path
-from typing import List, Dict, Optional
-from dataclasses import dataclass, asdict
-import subprocess
 import shutil
+import subprocess
+from dataclasses import asdict, dataclass
+from pathlib import Path
+
+from upkeep.core.exceptions import PathNotFoundError, PathNotReadableError, PathProtectedError
+from upkeep.storage.analyzer import AnalysisResult, DiskAnalyzer, FileEntry
 
 from .base import BaseAPI
-from upkeep.storage.analyzer import DiskAnalyzer, AnalysisResult, FileEntry
-from upkeep.core.exceptions import (
-    PathNotFoundError,
-    PathNotReadableError,
-    PathProtectedError
-)
 
 
 @dataclass
 class StorageAnalysisResult:
     """Result of storage analysis operation."""
+
     success: bool
     path: str
     total_size_bytes: int
     total_size_gb: float
     file_count: int
     dir_count: int
-    category_sizes: Dict[str, int]
-    largest_entries: List[Dict[str, any]]
-    error: Optional[str] = None
+    category_sizes: dict[str, int]
+    largest_entries: list[dict[str, any]]
+    error: str | None = None
 
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization."""
@@ -58,10 +55,7 @@ class StorageAPI(BaseAPI):
     }
 
     def analyze_path(
-        self,
-        path: Path | str,
-        max_depth: int = 3,
-        max_entries: int = 15
+        self, path: Path | str, max_depth: int = 3, max_entries: int = 15
     ) -> StorageAnalysisResult:
         """Analyze storage usage for a given path.
 
@@ -84,12 +78,12 @@ class StorageAPI(BaseAPI):
             path_obj = Path(path) if isinstance(path, str) else path
 
             # Check if Path class is mocked globally (for test_analyze_path_raises_not_found)
-            path_is_mocked = 'Mock' in str(type(Path).__name__)
+            path_is_mocked = "Mock" in str(type(Path).__name__)
 
             # Only check exists() if Path is mocked and the mock returns False
             # This handles test_analyze_path_raises_not_found which patches Path
             # For other tests, let DiskAnalyzer handle validation (may be mocked)
-            if path_is_mocked and hasattr(path_obj, 'exists') and callable(path_obj.exists):
+            if path_is_mocked and hasattr(path_obj, "exists") and callable(path_obj.exists):
                 if not path_obj.exists():
                     raise PathNotFoundError(f"Path not found: {path_obj}")
 
@@ -104,18 +98,24 @@ class StorageAPI(BaseAPI):
 
             # Handle case where entries might be a Mock or list
             largest_entries = []
-            if hasattr(entries, '__iter__') and not isinstance(entries, str):
+            if hasattr(entries, "__iter__") and not isinstance(entries, str):
                 for entry in entries:
-                    largest_entries.append({
-                        'path': str(entry.path),
-                        'size_bytes': entry.size,
-                        'size_gb': entry.size / (1024**3),
-                        'is_dir': entry.is_dir,
-                    })
+                    largest_entries.append(
+                        {
+                            "path": str(entry.path),
+                            "size_bytes": entry.size,
+                            "size_gb": entry.size / (1024**3),
+                            "is_dir": entry.is_dir,
+                        }
+                    )
 
             # Build result (handle Mock objects in tests)
             total_size = result.total_size if isinstance(result.total_size, (int, float)) else 0
-            total_size_gb = total_size / (1024**3) if total_size else (result.total_size_gb if hasattr(result, 'total_size_gb') else 0.0)
+            total_size_gb = (
+                total_size / (1024**3)
+                if total_size
+                else (result.total_size_gb if hasattr(result, "total_size_gb") else 0.0)
+            )
 
             return StorageAnalysisResult(
                 success=True,
@@ -124,9 +124,11 @@ class StorageAPI(BaseAPI):
                 total_size_gb=total_size_gb,
                 file_count=result.file_count if isinstance(result.file_count, int) else 0,
                 dir_count=result.dir_count if isinstance(result.dir_count, int) else 0,
-                category_sizes=result.category_sizes.copy() if hasattr(result.category_sizes, 'copy') else dict(result.category_sizes),
+                category_sizes=result.category_sizes.copy()
+                if hasattr(result.category_sizes, "copy")
+                else dict(result.category_sizes),
                 largest_entries=largest_entries,
-                error=None
+                error=None,
             )
 
         except PermissionError:
@@ -167,11 +169,7 @@ class StorageAPI(BaseAPI):
                 error=str(handled),
             )
 
-    def get_largest_files(
-        self,
-        path: Path | str,
-        limit: int = 10
-    ) -> List[FileEntry]:
+    def get_largest_files(self, path: Path | str, limit: int = 10) -> list[FileEntry]:
         """Get largest files in a directory tree.
 
         Args:
@@ -190,7 +188,7 @@ class StorageAPI(BaseAPI):
         try:
             path = Path(path) if isinstance(path, str) else path
 
-            if hasattr(path, 'exists') and callable(path.exists) and not path.exists():
+            if hasattr(path, "exists") and callable(path.exists) and not path.exists():
                 raise PathNotFoundError(f"Path not found: {path}")
 
             # Run analysis
@@ -210,10 +208,7 @@ class StorageAPI(BaseAPI):
         except Exception as e:
             raise self._handle_error(e)
 
-    def get_category_breakdown(
-        self,
-        path: Path | str
-    ) -> Dict[str, Dict[str, any]]:
+    def get_category_breakdown(self, path: Path | str) -> dict[str, dict[str, any]]:
         """Get storage breakdown by file category.
 
         Args:
@@ -231,7 +226,7 @@ class StorageAPI(BaseAPI):
         try:
             path = Path(path) if isinstance(path, str) else path
 
-            if hasattr(path, 'exists') and callable(path.exists) and not path.exists():
+            if hasattr(path, "exists") and callable(path.exists) and not path.exists():
                 raise PathNotFoundError(f"Path not found: {path}")
 
             # Run analysis
@@ -245,9 +240,9 @@ class StorageAPI(BaseAPI):
 
             for category, size_bytes in result.category_sizes.items():
                 breakdown[category] = {
-                    'size_bytes': size_bytes,
-                    'size_gb': size_bytes / (1024**3),
-                    'percentage': (size_bytes / total_size * 100) if total_size > 0 else 0
+                    "size_bytes": size_bytes,
+                    "size_gb": size_bytes / (1024**3),
+                    "percentage": (size_bytes / total_size * 100) if total_size > 0 else 0,
                 }
 
             return breakdown
@@ -259,7 +254,7 @@ class StorageAPI(BaseAPI):
         except Exception as e:
             raise self._handle_error(e)
 
-    def delete_path(self, path: Path | str, mode: str = 'trash') -> Dict[str, any]:
+    def delete_path(self, path: Path | str, mode: str = "trash") -> dict[str, any]:
         """Delete or move to trash a file or directory.
 
         Args:
@@ -279,7 +274,7 @@ class StorageAPI(BaseAPI):
         path_obj = Path(path) if isinstance(path, str) else path
 
         # Get path string for checks (handle both real paths and mocks)
-        if hasattr(path_obj, 'absolute') and callable(path_obj.absolute):
+        if hasattr(path_obj, "absolute") and callable(path_obj.absolute):
             path_str = str(path_obj.absolute())
         else:
             path_str = str(path)
@@ -291,32 +286,32 @@ class StorageAPI(BaseAPI):
                 raise PathProtectedError(f"Cannot delete protected system path: {path}")
 
         # Also check for .app bundles that might be system apps
-        if path_str.endswith('.app') and '/Applications/' in path_str:
+        if path_str.endswith(".app") and "/Applications/" in path_str:
             # Check if it's a system app (in /Applications or /System)
-            if path_str.startswith('/Applications/Safari') or path_str.startswith('/System/'):
+            if path_str.startswith("/Applications/Safari") or path_str.startswith("/System/"):
                 raise PathProtectedError(f"Cannot delete system application: {path}")
 
         # Now check if path exists (allow tests to mock this)
-        if hasattr(path_obj, 'exists') and callable(path_obj.exists) and not path_obj.exists():
+        if hasattr(path_obj, "exists") and callable(path_obj.exists) and not path_obj.exists():
             return {"success": False, "error": f"Path not found: {path}", "mode": mode}
 
         # Perform deletion
-        if mode == 'trash':
+        if mode == "trash":
             return self._move_to_trash(path_obj)
         else:
             return self._delete_permanent(path_obj)
 
-    def _move_to_trash(self, path: Path) -> Dict[str, any]:
+    def _move_to_trash(self, path: Path) -> dict[str, any]:
         """Move a file or directory to macOS Trash (internal method)."""
         try:
             # Check if path is mocked (for testing)
-            is_mock = 'Mock' in str(type(path).__name__)
+            is_mock = "Mock" in str(type(path).__name__)
             if is_mock:
                 # In tests with mocked Path, just return success
-                return {'success': True, 'error': None, 'mode': 'trash'}
+                return {"success": True, "error": None, "mode": "trash"}
 
             # Get absolute path (handle real paths)
-            if hasattr(path, 'absolute') and callable(path.absolute):
+            if hasattr(path, "absolute") and callable(path.absolute):
                 abs_path = str(path.absolute())
             else:
                 abs_path = str(path)
@@ -329,73 +324,57 @@ class StorageAPI(BaseAPI):
             '''
 
             result = subprocess.run(
-                ['osascript', '-e', applescript],
+                ["osascript", "-e", applescript],
                 capture_output=True,
                 text=True,
                 check=False,
-                timeout=30  # Increased for cloud-synced files (Dropbox, iCloud, etc.)
+                timeout=30,  # Increased for cloud-synced files (Dropbox, iCloud, etc.)
             )
 
             if result.returncode == 0:
-                return {'success': True, 'error': None, 'mode': 'trash'}
+                return {"success": True, "error": None, "mode": "trash"}
             else:
                 error_msg = result.stderr.strip() or "Failed to move to Trash"
                 self.logger.error(f"Trash error: {error_msg}")
-                return {
-                    'success': False,
-                    'error': error_msg,
-                    'mode': 'trash'
-                }
+                return {"success": False, "error": error_msg, "mode": "trash"}
 
         except Exception as e:
             self.logger.error(f"Move to trash error: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'mode': 'trash'
-            }
+            return {"success": False, "error": str(e), "mode": "trash"}
 
-    def _delete_permanent(self, path: Path) -> Dict[str, any]:
+    def _delete_permanent(self, path: Path) -> dict[str, any]:
         """Permanently delete a file or directory (internal method)."""
         try:
             # Check if path is mocked (for testing)
-            is_mock = 'Mock' in str(type(path).__name__)
+            is_mock = "Mock" in str(type(path).__name__)
             if is_mock:
                 # In tests with mocked Path, just return success
-                return {'success': True, 'error': None, 'mode': 'permanent'}
+                return {"success": True, "error": None, "mode": "permanent"}
 
             # Check if it's a directory (handle real paths)
-            is_dir = path.is_dir() if hasattr(path, 'is_dir') and callable(path.is_dir) else False
+            is_dir = path.is_dir() if hasattr(path, "is_dir") and callable(path.is_dir) else False
 
             if is_dir:
                 shutil.rmtree(str(path))
             else:
                 # path.unlink() or direct delete
-                if hasattr(path, 'unlink') and callable(path.unlink):
+                if hasattr(path, "unlink") and callable(path.unlink):
                     path.unlink()
                 else:
                     # Should not reach here with real paths
                     pass
 
-            return {'success': True, 'error': None, 'mode': 'permanent'}
+            return {"success": True, "error": None, "mode": "permanent"}
 
         except PermissionError:
-            return {
-                'success': False,
-                'error': f"Permission denied: {path}",
-                'mode': 'permanent'
-            }
+            return {"success": False, "error": f"Permission denied: {path}", "mode": "permanent"}
         except Exception as e:
             self.logger.error(f"Delete error: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'mode': 'permanent'
-            }
+            return {"success": False, "error": str(e), "mode": "permanent"}
 
-    def move_to_trash(self, path: Path | str) -> Dict[str, any]:
+    def move_to_trash(self, path: Path | str) -> dict[str, any]:
         """Move a file or directory to macOS Trash (public method).
 
         Deprecated: Use delete_path(path, mode='trash') instead.
         """
-        return self.delete_path(path, mode='trash')
+        return self.delete_path(path, mode="trash")

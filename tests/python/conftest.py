@@ -4,10 +4,11 @@ Pytest configuration and fixtures for upkeep tests.
 This module provides shared fixtures and configuration for all Python tests.
 """
 
-import pytest
-from pathlib import Path
-import tempfile
 import shutil
+import tempfile
+from pathlib import Path
+
+import pytest
 
 
 @pytest.fixture

@@ -2,8 +2,10 @@
 Tests for core.system module.
 """
 
-import pytest
 import platform
+
+import pytest
+
 from upkeep.core import system
 
 

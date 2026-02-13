@@ -19,9 +19,9 @@ Usage:
     result = await maintenance.update_homebrew()
 """
 
-from upkeep.api.storage import StorageAPI
 from upkeep.api.maintenance import MaintenanceAPI
 from upkeep.api.schedule import ScheduleAPI
+from upkeep.api.storage import StorageAPI
 
 __all__ = [
     "StorageAPI",

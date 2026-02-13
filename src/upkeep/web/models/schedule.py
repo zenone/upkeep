@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import List, Optional
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -32,9 +29,9 @@ class Schedule(BaseModel):
     enabled: bool = Field(True, description="Whether schedule is active")
     cron: str = Field(..., description="Cron expression (minute hour day month weekday)")
     cron_human: str = Field(..., description="Human-readable cron description")
-    operations: List[str] = Field(..., description="Operation IDs to run", min_length=1)
+    operations: list[str] = Field(..., description="Operation IDs to run", min_length=1)
     created_at: str = Field(..., description="ISO 8601 creation timestamp")
-    last_run: Optional[str] = Field(None, description="ISO 8601 timestamp of last execution")
+    last_run: str | None = Field(None, description="ISO 8601 timestamp of last execution")
     next_run: str = Field(..., description="ISO 8601 timestamp of next scheduled execution")
 
     @field_validator("cron")
@@ -63,7 +60,9 @@ class ScheduleCreate(BaseModel):
 
     name: str = Field(..., description="Schedule name", min_length=1, max_length=100)
     cron: str = Field(..., description="Cron expression", min_length=9)
-    operations: List[str] = Field(..., description="Operation IDs to run", min_length=1, max_length=20)
+    operations: list[str] = Field(
+        ..., description="Operation IDs to run", min_length=1, max_length=20
+    )
     enabled: bool = Field(True, description="Start enabled or disabled")
 
     @field_validator("cron")
@@ -72,7 +71,9 @@ class ScheduleCreate(BaseModel):
         """Validate cron expression format."""
         parts = v.split()
         if len(parts) != 5:
-            raise ValueError("Cron expression must have exactly 5 fields (minute hour day month weekday)")
+            raise ValueError(
+                "Cron expression must have exactly 5 fields (minute hour day month weekday)"
+            )
         return v
 
 
@@ -85,14 +86,16 @@ class ScheduleUpdate(BaseModel):
         }
     )
 
-    name: Optional[str] = Field(None, description="New schedule name", min_length=1, max_length=100)
-    cron: Optional[str] = Field(None, description="New cron expression")
-    operations: Optional[List[str]] = Field(None, description="New operation IDs", min_length=1, max_length=20)
-    enabled: Optional[bool] = Field(None, description="Enable or disable schedule")
+    name: str | None = Field(None, description="New schedule name", min_length=1, max_length=100)
+    cron: str | None = Field(None, description="New cron expression")
+    operations: list[str] | None = Field(
+        None, description="New operation IDs", min_length=1, max_length=20
+    )
+    enabled: bool | None = Field(None, description="Enable or disable schedule")
 
     @field_validator("cron")
     @classmethod
-    def validate_cron(cls, v: Optional[str]) -> Optional[str]:
+    def validate_cron(cls, v: str | None) -> str | None:
         """Validate cron expression format if provided."""
         if v is not None:
             parts = v.split()
@@ -127,7 +130,7 @@ class ScheduleListResponse(BaseModel):
     )
 
     success: bool = Field(True, description="Request succeeded")
-    schedules: List[Schedule] = Field(..., description="All schedules")
+    schedules: list[Schedule] = Field(..., description="All schedules")
     active_count: int = Field(..., description="Number of enabled schedules", ge=0)
 
 
@@ -175,7 +178,11 @@ class ScheduleToggleResponse(BaseModel):
 
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {"success": True, "enabled": False, "message": "Schedule 'Daily Cleanup' disabled"}
+            "example": {
+                "success": True,
+                "enabled": False,
+                "message": "Schedule 'Daily Cleanup' disabled",
+            }
         }
     )
 

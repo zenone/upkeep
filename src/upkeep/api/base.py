@@ -58,7 +58,7 @@ class BaseAPI(ABC):
             **kwargs: Arguments passed to method (for debugging)
         """
         # Sanitize kwargs for logging (remove sensitive data if any)
-        safe_kwargs = {k: v for k, v in kwargs.items() if not k.startswith('_')}
+        safe_kwargs = {k: v for k, v in kwargs.items() if not k.startswith("_")}
         self.logger.info(f"{method} called", extra={"call_args": safe_kwargs})
 
     def _log_error(self, message: str) -> None:
@@ -81,7 +81,4 @@ class BaseAPI(ABC):
         from upkeep.core.exceptions import ValidationError
 
         if not isinstance(path, (str, type(None))):
-            raise ValidationError(
-                f"Path must be a string, got {type(path).__name__}",
-                field="path"
-            )
+            raise ValidationError(f"Path must be a string, got {type(path).__name__}", field="path")

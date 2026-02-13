@@ -3,15 +3,16 @@
 Pydantic models for schedule configuration, validation, and API responses.
 """
 
-from pydantic import BaseModel, Field, field_validator, model_validator
-from typing import List, Optional
+import uuid
 from datetime import datetime, time
 from enum import Enum
-import uuid
+
+from pydantic import BaseModel, Field, model_validator
 
 
 class ScheduleFrequency(str, Enum):
     """Schedule frequency options."""
+
     DAILY = "daily"
     WEEKLY = "weekly"
     MONTHLY = "monthly"
@@ -20,6 +21,7 @@ class ScheduleFrequency(str, Enum):
 
 class DayOfWeek(str, Enum):
     """Days of the week for weekly schedules."""
+
     MONDAY = "monday"
     TUESDAY = "tuesday"
     WEDNESDAY = "wednesday"
@@ -42,85 +44,53 @@ class ScheduleConfig(BaseModel):
     """
 
     # Identification
-    id: Optional[str] = Field(
-        default=None,
-        description="Unique schedule ID (auto-generated UUID)"
-    )
-    name: str = Field(
-        ...,
-        description="Human-readable schedule name",
-        min_length=1,
-        max_length=100
-    )
-    description: Optional[str] = Field(
-        None,
-        description="Optional description of what this schedule does"
+    id: str | None = Field(default=None, description="Unique schedule ID (auto-generated UUID)")
+    name: str = Field(..., description="Human-readable schedule name", min_length=1, max_length=100)
+    description: str | None = Field(
+        None, description="Optional description of what this schedule does"
     )
 
     # Operations to execute
-    operations: List[str] = Field(
-        ...,
-        description="List of maintenance operation IDs to run",
-        min_length=1
+    operations: list[str] = Field(
+        ..., description="List of maintenance operation IDs to run", min_length=1
     )
 
     # Schedule timing
     frequency: ScheduleFrequency = Field(
-        ...,
-        description="How often to run (daily, weekly, monthly)"
+        ..., description="How often to run (daily, weekly, monthly)"
     )
-    time_of_day: time = Field(
-        ...,
-        description="Time of day to run (HH:MM:SS)"
-    )
+    time_of_day: time = Field(..., description="Time of day to run (HH:MM:SS)")
 
     # Frequency-specific fields
-    days_of_week: Optional[List[DayOfWeek]] = Field(
-        None,
-        description="Days for weekly schedules (required for weekly)"
+    days_of_week: list[DayOfWeek] | None = Field(
+        None, description="Days for weekly schedules (required for weekly)"
     )
-    day_of_month: Optional[int] = Field(
+    day_of_month: int | None = Field(
         None,
         description="Day of month (1-28) for monthly schedules",
         ge=1,
-        le=28  # Avoid month-end issues (Feb has 28 days)
+        le=28,  # Avoid month-end issues (Feb has 28 days)
     )
 
     # State
-    enabled: bool = Field(
-        True,
-        description="Whether schedule is currently active"
-    )
+    enabled: bool = Field(True, description="Whether schedule is currently active")
 
     # Scheduling behavior
     wake_mac: bool = Field(
         False,
-        description="Attempt to wake the Mac for this schedule (best-effort; may require admin)"
+        description="Attempt to wake the Mac for this schedule (best-effort; may require admin)",
     )
     notify: bool = Field(
-        True,
-        description="Show a macOS notification after the schedule runs (success/fail summary)"
+        True, description="Show a macOS notification after the schedule runs (success/fail summary)"
     )
 
     # Metadata
-    created_at: Optional[datetime] = Field(
-        None,
-        description="Creation timestamp (auto-set)"
-    )
-    updated_at: Optional[datetime] = Field(
-        None,
-        description="Last update timestamp (auto-set)"
-    )
-    last_run: Optional[datetime] = Field(
-        None,
-        description="Last execution timestamp"
-    )
-    next_run: Optional[datetime] = Field(
-        None,
-        description="Next scheduled execution (calculated)"
-    )
+    created_at: datetime | None = Field(None, description="Creation timestamp (auto-set)")
+    updated_at: datetime | None = Field(None, description="Last update timestamp (auto-set)")
+    last_run: datetime | None = Field(None, description="Last execution timestamp")
+    next_run: datetime | None = Field(None, description="Next scheduled execution (calculated)")
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_schedule_requirements(self):
         """Validate frequency-specific requirements."""
         # Weekly schedules MUST have days_of_week
@@ -151,30 +121,17 @@ class ScheduleConfig(BaseModel):
 
 class ScheduleResponse(BaseModel):
     """API response for single schedule operations."""
+
     success: bool = Field(..., description="Whether operation succeeded")
-    schedule: Optional[ScheduleConfig] = Field(
-        None,
-        description="Schedule data (if successful)"
-    )
-    error: Optional[str] = Field(
-        None,
-        description="Error message (if failed)"
-    )
-    message: Optional[str] = Field(
-        None,
-        description="Additional information"
-    )
+    schedule: ScheduleConfig | None = Field(None, description="Schedule data (if successful)")
+    error: str | None = Field(None, description="Error message (if failed)")
+    message: str | None = Field(None, description="Additional information")
 
 
 class ScheduleListResponse(BaseModel):
     """API response for listing schedules."""
+
     success: bool = Field(..., description="Whether operation succeeded")
-    schedules: List[ScheduleConfig] = Field(
-        default_factory=list,
-        description="List of schedules"
-    )
+    schedules: list[ScheduleConfig] = Field(default_factory=list, description="List of schedules")
     count: int = Field(..., description="Total number of schedules")
-    error: Optional[str] = Field(
-        None,
-        description="Error message (if failed)"
-    )
+    error: str | None = Field(None, description="Error message (if failed)")

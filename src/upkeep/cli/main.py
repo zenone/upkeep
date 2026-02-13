@@ -9,11 +9,12 @@ API-First Architecture:
 Provides unified command-line interface for all features.
 """
 
-import click
 from pathlib import Path
 
+import click
+
 from .. import __version__
-from .commands import status_command, analyze_command
+from .commands import analyze_command, status_command
 
 
 @click.group()
@@ -38,6 +39,7 @@ def web() -> None:
     import subprocess
     import sys
     from pathlib import Path
+
     from rich.console import Console
 
     console = Console()
@@ -60,21 +62,26 @@ def web() -> None:
         console.print("[dim]For sudo support, use: ./run-web.sh[/dim]\n")
         try:
             import uvicorn
-            from upkeep.web.server import app
+
             from upkeep.web.port_utils import find_available_port
+            from upkeep.web.server import app
 
             # Find available port (8080-8089)
             port = find_available_port(8080, 8089)
 
             if port is None:
                 console.print("\n[red]Error: No available ports in range 8080-8089[/red]")
-                console.print("[yellow]Close other applications or specify a different port[/yellow]\n")
+                console.print(
+                    "[yellow]Close other applications or specify a different port[/yellow]\n"
+                )
                 sys.exit(1)
 
             if port != 8080:
                 console.print(f"[yellow]Port 8080 in use, using port {port} instead[/yellow]")
 
-            console.print(f"\n[bold green]Starting server on http://127.0.0.1:{port}[/bold green]\n")
+            console.print(
+                f"\n[bold green]Starting server on http://127.0.0.1:{port}[/bold green]\n"
+            )
 
             uvicorn.run(app, host="127.0.0.1", port=port)
         except KeyboardInterrupt:

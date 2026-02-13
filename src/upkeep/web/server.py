@@ -4,47 +4,44 @@ Provides REST API endpoints and serves static web UI.
 Uses secure launchd daemon for privileged operations (no password handling).
 """
 
+import json
 import logging
+import sys
+import time
+from collections import deque
 from contextlib import asynccontextmanager
+from pathlib import Path
+from typing import Any
+
+import psutil
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
-from pathlib import Path
-import psutil
-import json
-import sys
-from typing import Dict, Any, List
-from pydantic import BaseModel
-from collections import deque
-import time
+from fastapi.staticfiles import StaticFiles
 
-from upkeep.api import StorageAPI, MaintenanceAPI, ScheduleAPI
-from upkeep.core.launchd import LaunchdGenerator
-from upkeep.core import system as system_utils
 from upkeep import __version__
+from upkeep.api import MaintenanceAPI, ScheduleAPI, StorageAPI
+from upkeep.core import system as system_utils
+from upkeep.core.launchd import LaunchdGenerator
 from upkeep.web.models import (
-    SystemInfoResponse,
-    SystemHealthResponse,
-    SparklineResponse,
-    ProcessesResponse,
-    StorageAnalyzeResponse,
     DeleteResponse,
-    DeleteRequest,
-    OperationsListResponse,
     LastRunResponse,
+    OperationsListResponse,
+    ProcessesResponse,
     RunOperationsRequest,
-    OperationEvent,
-    ErrorResponse,
+    SparklineResponse,
+    StorageAnalyzeResponse,
     SuccessResponse,
+    SystemHealthResponse,
+    SystemInfoResponse,
 )
 
 # Configure logging for API modules
 # This ensures API loggers (api.MaintenanceAPI, api.StorageAPI, etc.) output to console
 logging.basicConfig(
     level=logging.INFO,
-    format='%(levelname)s:     %(name)s - %(message)s',
-    force=True  # Override any existing configuration
+    format="%(levelname)s:     %(name)s - %(message)s",
+    force=True,  # Override any existing configuration
 )
 
 # System metrics history (circular buffer for last 60 data points)
@@ -52,8 +49,9 @@ system_history = {
     "cpu": deque(maxlen=60),
     "memory": deque(maxlen=60),
     "disk": deque(maxlen=60),
-    "timestamps": deque(maxlen=60)
+    "timestamps": deque(maxlen=60),
 }
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -84,7 +82,6 @@ async def lifespan(app: FastAPI):
 # Initialize FastAPI app with comprehensive OpenAPI configuration
 app = FastAPI(
     lifespan=lifespan,
-
     title="Upkeep API",
     version=__version__,
     description="""
@@ -185,7 +182,7 @@ async def startup_event():
 
 # Health check
 @app.get("/api/health", tags=["system"])
-async def health_check() -> Dict[str, str]:
+async def health_check() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "healthy", "version": __version__}
 
@@ -198,7 +195,7 @@ async def health_check() -> Dict[str, str]:
     summary="Get system information",
     description="Returns real-time CPU, memory, disk usage, and system details with historical data for trend analysis.",
 )
-async def get_system_info() -> Dict[str, Any]:
+async def get_system_info() -> dict[str, Any]:
     """Get system information (CPU, memory, disk, username) with history for trends."""
     try:
         # CPU
@@ -216,7 +213,7 @@ async def get_system_info() -> Dict[str, Any]:
         current_time = time.time()
 
         # Calculate network rates (bytes per second)
-        if hasattr(get_system_info, '_last_net_io') and hasattr(get_system_info, '_last_time'):
+        if hasattr(get_system_info, "_last_net_io") and hasattr(get_system_info, "_last_time"):
             time_delta = current_time - get_system_info._last_time
             if time_delta > 0:
                 bytes_sent_delta = net_io.bytes_sent - get_system_info._last_net_io.bytes_sent
@@ -302,7 +299,7 @@ async def get_system_info() -> Dict[str, Any]:
     summary="Get system health assessment",
     description="Calculates overall system health score (0-100) based on CPU, memory, and disk usage with issue detection.",
 )
-async def get_system_health() -> Dict[str, Any]:
+async def get_system_health() -> dict[str, Any]:
     """Calculate overall system health score (0-100)."""
     try:
         # Get current metrics
@@ -316,9 +313,7 @@ async def get_system_health() -> Dict[str, Any]:
         disk_score = max(0, 100 - disk_percent)
 
         # Weighted average: Memory 40%, CPU 30%, Disk 30%
-        overall_score = int(
-            (cpu_score * 0.3) + (memory_score * 0.4) + (disk_score * 0.3)
-        )
+        overall_score = int((cpu_score * 0.3) + (memory_score * 0.4) + (disk_score * 0.3))
 
         # Determine overall status based on worst component
         # Map to expected values: "good", "warning", "critical"
@@ -358,45 +353,49 @@ async def get_system_health() -> Dict[str, Any]:
     summary="Get top resource consumers",
     description="Returns top CPU and memory consuming processes for resource monitoring.",
 )
-async def get_top_processes(limit: int = 3) -> Dict[str, Any]:
+async def get_top_processes(limit: int = 3) -> dict[str, Any]:
     """Get top CPU and memory consuming processes."""
     try:
         processes = []
 
         # Iterate through all processes
-        for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']):
+        for proc in psutil.process_iter(["pid", "name", "cpu_percent", "memory_info"]):
             try:
                 pinfo = proc.info
-                processes.append({
-                    'pid': pinfo['pid'],
-                    'name': pinfo['name'],
-                    'cpu_percent': pinfo['cpu_percent'] or 0.0,
-                    'memory_mb': (pinfo['memory_info'].rss / (1024 * 1024)) if pinfo['memory_info'] else 0.0
-                })
+                processes.append(
+                    {
+                        "pid": pinfo["pid"],
+                        "name": pinfo["name"],
+                        "cpu_percent": pinfo["cpu_percent"] or 0.0,
+                        "memory_mb": (pinfo["memory_info"].rss / (1024 * 1024))
+                        if pinfo["memory_info"]
+                        else 0.0,
+                    }
+                )
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
 
         # Sort by CPU and get top N
-        top_cpu = sorted(processes, key=lambda x: x['cpu_percent'], reverse=True)[:limit]
+        top_cpu = sorted(processes, key=lambda x: x["cpu_percent"], reverse=True)[:limit]
 
         # Sort by memory and get top N
-        top_memory = sorted(processes, key=lambda x: x['memory_mb'], reverse=True)[:limit]
+        top_memory = sorted(processes, key=lambda x: x["memory_mb"], reverse=True)[:limit]
 
         # Return with ALL fields required by ProcessInfo model
         return {
             "top_cpu": [
                 {
-                    "name": p['name'],
-                    "cpu_percent": round(p['cpu_percent'], 1),
-                    "memory_mb": round(p['memory_mb'], 1)
+                    "name": p["name"],
+                    "cpu_percent": round(p["cpu_percent"], 1),
+                    "memory_mb": round(p["memory_mb"], 1),
                 }
                 for p in top_cpu
             ],
             "top_memory": [
                 {
-                    "name": p['name'],
-                    "cpu_percent": round(p['cpu_percent'], 1),
-                    "memory_mb": round(p['memory_mb'], 1)
+                    "name": p["name"],
+                    "cpu_percent": round(p["cpu_percent"], 1),
+                    "memory_mb": round(p["memory_mb"], 1),
                 }
                 for p in top_memory
             ],
@@ -413,7 +412,7 @@ async def get_top_processes(limit: int = 3) -> Dict[str, Any]:
     summary="Get historical metrics for charts",
     description="Returns historical CPU, memory, and disk usage data for sparkline chart visualization.",
 )
-async def get_sparkline_data() -> Dict[str, Any]:
+async def get_sparkline_data() -> dict[str, Any]:
     """Get full historical data for sparkline charts (last 60 data points)."""
     try:
         return {
@@ -421,7 +420,7 @@ async def get_sparkline_data() -> Dict[str, Any]:
             "memory": list(system_history["memory"]),
             "disk": list(system_history["disk"]),
             "timestamps": list(system_history["timestamps"]),
-            "count": len(system_history["cpu"])
+            "count": len(system_history["cpu"]),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting sparkline data: {e}")
@@ -435,9 +434,8 @@ async def get_sparkline_data() -> Dict[str, Any]:
     summary="Reload maintenance scripts",
     description="Copies the updated maintain.sh script from source to the system location used by the daemon.",
 )
-async def reload_scripts() -> Dict[str, Any]:
+async def reload_scripts() -> dict[str, Any]:
     """Copy maintain.sh from source to /usr/local/lib/upkeep/."""
-    import os
     import shutil
     import subprocess
 
@@ -447,16 +445,12 @@ async def reload_scripts() -> Dict[str, Any]:
         dest_path = Path("/usr/local/lib/upkeep/maintain.sh")
 
         if not source_path.exists():
-            raise HTTPException(
-                status_code=404,
-                detail=f"Source script not found at {source_path}"
-            )
+            raise HTTPException(status_code=404, detail=f"Source script not found at {source_path}")
 
         # Check if destination directory exists
         if not dest_path.parent.exists():
             raise HTTPException(
-                status_code=404,
-                detail=f"Destination directory not found: {dest_path.parent}"
+                status_code=404, detail=f"Destination directory not found: {dest_path.parent}"
             )
 
         # Copy file without sudo - will work if user has write permissions
@@ -469,35 +463,32 @@ async def reload_scripts() -> Dict[str, Any]:
                 ["sudo", "-n", "cp", str(source_path), str(dest_path)],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=10,
             )
             if result.returncode != 0:
                 raise HTTPException(
                     status_code=403,
-                    detail=f"Permission denied. Add sudoers rule: 'sudo tee /etc/sudoers.d/upkeep-reload <<< \"$(whoami) ALL=(ALL) NOPASSWD: /bin/cp {source_path} {dest_path}\"'"
+                    detail=f"Permission denied. Add sudoers rule: 'sudo tee /etc/sudoers.d/upkeep-reload <<< \"$(whoami) ALL=(ALL) NOPASSWD: /bin/cp {source_path} {dest_path}\"'",
                 )
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to copy: {e}")
 
         # Verify succeeded
-        result = type('obj', (object,), {'returncode': 0, 'stderr': ''})()
+        result = type("obj", (object,), {"returncode": 0, "stderr": ""})()
 
         if result.returncode != 0:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to copy script: {result.stderr}"
-            )
+            raise HTTPException(status_code=500, detail=f"Failed to copy script: {result.stderr}")
 
         # Verify the copy succeeded
         if not dest_path.exists():
             raise HTTPException(
                 status_code=500,
-                detail="Script copy appeared to succeed but destination file not found"
+                detail="Script copy appeared to succeed but destination file not found",
             )
 
         return {
             "success": True,
-            "message": f"Scripts reloaded successfully. Changes will take effect on next operation."
+            "message": "Scripts reloaded successfully. Changes will take effect on next operation.",
         }
 
     except subprocess.TimeoutExpired:
@@ -514,7 +505,7 @@ async def reload_scripts() -> Dict[str, Any]:
     summary="Analyze storage usage",
     description="Analyzes disk usage for a given path and returns largest files/directories (up to 50 entries).",
 )
-async def analyze_storage(path: str = str(Path.home())) -> Dict[str, Any]:
+async def analyze_storage(path: str = str(Path.home())) -> dict[str, Any]:
     """Analyze storage usage for a given path."""
     try:
         result = storage_api.analyze_path(path, max_depth=3, max_entries=20)
@@ -533,7 +524,7 @@ async def analyze_storage(path: str = str(Path.home())) -> Dict[str, Any]:
     summary="Delete file or directory",
     description="Deletes a file or directory either by moving to Trash (recoverable) or permanently (cannot be undone).",
 )
-async def delete_path(path: str, mode: str = 'trash') -> Dict[str, Any]:
+async def delete_path(path: str, mode: str = "trash") -> dict[str, Any]:
     """Delete or move to trash a file or directory.
 
     Args:
@@ -545,19 +536,17 @@ async def delete_path(path: str, mode: str = 'trash') -> Dict[str, Any]:
     """
     try:
         # Validate mode parameter
-        if mode not in ['trash', 'permanent']:
-            raise HTTPException(status_code=400, detail=f"Invalid mode: {mode}. Use 'trash' or 'permanent'")
+        if mode not in ["trash", "permanent"]:
+            raise HTTPException(
+                status_code=400, detail=f"Invalid mode: {mode}. Use 'trash' or 'permanent'"
+            )
 
         result = storage_api.delete_path(path, mode=mode)
-        if not result['success']:
-            raise HTTPException(status_code=400, detail=result['error'])
+        if not result["success"]:
+            raise HTTPException(status_code=400, detail=result["error"])
 
         # Add path to response (required by DeleteResponse model)
-        return {
-            'success': result['success'],
-            'path': path,
-            'error': result.get('error')
-        }
+        return {"success": result["success"], "path": path, "error": result.get("error")}
     except HTTPException:
         raise  # Re-raise HTTP exceptions
     except Exception as e:
@@ -572,7 +561,7 @@ async def delete_path(path: str, mode: str = 'trash') -> Dict[str, Any]:
     summary="List available maintenance operations",
     description="Returns all available maintenance operations with their metadata, categories, and requirements.",
 )
-async def get_operations() -> Dict[str, Any]:
+async def get_operations() -> dict[str, Any]:
     """Get list of available maintenance operations."""
     try:
         operations = maintenance_api.get_operations()
@@ -609,6 +598,7 @@ async def run_operations(request: RunOperationsRequest):
     Returns a Server-Sent Events (SSE) stream with real-time progress.
     Operations are executed by the secure launchd daemon (no authentication needed).
     """
+
     async def event_generator():
         """Generate SSE events from maintenance operations."""
         try:
@@ -641,7 +631,7 @@ async def run_operations(request: RunOperationsRequest):
     summary="Skip current operation",
     description="Skips the currently running maintenance operation and proceeds to the next one in the queue.",
 )
-async def skip_current_operation() -> Dict[str, Any]:
+async def skip_current_operation() -> dict[str, Any]:
     """Skip the current maintenance operation and move to the next."""
     try:
         skipped = maintenance_api.skip_current_operation()
@@ -652,6 +642,7 @@ async def skip_current_operation() -> Dict[str, Any]:
         }
     except Exception as e:
         import traceback
+
         logger.error(f"Skip operation error: {e}")
         logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error skipping operation: {e}")
@@ -664,7 +655,7 @@ async def skip_current_operation() -> Dict[str, Any]:
     summary="Cancel all operations",
     description="Cancels all currently running maintenance operations immediately.",
 )
-async def cancel_operations() -> Dict[str, Any]:
+async def cancel_operations() -> dict[str, Any]:
     """Cancel running maintenance operations."""
     try:
         cancelled = maintenance_api.cancel_operations()
@@ -693,7 +684,7 @@ Provides real-time visibility into:
 This prevents confusion when operations appear hung - user can see if daemon is actively processing.
     """,
 )
-async def get_queue_status() -> Dict[str, Any]:
+async def get_queue_status() -> dict[str, Any]:
     """Get current queue status and operation progress."""
     try:
         return maintenance_api.get_queue_status()
@@ -711,7 +702,7 @@ Runs a quick preflight to detect missing tools and common issues that would caus
 Returns a list of issues with optional guided fixes.
     """,
 )
-async def maintenance_doctor() -> Dict[str, Any]:
+async def maintenance_doctor() -> dict[str, Any]:
     import shutil
     import subprocess
 
@@ -721,42 +712,56 @@ async def maintenance_doctor() -> Dict[str, Any]:
     issues: list[dict[str, Any]] = []
 
     # Homebrew
-    if not _has("brew") and not Path("/opt/homebrew/bin/brew").exists() and not Path("/usr/local/bin/brew").exists():
-        issues.append({
-            "id": "missing_brew",
-            "severity": "warning",
-            "title": "Homebrew not installed",
-            "detail": "Homebrew is required for Homebrew and mas-based update operations.",
-            "affects_operations": ["brew-update", "brew-cleanup", "mas-update"],
-            "fix_action": "install_homebrew",
-            "fix_label": "Install Homebrew",
-        })
+    if (
+        not _has("brew")
+        and not Path("/opt/homebrew/bin/brew").exists()
+        and not Path("/usr/local/bin/brew").exists()
+    ):
+        issues.append(
+            {
+                "id": "missing_brew",
+                "severity": "warning",
+                "title": "Homebrew not installed",
+                "detail": "Homebrew is required for Homebrew and mas-based update operations.",
+                "affects_operations": ["brew-update", "brew-cleanup", "mas-update"],
+                "fix_action": "install_homebrew",
+                "fix_label": "Install Homebrew",
+            }
+        )
 
     # mas (Mac App Store CLI)
-    if not _has("mas") and not Path("/opt/homebrew/bin/mas").exists() and not Path("/usr/local/bin/mas").exists():
-        issues.append({
-            "id": "missing_mas",
-            "severity": "warning",
-            "title": "mas (App Store CLI) not installed",
-            "detail": "mas is used to update Mac App Store applications.",
-            "affects_operations": ["mas-update"],
-            "fix_action": "install_mas",
-            "fix_label": "Install mas",
-        })
+    if (
+        not _has("mas")
+        and not Path("/opt/homebrew/bin/mas").exists()
+        and not Path("/usr/local/bin/mas").exists()
+    ):
+        issues.append(
+            {
+                "id": "missing_mas",
+                "severity": "warning",
+                "title": "mas (App Store CLI) not installed",
+                "detail": "mas is used to update Mac App Store applications.",
+                "affects_operations": ["mas-update"],
+                "fix_action": "install_mas",
+                "fix_label": "Install mas",
+            }
+        )
 
     # Xcode Command Line Tools (common Homebrew prerequisite)
     try:
         res = subprocess.run(["xcode-select", "-p"], capture_output=True, text=True, timeout=3)
         if res.returncode != 0:
-            issues.append({
-                "id": "missing_xcode_clt",
-                "severity": "warning",
-                "title": "Xcode Command Line Tools not installed",
-                "detail": "Some tools (especially Homebrew) require Xcode Command Line Tools.",
-                "affects_operations": ["brew-update", "brew-cleanup", "mas-update"],
-                "fix_action": "install_xcode_clt",
-                "fix_label": "Install Xcode CLT",
-            })
+            issues.append(
+                {
+                    "id": "missing_xcode_clt",
+                    "severity": "warning",
+                    "title": "Xcode Command Line Tools not installed",
+                    "detail": "Some tools (especially Homebrew) require Xcode Command Line Tools.",
+                    "affects_operations": ["brew-update", "brew-cleanup", "mas-update"],
+                    "fix_action": "install_xcode_clt",
+                    "fix_label": "Install Xcode CLT",
+                }
+            )
     except Exception:
         pass
 
@@ -768,7 +773,7 @@ async def maintenance_doctor() -> Dict[str, Any]:
     tags=["maintenance"],
     summary="Start a guided fix for a doctor issue",
 )
-async def maintenance_doctor_fix(request: Request) -> Dict[str, Any]:
+async def maintenance_doctor_fix(request: Request) -> dict[str, Any]:
     data = await request.json()
     action = data.get("action")
 
@@ -780,21 +785,23 @@ async def maintenance_doctor_fix(request: Request) -> Dict[str, Any]:
     def open_terminal(command: str) -> None:
         script = f'''tell application "Terminal"
   activate
-  do script "{command.replace('\\', '\\\\').replace('"', '\\"')}"
+  do script "{command.replace("\\", "\\\\").replace('"', '\\"')}"
 end tell'''
         subprocess.Popen(["osascript", "-e", script])
 
     if action == "install_homebrew":
-        open_terminal('/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"')
+        open_terminal(
+            '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+        )
         return {"success": True, "message": "Opened Terminal to install Homebrew"}
 
     if action == "install_mas":
         # Requires brew; if brew is missing the user should run Homebrew install first.
-        open_terminal('brew install mas')
+        open_terminal("brew install mas")
         return {"success": True, "message": "Opened Terminal to install mas"}
 
     if action == "install_xcode_clt":
-        open_terminal('xcode-select --install')
+        open_terminal("xcode-select --install")
         return {"success": True, "message": "Opened the Xcode Command Line Tools installer"}
 
     return {"success": False, "message": "No action taken"}
@@ -817,7 +824,7 @@ Includes:
 Checks ~/Library/Logs/upkeep for operation history.
     """,
 )
-async def get_last_run() -> Dict[str, Any]:
+async def get_last_run() -> dict[str, Any]:
     """Get timestamp of last maintenance run from timestamp file.
 
     Checks the ~/Library/Logs/upkeep directory for the last_run_timestamp.txt
@@ -878,6 +885,7 @@ async def get_last_run() -> Dict[str, Any]:
             timestamp_str = timestamp_file.read_text().strip()
             # Parse ISO format timestamp
             from datetime import datetime
+
             last_run_datetime = datetime.fromisoformat(timestamp_str)
             mtime = last_run_datetime.timestamp()
             last_run_iso = timestamp_str
@@ -961,7 +969,9 @@ async def get_last_run() -> Dict[str, Any]:
                         durations_success = op_data.get("durations_seconds", [])
                         if not isinstance(durations_success, list):
                             durations_success = []
-                        med_success = _median([d for d in durations_success if isinstance(d, (int, float))])
+                        med_success = _median(
+                            [d for d in durations_success if isinstance(d, (int, float))]
+                        )
 
                         durations_all = op_data.get("durations_all_seconds", [])
                         if not isinstance(durations_all, list):
@@ -970,7 +980,11 @@ async def get_last_run() -> Dict[str, Any]:
 
                         # Prefer median of successful runs; fallback to median of all runs.
                         med = med_success if med_success is not None else med_all
-                        basis = "success" if med_success is not None else ("all" if med_all is not None else None)
+                        basis = (
+                            "success"
+                            if med_success is not None
+                            else ("all" if med_all is not None else None)
+                        )
 
                         operations_history[op_id] = {
                             "last_run": op_data["last_run"],
@@ -1004,6 +1018,7 @@ async def get_last_run() -> Dict[str, Any]:
 # SCHEDULE ENDPOINTS
 # ===================================================================
 
+
 @app.get("/api/schedules", tags=["schedules"])
 async def list_schedules():
     """List all scheduled maintenance tasks.
@@ -1014,6 +1029,7 @@ async def list_schedules():
     try:
         # Get storage path from environment or use default
         import os
+
         storage_path = os.getenv("MAC_MAINTENANCE_SCHEDULE_STORAGE")
 
         schedule_api = ScheduleAPI(storage_path=Path(storage_path) if storage_path else None)
@@ -1037,12 +1053,19 @@ async def get_schedule_templates():
         {
             "name": "Essential Weekly Maintenance",
             "description": "Recommended weekly maintenance: updates, disk health, and basic cleanup",
-            "operations": ["disk-verify", "trim-caches", "trim-logs", "brew-update", "mas-update", "periodic"],
+            "operations": [
+                "disk-verify",
+                "trim-caches",
+                "trim-logs",
+                "brew-update",
+                "mas-update",
+                "periodic",
+            ],
             "frequency": "weekly",
             "time_of_day": "03:00:00",
             "days_of_week": ["sunday"],
             "icon": "⭐",
-            "recommended": True
+            "recommended": True,
         },
         {
             "name": "Light Daily Cleanup",
@@ -1050,16 +1073,24 @@ async def get_schedule_templates():
             "operations": ["trim-logs", "dns-flush"],
             "frequency": "daily",
             "time_of_day": "02:00:00",
-            "icon": "🧹"
+            "icon": "🧹",
         },
         {
             "name": "Deep Monthly Maintenance",
             "description": "Comprehensive monthly check: disk health, caches, and system scripts",
-            "operations": ["disk-verify", "smart-check", "trim-caches", "browser-cache", "mail-optimize", "periodic", "spotlight-status"],
+            "operations": [
+                "disk-verify",
+                "smart-check",
+                "trim-caches",
+                "browser-cache",
+                "mail-optimize",
+                "periodic",
+                "spotlight-status",
+            ],
             "frequency": "monthly",
             "time_of_day": "04:00:00",
             "day_of_month": 1,
-            "icon": "🔧"
+            "icon": "🔧",
         },
         {
             "name": "Software Updates Weekly",
@@ -1068,35 +1099,54 @@ async def get_schedule_templates():
             "frequency": "weekly",
             "time_of_day": "10:00:00",
             "days_of_week": ["saturday"],
-            "icon": "📦"
+            "icon": "📦",
         },
         {
             "name": "Developer Cleanup Monthly",
             "description": "Developer-focused cleanup: Xcode, npm, pip, Go caches (20-60GB savings)",
-            "operations": ["dev-cache", "dev-tools-cache", "browser-cache", "trim-caches", "brew-cleanup"],
+            "operations": [
+                "dev-cache",
+                "dev-tools-cache",
+                "browser-cache",
+                "trim-caches",
+                "brew-cleanup",
+            ],
             "frequency": "monthly",
             "time_of_day": "03:00:00",
             "day_of_month": 15,
-            "icon": "💻"
+            "icon": "💻",
         },
         {
             "name": "Security Focus Weekly",
             "description": "Security-first maintenance: all updates plus disk integrity checks",
-            "operations": ["macos-check", "brew-update", "mas-update", "disk-verify", "smart-check"],
+            "operations": [
+                "macos-check",
+                "brew-update",
+                "mas-update",
+                "disk-verify",
+                "smart-check",
+            ],
             "frequency": "weekly",
             "time_of_day": "09:00:00",
             "days_of_week": ["monday"],
-            "icon": "🔒"
+            "icon": "🔒",
         },
         {
             "name": "Storage Recovery",
             "description": "Maximum space recovery: all cleanup operations (run when disk is full)",
-            "operations": ["browser-cache", "dev-cache", "dev-tools-cache", "trim-caches", "trim-logs", "brew-cleanup"],
+            "operations": [
+                "browser-cache",
+                "dev-cache",
+                "dev-tools-cache",
+                "trim-caches",
+                "trim-logs",
+                "brew-cleanup",
+            ],
             "frequency": "monthly",
             "time_of_day": "02:00:00",
             "day_of_month": 1,
-            "icon": "💾"
-        }
+            "icon": "💾",
+        },
     ]
 
     return {"templates": templates}
@@ -1114,6 +1164,7 @@ async def get_schedule(schedule_id: str):
     """
     try:
         import os
+
         storage_path = os.getenv("MAC_MAINTENANCE_SCHEDULE_STORAGE")
 
         schedule_api = ScheduleAPI(storage_path=Path(storage_path) if storage_path else None)
@@ -1191,6 +1242,7 @@ async def create_schedule(request: Request):
     """
     try:
         import os
+
         storage_path = os.getenv("MAC_MAINTENANCE_SCHEDULE_STORAGE")
 
         # Parse request body
@@ -1241,6 +1293,7 @@ async def update_schedule(schedule_id: str, request: Request):
     """
     try:
         import os
+
         storage_path = os.getenv("MAC_MAINTENANCE_SCHEDULE_STORAGE")
 
         # Parse request body
@@ -1257,7 +1310,9 @@ async def update_schedule(schedule_id: str, request: Request):
                 raise HTTPException(status_code=400, detail=response.error)
 
         # Update launchd registration if enabled state changed
-        if "enabled" in updates or any(key in updates for key in ["frequency", "time_of_day", "days_of_week", "day_of_month"]):
+        if "enabled" in updates or any(
+            key in updates for key in ["frequency", "time_of_day", "days_of_week", "day_of_month"]
+        ):
             launchd = LaunchdGenerator()
             try:
                 # Unregister old plist
@@ -1271,9 +1326,15 @@ async def update_schedule(schedule_id: str, request: Request):
                 print(f"Warning: Failed to update launchd: {e}")
 
         # Best-effort wake scheduling (optional)
-        if "wake_mac" in updates or any(key in updates for key in ["frequency", "time_of_day", "days_of_week"]):
+        if "wake_mac" in updates or any(
+            key in updates for key in ["frequency", "time_of_day", "days_of_week"]
+        ):
             try:
-                if response.schedule and getattr(response.schedule, "wake_mac", False) and response.schedule.enabled:
+                if (
+                    response.schedule
+                    and getattr(response.schedule, "wake_mac", False)
+                    and response.schedule.enabled
+                ):
                     _configure_pmset_wake(response.schedule)
             except Exception as e:
                 print(f"Warning: Failed to configure wake schedule: {e}")
@@ -1298,6 +1359,7 @@ async def delete_schedule(schedule_id: str):
     """
     try:
         import os
+
         storage_path = os.getenv("MAC_MAINTENANCE_SCHEDULE_STORAGE")
 
         # Unregister from launchd first
@@ -1336,6 +1398,7 @@ async def toggle_schedule_enabled(schedule_id: str, request: Request):
     """
     try:
         import os
+
         storage_path = os.getenv("MAC_MAINTENANCE_SCHEDULE_STORAGE")
 
         # Parse request body
@@ -1385,6 +1448,7 @@ async def run_schedule_now(schedule_id: str):
     """
     try:
         import os
+
         storage_path = os.getenv("MAC_MAINTENANCE_SCHEDULE_STORAGE")
 
         # Get schedule
@@ -1402,21 +1466,15 @@ async def run_schedule_now(schedule_id: str):
             success = await run_scheduled_task_async(schedule_id, lock_wait_seconds=60)
         except Exception as e:
             # Surface the underlying reason to the UI
-            return {
-                "success": False,
-                "message": f"Schedule execution error: {e}"
-            }
+            return {"success": False, "message": f"Schedule execution error: {e}"}
 
         if success:
             return {
                 "success": True,
-                "message": f"Schedule '{response.schedule.name}' executed successfully"
+                "message": f"Schedule '{response.schedule.name}' executed successfully",
             }
         else:
-            return {
-                "success": False,
-                "message": "Schedule execution failed (check ~/.upkeep/logs)"
-            }
+            return {"success": False, "message": "Schedule execution failed (check ~/.upkeep/logs)"}
 
     except HTTPException:
         raise
@@ -1440,11 +1498,16 @@ if static_dir.exists():
         if favicon_path.exists():
             return FileResponse(favicon_path, media_type="image/svg+xml")
         # Fallback if SVG doesn't exist
-        return FileResponse(static_dir / "favicon.ico") if (static_dir / "favicon.ico").exists() else None
+        return (
+            FileResponse(static_dir / "favicon.ico")
+            if (static_dir / "favicon.ico").exists()
+            else None
+        )
 
     # Mount static files for CSS/JS
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 else:
+
     @app.get("/")
     async def read_root():
         """API root - static files not found."""
@@ -1458,6 +1521,7 @@ else:
 
 if __name__ == "__main__":
     import uvicorn
+
     from .port_utils import find_available_port
 
     # Find available port (8080-8089)

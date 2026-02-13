@@ -13,18 +13,18 @@ Key Concepts:
 import asyncio
 import logging
 import os
-import subprocess
 import plistlib
 import re
+import subprocess
 import sys
-from pathlib import Path
-from typing import Dict, List, Optional, Any
 from datetime import datetime
+from pathlib import Path
+from typing import Any
 
 from upkeep.api.models.schedule import (
+    DayOfWeek,
     ScheduleConfig,
     ScheduleFrequency,
-    DayOfWeek,
 )
 from upkeep.core.exceptions import ValidationError
 
@@ -39,7 +39,7 @@ class LaunchdGenerator:
     - Provides registration status checks
     """
 
-    def __init__(self, plist_dir: Optional[Path] = None):
+    def __init__(self, plist_dir: Path | None = None):
         """Initialize LaunchdGenerator.
 
         Args:
@@ -60,7 +60,7 @@ class LaunchdGenerator:
 
         self.logger.info(f"LaunchdGenerator initialized with plist_dir: {self.plist_dir}")
 
-    def generate_plist(self, schedule: ScheduleConfig) -> Dict[str, Any]:
+    def generate_plist(self, schedule: ScheduleConfig) -> dict[str, Any]:
         """Generate launchd plist dictionary for a schedule.
 
         Args:
@@ -113,7 +113,7 @@ class LaunchdGenerator:
 
         return plist
 
-    def _ensure_runner_script(self) -> Optional[Path]:
+    def _ensure_runner_script(self) -> Path | None:
         """Ensure the schedule runner exists and is executable.
 
         We intentionally make the runner script the *first* ProgramArguments entry so
@@ -188,11 +188,13 @@ exec \"$PYTHON\" -m upkeep.scripts.run_schedule \"$1\"
             # Create interval for each day
             intervals = []
             for day in schedule.days_of_week:
-                intervals.append({
-                    "Hour": hour,
-                    "Minute": minute,
-                    "Weekday": day_map[day],
-                })
+                intervals.append(
+                    {
+                        "Hour": hour,
+                        "Minute": minute,
+                        "Weekday": day_map[day],
+                    }
+                )
 
             return intervals
 
@@ -235,7 +237,7 @@ exec \"$PYTHON\" -m upkeep.scripts.run_schedule \"$1\"
         plist_path = self.get_plist_path(schedule.id)
 
         # Write plist
-        with open(plist_path, 'wb') as f:
+        with open(plist_path, "wb") as f:
             plistlib.dump(plist_dict, f)
 
         self.logger.info(f"Saved plist: {plist_path}")
@@ -441,10 +443,10 @@ exec \"$PYTHON\" -m upkeep.scripts.run_schedule \"$1\"
 
         # Must contain only alphanumeric, dash, and underscore
         # Prevents path traversal (../) and command injection (; rm -rf /)
-        pattern = re.compile(r'^schedule-[a-zA-Z0-9\-]+$')
+        pattern = re.compile(r"^schedule-[a-zA-Z0-9\-]+$")
         return pattern.match(schedule_id) is not None
 
-    def list_registered_schedules(self) -> List[str]:
+    def list_registered_schedules(self) -> list[str]:
         """List all registered schedule IDs.
 
         Returns:
@@ -551,7 +553,7 @@ async def run_scheduled_task_async(schedule_id: str, *, lock_wait_seconds: int =
                     [
                         "osascript",
                         "-e",
-                        f'display notification "{message.replace("\"", "\\\"")}" with title "{title.replace("\"", "\\\"")}"',
+                        f'display notification "{message.replace('"', '\\"')}" with title "{title.replace('"', '\\"')}"',
                     ],
                     check=False,
                     timeout=5,
@@ -590,7 +592,9 @@ async def run_scheduled_task_async(schedule_id: str, *, lock_wait_seconds: int =
                 async for event in maintenance_api.run_operations(schedule.operations):
                     # Mirror key events to the scheduler log
                     if event.get("type") == "operation_start":
-                        logger.info(f"[{event.get('progress')}] Starting: {event.get('operation_name')}")
+                        logger.info(
+                            f"[{event.get('progress')}] Starting: {event.get('operation_name')}"
+                        )
                     elif event.get("type") == "output":
                         # Keep logs readable; output already cleaned by API
                         line = event.get("line", "")
@@ -598,14 +602,14 @@ async def run_scheduled_task_async(schedule_id: str, *, lock_wait_seconds: int =
                             logger.info(line)
                     elif event.get("type") == "operation_complete":
                         status = "SUCCESS" if event.get("success") else "FAILED"
-                        logger.info(f"Completed {event.get('operation_id')}: {status} (code {event.get('returncode')})")
+                        logger.info(
+                            f"Completed {event.get('operation_id')}: {status} (code {event.get('returncode')})"
+                        )
                     elif event.get("type") == "summary":
                         total = int(event.get("total") or total)
                         successful = int(event.get("successful") or 0)
                         failed = int(event.get("failed") or 0)
-                        logger.info(
-                            f"Summary: total={total} success={successful} failed={failed}"
-                        )
+                        logger.info(f"Summary: total={total} success={successful} failed={failed}")
 
             await _run_batch()
 

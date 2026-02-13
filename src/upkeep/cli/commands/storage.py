@@ -4,8 +4,8 @@ Storage-related CLI commands using StorageAPI.
 All commands use the API layer for consistency.
 """
 
-import click
 from pathlib import Path
+
 from rich.console import Console
 from rich.table import Table
 
@@ -44,14 +44,14 @@ def analyze_command(path: Path) -> None:
 
             for entry in result.largest_entries:
                 # Calculate size display
-                size_bytes = entry['size_bytes']
+                size_bytes = entry["size_bytes"]
                 size_mb = size_bytes / (1024**2)
                 size_gb = size_bytes / (1024**3)
 
                 size_str = f"{size_mb:.1f} MB" if size_mb < 1024 else f"{size_gb:.2f} GB"
 
                 # Extract filename from path
-                path_obj = Path(entry['path'])
+                path_obj = Path(entry["path"])
                 table.add_row(path_obj.name, size_str)
 
             console.print(table)

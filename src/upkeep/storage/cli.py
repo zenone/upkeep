@@ -2,15 +2,13 @@
 CLI interface for storage analysis.
 """
 
-import click
 from pathlib import Path
+
+import click
 from rich.console import Console
 from rich.table import Table
-from rich.progress import track
-from typing import Optional
 
-from .analyzer import DiskAnalyzer, AnalysisResult
-
+from .analyzer import AnalysisResult, DiskAnalyzer
 
 console = Console()
 
@@ -41,7 +39,11 @@ def display_results(result: AnalysisResult) -> None:
     table.add_column("Type", justify="center")
 
     for entry in result.get_largest_entries(10):
-        rel_path = entry.path.relative_to(result.root_path) if entry.path != result.root_path else entry.path.name
+        rel_path = (
+            entry.path.relative_to(result.root_path)
+            if entry.path != result.root_path
+            else entry.path.name
+        )
         table.add_row(
             str(rel_path),
             format_size(entry.size),
@@ -100,7 +102,7 @@ def display_results(result: AnalysisResult) -> None:
 )
 def main(
     path: Path,
-    max_depth: Optional[int],
+    max_depth: int | None,
     exclude: tuple,
     output_json: bool,
 ) -> None:
@@ -125,7 +127,6 @@ def main(
             result = analyzer.analyze()
 
         if output_json:
-            import json
 
             data = {
                 "root_path": str(result.root_path),

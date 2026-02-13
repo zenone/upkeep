@@ -21,27 +21,32 @@ class MacMaintenanceError(Exception):
 # Storage-related exceptions
 class PathNotFoundError(MacMaintenanceError):
     """Path does not exist."""
+
     pass
 
 
 class PathNotReadableError(MacMaintenanceError):
     """Path exists but cannot be read (permission denied)."""
+
     pass
 
 
 class PathProtectedError(MacMaintenanceError):
     """Path is protected and cannot be modified (system directory)."""
+
     pass
 
 
 class PathNotWritableError(MacMaintenanceError):
     """Path exists but cannot be written to."""
+
     pass
 
 
 # Maintenance operation exceptions
 class OperationNotFoundError(MacMaintenanceError):
     """Requested maintenance operation does not exist."""
+
     pass
 
 
@@ -56,17 +61,20 @@ class OperationFailedError(MacMaintenanceError):
 
 class DaemonNotAvailableError(MacMaintenanceError):
     """Privileged daemon is not running or not accessible."""
+
     pass
 
 
 class OperationTimeoutError(MacMaintenanceError):
     """Operation exceeded timeout limit."""
+
     pass
 
 
 # System exceptions
 class SystemMetricsError(MacMaintenanceError):
     """Failed to retrieve system metrics."""
+
     pass
 
 
@@ -91,10 +99,7 @@ class APIError(MacMaintenanceError):
         Returns:
             APIError wrapping the original exception
         """
-        return cls(
-            message=f"API error: {type(e).__name__}: {str(e)}",
-            original_exception=e
-        )
+        return cls(message=f"API error: {type(e).__name__}: {str(e)}", original_exception=e)
 
 
 class ValidationError(MacMaintenanceError):
@@ -107,9 +112,11 @@ class ValidationError(MacMaintenanceError):
 
 class NotFoundError(MacMaintenanceError):
     """Requested resource not found."""
+
     pass
 
 
 class ConflictError(MacMaintenanceError):
     """Resource conflict detected."""
+
     pass

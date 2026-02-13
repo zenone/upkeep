@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import List, Optional
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -45,17 +43,19 @@ class StorageAnalyzeResponse(BaseModel):
     total_size_gb: float = Field(..., description="Total size in GB", ge=0)
     file_count: int = Field(..., description="Number of files", ge=0)
     dir_count: int = Field(..., description="Number of directories", ge=0)
-    largest_entries: List[StorageEntry] = Field(
+    largest_entries: list[StorageEntry] = Field(
         ..., description="Largest files/directories (up to 50)", max_length=50
     )
-    error: Optional[str] = Field(None, description="Error message if analysis failed")
+    error: str | None = Field(None, description="Error message if analysis failed")
 
 
 class DeleteRequest(BaseModel):
     """Request to delete a file or directory."""
 
     path: str = Field(..., description="Path to delete", min_length=1)
-    mode: str = Field(..., description="Delete mode: 'trash' or 'permanent'", pattern="^(trash|permanent)$")
+    mode: str = Field(
+        ..., description="Delete mode: 'trash' or 'permanent'", pattern="^(trash|permanent)$"
+    )
 
 
 class DeleteResponse(BaseModel):
@@ -69,4 +69,4 @@ class DeleteResponse(BaseModel):
 
     success: bool = Field(..., description="Delete succeeded")
     path: str = Field(..., description="Deleted path")
-    error: Optional[str] = Field(None, description="Error message if delete failed")
+    error: str | None = Field(None, description="Error message if delete failed")

@@ -4,9 +4,8 @@ System-related CLI commands using SystemAPI.
 All commands use the API layer for consistency.
 """
 
-import click
-from rich.console import Console
 import psutil
+from rich.console import Console
 
 from ...api.system import SystemAPI
 
@@ -41,9 +40,7 @@ def status_command() -> None:
     # Memory (psutil is fine - standard library)
     memory = psutil.virtual_memory()
     mem_color = "green" if memory.percent < 75 else "yellow" if memory.percent < 90 else "red"
-    console.print(
-        f"[bold]Memory:[/bold] [{mem_color}]{memory.percent:.1f}% used[/{mem_color}]"
-    )
+    console.print(f"[bold]Memory:[/bold] [{mem_color}]{memory.percent:.1f}% used[/{mem_color}]")
     console.print(f"  Available: {memory.available / (1024**3):.1f} GB\n")
 
     console.print("[dim]Run 'upkeep web' or './run-web.sh' for detailed analysis[/dim]\n")

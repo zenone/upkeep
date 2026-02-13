@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -11,7 +9,7 @@ class SuccessResponse(BaseModel):
     """Standard success response."""
 
     success: bool = Field(True, description="Operation succeeded")
-    message: Optional[str] = Field(None, description="Optional success message")
+    message: str | None = Field(None, description="Optional success message")
 
 
 class ErrorResponse(BaseModel):
@@ -30,5 +28,5 @@ class ErrorResponse(BaseModel):
 
     success: bool = Field(False, description="Operation failed")
     error: str = Field(..., description="Error message")
-    detail: Optional[str] = Field(None, description="Detailed error information")
-    code: Optional[str] = Field(None, description="Error code for programmatic handling")
+    detail: str | None = Field(None, description="Detailed error information")
+    code: str | None = Field(None, description="Error code for programmatic handling")

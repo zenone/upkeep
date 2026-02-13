@@ -11,24 +11,14 @@ Test Coverage:
 - Conflict detection and warnings
 """
 
-import pytest
-import tempfile
-import json
-from pathlib import Path
 from datetime import datetime, time
-from typing import List
+
+import pytest
 
 from upkeep.api.models.schedule import (
+    DayOfWeek,
     ScheduleConfig,
     ScheduleFrequency,
-    DayOfWeek,
-    ScheduleResponse,
-    ScheduleListResponse,
-)
-from upkeep.core.exceptions import (
-    ValidationError,
-    NotFoundError,
-    ConflictError,
 )
 
 
@@ -43,7 +33,7 @@ class TestScheduleModels:
             operations=["trim_logs", "flush_dns"],
             frequency=ScheduleFrequency.DAILY,
             time_of_day=time(3, 0, 0),
-            enabled=True
+            enabled=True,
         )
 
         assert schedule.name == "Daily Cleanup"
@@ -59,7 +49,7 @@ class TestScheduleModels:
             operations=["verify_disk", "update_homebrew"],
             frequency=ScheduleFrequency.WEEKLY,
             time_of_day=time(3, 0, 0),
-            days_of_week=[DayOfWeek.SUNDAY, DayOfWeek.WEDNESDAY]
+            days_of_week=[DayOfWeek.SUNDAY, DayOfWeek.WEDNESDAY],
         )
 
         assert schedule.frequency == ScheduleFrequency.WEEKLY
@@ -84,7 +74,7 @@ class TestScheduleModels:
             operations=["verify_disk", "repair_disk"],
             frequency=ScheduleFrequency.MONTHLY,
             time_of_day=time(4, 0, 0),
-            day_of_month=15
+            day_of_month=15,
         )
 
         assert schedule.frequency == ScheduleFrequency.MONTHLY
@@ -109,7 +99,7 @@ class TestScheduleModels:
             operations=["verify_disk"],
             frequency=ScheduleFrequency.MONTHLY,
             time_of_day=time(3, 0, 0),
-            day_of_month=1
+            day_of_month=1,
         )
         assert schedule1.day_of_month == 1
 
@@ -119,7 +109,7 @@ class TestScheduleModels:
             operations=["verify_disk"],
             frequency=ScheduleFrequency.MONTHLY,
             time_of_day=time(3, 0, 0),
-            day_of_month=28
+            day_of_month=28,
         )
         assert schedule2.day_of_month == 28
 
@@ -130,7 +120,7 @@ class TestScheduleModels:
                 operations=["verify_disk"],
                 frequency=ScheduleFrequency.MONTHLY,
                 time_of_day=time(3, 0, 0),
-                day_of_month=0
+                day_of_month=0,
             )
 
         # Invalid: day 29 (February might not have it)
@@ -140,7 +130,7 @@ class TestScheduleModels:
                 operations=["verify_disk"],
                 frequency=ScheduleFrequency.MONTHLY,
                 time_of_day=time(3, 0, 0),
-                day_of_month=29
+                day_of_month=29,
             )
 
     def test_operations_not_empty(self):
@@ -150,7 +140,7 @@ class TestScheduleModels:
                 name="No Operations",
                 operations=[],  # Empty - should raise error
                 frequency=ScheduleFrequency.DAILY,
-                time_of_day=time(3, 0, 0)
+                time_of_day=time(3, 0, 0),
             )
 
     def test_name_length_validation(self):
@@ -161,7 +151,7 @@ class TestScheduleModels:
                 name="",  # Empty - should raise error
                 operations=["verify_disk"],
                 frequency=ScheduleFrequency.DAILY,
-                time_of_day=time(3, 0, 0)
+                time_of_day=time(3, 0, 0),
             )
 
         # Too long (>100 chars)
@@ -170,7 +160,7 @@ class TestScheduleModels:
                 name="A" * 101,  # 101 chars - should raise error
                 operations=["verify_disk"],
                 frequency=ScheduleFrequency.DAILY,
-                time_of_day=time(3, 0, 0)
+                time_of_day=time(3, 0, 0),
             )
 
         # Valid: exactly 100 chars
@@ -178,7 +168,7 @@ class TestScheduleModels:
             name="A" * 100,
             operations=["verify_disk"],
             frequency=ScheduleFrequency.DAILY,
-            time_of_day=time(3, 0, 0)
+            time_of_day=time(3, 0, 0),
         )
         assert len(schedule.name) == 100
 
@@ -188,7 +178,7 @@ class TestScheduleModels:
             name="Test Schedule",
             operations=["verify_disk"],
             frequency=ScheduleFrequency.DAILY,
-            time_of_day=time(3, 0, 0)
+            time_of_day=time(3, 0, 0),
         )
 
         # Initially no ID
@@ -212,7 +202,7 @@ class TestScheduleModels:
             name="Test Schedule",
             operations=["verify_disk"],
             frequency=ScheduleFrequency.DAILY,
-            time_of_day=time(3, 0, 0)
+            time_of_day=time(3, 0, 0),
         )
 
         # Initially no timestamps
@@ -234,6 +224,7 @@ class TestScheduleModels:
         # Update timestamps (not new)
         original_created = schedule.created_at
         import time as time_module
+
         time_module.sleep(0.01)  # Small delay
 
         schedule.set_timestamps(is_new=False)
@@ -262,16 +253,17 @@ class TestScheduleAPICRUD:
     def schedule_api(self, temp_schedule_file):
         """Create ScheduleAPI instance with temporary storage."""
         from upkeep.api.schedule import ScheduleAPI
+
         return ScheduleAPI(storage_path=temp_schedule_file)
 
     def test_api_initialization(self, schedule_api):
         """Should initialize ScheduleAPI without errors."""
         assert schedule_api is not None
-        assert hasattr(schedule_api, 'create_schedule')
-        assert hasattr(schedule_api, 'get_schedule')
-        assert hasattr(schedule_api, 'list_schedules')
-        assert hasattr(schedule_api, 'update_schedule')
-        assert hasattr(schedule_api, 'delete_schedule')
+        assert hasattr(schedule_api, "create_schedule")
+        assert hasattr(schedule_api, "get_schedule")
+        assert hasattr(schedule_api, "list_schedules")
+        assert hasattr(schedule_api, "update_schedule")
+        assert hasattr(schedule_api, "delete_schedule")
 
     def test_create_schedule(self, schedule_api):
         """Should create and persist a new schedule."""
@@ -280,7 +272,7 @@ class TestScheduleAPICRUD:
             "operations": ["trim_logs", "flush_dns"],
             "frequency": "daily",
             "time_of_day": "03:00:00",
-            "enabled": True
+            "enabled": True,
         }
 
         response = schedule_api.create_schedule(schedule_data)
@@ -297,23 +289,27 @@ class TestScheduleAPICRUD:
 
         Hygiene requirement: prevents launchd spam (lots of python3 login items).
         """
-        first = schedule_api.create_schedule({
-            "name": "Nightly",
-            "operations": ["verify_disk"],
-            "frequency": "daily",
-            "time_of_day": "03:00:00",
-            "enabled": True,
-        })
+        first = schedule_api.create_schedule(
+            {
+                "name": "Nightly",
+                "operations": ["verify_disk"],
+                "frequency": "daily",
+                "time_of_day": "03:00:00",
+                "enabled": True,
+            }
+        )
         assert first.success
         first_id = first.schedule.id
 
-        second = schedule_api.create_schedule({
-            "name": "Nightly",  # same name
-            "operations": ["verify_disk", "trim_logs"],
-            "frequency": "daily",
-            "time_of_day": "03:30:00",
-            "enabled": False,
-        })
+        second = schedule_api.create_schedule(
+            {
+                "name": "Nightly",  # same name
+                "operations": ["verify_disk", "trim_logs"],
+                "frequency": "daily",
+                "time_of_day": "03:30:00",
+                "enabled": False,
+            }
+        )
         assert second.success
         assert second.schedule.id == first_id
 
@@ -332,7 +328,7 @@ class TestScheduleAPICRUD:
             "name": "Test Schedule",
             "operations": ["verify_disk"],
             "frequency": "daily",
-            "time_of_day": "03:00:00"
+            "time_of_day": "03:00:00",
         }
         create_response = schedule_api.create_schedule(schedule_data)
         schedule_id = create_response.schedule.id
@@ -365,19 +361,23 @@ class TestScheduleAPICRUD:
     def test_list_schedules_multiple(self, schedule_api):
         """Should list all schedules."""
         # Create multiple schedules
-        schedule_api.create_schedule({
-            "name": "Schedule 1",
-            "operations": ["verify_disk"],
-            "frequency": "daily",
-            "time_of_day": "03:00:00"
-        })
-        schedule_api.create_schedule({
-            "name": "Schedule 2",
-            "operations": ["trim_logs"],
-            "frequency": "weekly",
-            "time_of_day": "04:00:00",
-            "days_of_week": ["sunday"]
-        })
+        schedule_api.create_schedule(
+            {
+                "name": "Schedule 1",
+                "operations": ["verify_disk"],
+                "frequency": "daily",
+                "time_of_day": "03:00:00",
+            }
+        )
+        schedule_api.create_schedule(
+            {
+                "name": "Schedule 2",
+                "operations": ["trim_logs"],
+                "frequency": "weekly",
+                "time_of_day": "04:00:00",
+                "days_of_week": ["sunday"],
+            }
+        )
 
         # List schedules
         response = schedule_api.list_schedules()
@@ -389,19 +389,20 @@ class TestScheduleAPICRUD:
     def test_update_schedule(self, schedule_api):
         """Should update an existing schedule."""
         # Create schedule
-        create_response = schedule_api.create_schedule({
-            "name": "Original Name",
-            "operations": ["verify_disk"],
-            "frequency": "daily",
-            "time_of_day": "03:00:00"
-        })
+        create_response = schedule_api.create_schedule(
+            {
+                "name": "Original Name",
+                "operations": ["verify_disk"],
+                "frequency": "daily",
+                "time_of_day": "03:00:00",
+            }
+        )
         schedule_id = create_response.schedule.id
 
         # Update schedule
-        update_response = schedule_api.update_schedule(schedule_id, {
-            "name": "Updated Name",
-            "operations": ["verify_disk", "trim_logs"]
-        })
+        update_response = schedule_api.update_schedule(
+            schedule_id, {"name": "Updated Name", "operations": ["verify_disk", "trim_logs"]}
+        )
 
         assert update_response.success is True
         assert update_response.schedule.name == "Updated Name"
@@ -410,9 +411,7 @@ class TestScheduleAPICRUD:
 
     def test_update_nonexistent_schedule(self, schedule_api):
         """Should handle updating nonexistent schedule."""
-        response = schedule_api.update_schedule("nonexistent-id", {
-            "name": "New Name"
-        })
+        response = schedule_api.update_schedule("nonexistent-id", {"name": "New Name"})
 
         assert response.success is False
         assert response.error is not None
@@ -421,12 +420,14 @@ class TestScheduleAPICRUD:
     def test_delete_schedule(self, schedule_api):
         """Should delete a schedule."""
         # Create schedule
-        create_response = schedule_api.create_schedule({
-            "name": "To Be Deleted",
-            "operations": ["verify_disk"],
-            "frequency": "daily",
-            "time_of_day": "03:00:00"
-        })
+        create_response = schedule_api.create_schedule(
+            {
+                "name": "To Be Deleted",
+                "operations": ["verify_disk"],
+                "frequency": "daily",
+                "time_of_day": "03:00:00",
+            }
+        )
         schedule_id = create_response.schedule.id
 
         # Delete schedule
@@ -461,52 +462,51 @@ class TestScheduleAPILogic:
     def schedule_api(self, temp_schedule_file):
         """Create ScheduleAPI instance."""
         from upkeep.api.schedule import ScheduleAPI
+
         return ScheduleAPI(storage_path=temp_schedule_file)
 
     def test_enable_disable_schedule(self, schedule_api):
         """Should toggle schedule enabled state."""
         # Create enabled schedule
-        create_response = schedule_api.create_schedule({
-            "name": "Test Schedule",
-            "operations": ["verify_disk"],
-            "frequency": "daily",
-            "time_of_day": "03:00:00",
-            "enabled": True
-        })
+        create_response = schedule_api.create_schedule(
+            {
+                "name": "Test Schedule",
+                "operations": ["verify_disk"],
+                "frequency": "daily",
+                "time_of_day": "03:00:00",
+                "enabled": True,
+            }
+        )
         schedule_id = create_response.schedule.id
         assert create_response.schedule.enabled is True
 
         # Disable
-        disable_response = schedule_api.update_schedule(schedule_id, {
-            "enabled": False
-        })
+        disable_response = schedule_api.update_schedule(schedule_id, {"enabled": False})
         assert disable_response.success is True
         assert disable_response.schedule.enabled is False
 
         # Enable again
-        enable_response = schedule_api.update_schedule(schedule_id, {
-            "enabled": True
-        })
+        enable_response = schedule_api.update_schedule(schedule_id, {"enabled": True})
         assert enable_response.success is True
         assert enable_response.schedule.enabled is True
 
     def test_update_last_run(self, schedule_api):
         """Should track last execution time."""
         # Create schedule
-        create_response = schedule_api.create_schedule({
-            "name": "Test Schedule",
-            "operations": ["verify_disk"],
-            "frequency": "daily",
-            "time_of_day": "03:00:00"
-        })
+        create_response = schedule_api.create_schedule(
+            {
+                "name": "Test Schedule",
+                "operations": ["verify_disk"],
+                "frequency": "daily",
+                "time_of_day": "03:00:00",
+            }
+        )
         schedule_id = create_response.schedule.id
         assert create_response.schedule.last_run is None
 
         # Update last run
         now = datetime.now()
-        update_response = schedule_api.update_schedule(schedule_id, {
-            "last_run": now
-        })
+        update_response = schedule_api.update_schedule(schedule_id, {"last_run": now})
 
         assert update_response.success is True
         assert update_response.schedule.last_run is not None
@@ -517,12 +517,14 @@ class TestScheduleAPILogic:
     def test_calculate_next_run_daily(self, schedule_api):
         """Should calculate next run for daily schedules."""
         # Create daily schedule at 3 AM
-        create_response = schedule_api.create_schedule({
-            "name": "Daily Schedule",
-            "operations": ["verify_disk"],
-            "frequency": "daily",
-            "time_of_day": "03:00:00"
-        })
+        create_response = schedule_api.create_schedule(
+            {
+                "name": "Daily Schedule",
+                "operations": ["verify_disk"],
+                "frequency": "daily",
+                "time_of_day": "03:00:00",
+            }
+        )
 
         schedule = create_response.schedule
         next_run = schedule_api.calculate_next_run(schedule)
@@ -540,13 +542,15 @@ class TestScheduleAPILogic:
     def test_calculate_next_run_weekly(self, schedule_api):
         """Should calculate next run for weekly schedules."""
         # Create weekly schedule on Sundays at 3 AM
-        create_response = schedule_api.create_schedule({
-            "name": "Weekly Schedule",
-            "operations": ["verify_disk"],
-            "frequency": "weekly",
-            "time_of_day": "03:00:00",
-            "days_of_week": ["sunday"]
-        })
+        create_response = schedule_api.create_schedule(
+            {
+                "name": "Weekly Schedule",
+                "operations": ["verify_disk"],
+                "frequency": "weekly",
+                "time_of_day": "03:00:00",
+                "days_of_week": ["sunday"],
+            }
+        )
 
         schedule = create_response.schedule
         next_run = schedule_api.calculate_next_run(schedule)
@@ -565,13 +569,15 @@ class TestScheduleAPILogic:
     def test_calculate_next_run_monthly(self, schedule_api):
         """Should calculate next run for monthly schedules."""
         # Create monthly schedule on 15th at 4 AM
-        create_response = schedule_api.create_schedule({
-            "name": "Monthly Schedule",
-            "operations": ["verify_disk"],
-            "frequency": "monthly",
-            "time_of_day": "04:00:00",
-            "day_of_month": 15
-        })
+        create_response = schedule_api.create_schedule(
+            {
+                "name": "Monthly Schedule",
+                "operations": ["verify_disk"],
+                "frequency": "monthly",
+                "time_of_day": "04:00:00",
+                "day_of_month": 15,
+            }
+        )
 
         schedule = create_response.schedule
         next_run = schedule_api.calculate_next_run(schedule)
@@ -590,12 +596,14 @@ class TestScheduleAPILogic:
 
         # Create schedule with first API instance
         api1 = ScheduleAPI(storage_path=temp_schedule_file)
-        create_response = api1.create_schedule({
-            "name": "Persistent Schedule",
-            "operations": ["verify_disk"],
-            "frequency": "daily",
-            "time_of_day": "03:00:00"
-        })
+        create_response = api1.create_schedule(
+            {
+                "name": "Persistent Schedule",
+                "operations": ["verify_disk"],
+                "frequency": "daily",
+                "time_of_day": "03:00:00",
+            }
+        )
         schedule_id = create_response.schedule.id
 
         # Create new API instance (simulates restart)
@@ -621,25 +629,30 @@ class TestScheduleAPIConflicts:
     def schedule_api(self, temp_schedule_file):
         """Create ScheduleAPI instance."""
         from upkeep.api.schedule import ScheduleAPI
+
         return ScheduleAPI(storage_path=temp_schedule_file)
 
     def test_no_conflict_different_times(self, schedule_api):
         """Schedules at different times should not conflict."""
         # Create first schedule at 3 AM
-        schedule_api.create_schedule({
-            "name": "Schedule 1",
-            "operations": ["verify_disk"],
-            "frequency": "daily",
-            "time_of_day": "03:00:00"
-        })
+        schedule_api.create_schedule(
+            {
+                "name": "Schedule 1",
+                "operations": ["verify_disk"],
+                "frequency": "daily",
+                "time_of_day": "03:00:00",
+            }
+        )
 
         # Create second schedule at 4 AM (should be OK)
-        response = schedule_api.create_schedule({
-            "name": "Schedule 2",
-            "operations": ["trim_logs"],
-            "frequency": "daily",
-            "time_of_day": "04:00:00"
-        })
+        response = schedule_api.create_schedule(
+            {
+                "name": "Schedule 2",
+                "operations": ["trim_logs"],
+                "frequency": "daily",
+                "time_of_day": "04:00:00",
+            }
+        )
 
         assert response.success is True
         # Should not have conflict warning
@@ -648,20 +661,24 @@ class TestScheduleAPIConflicts:
     def test_conflict_warning_same_time(self, schedule_api):
         """Should warn about schedules at the same time."""
         # Create first schedule at 3 AM
-        schedule_api.create_schedule({
-            "name": "Schedule 1",
-            "operations": ["verify_disk"],
-            "frequency": "daily",
-            "time_of_day": "03:00:00"
-        })
+        schedule_api.create_schedule(
+            {
+                "name": "Schedule 1",
+                "operations": ["verify_disk"],
+                "frequency": "daily",
+                "time_of_day": "03:00:00",
+            }
+        )
 
         # Create second schedule at 3 AM (potential conflict)
-        response = schedule_api.create_schedule({
-            "name": "Schedule 2",
-            "operations": ["trim_logs"],
-            "frequency": "daily",
-            "time_of_day": "03:00:00"
-        })
+        response = schedule_api.create_schedule(
+            {
+                "name": "Schedule 2",
+                "operations": ["trim_logs"],
+                "frequency": "daily",
+                "time_of_day": "03:00:00",
+            }
+        )
 
         # Should still succeed but with warning
         assert response.success is True
@@ -671,18 +688,22 @@ class TestScheduleAPIConflicts:
     def test_get_schedule_conflicts(self, schedule_api):
         """Should be able to query for schedule conflicts."""
         # Create schedules at same time
-        schedule_api.create_schedule({
-            "name": "Schedule 1",
-            "operations": ["verify_disk"],
-            "frequency": "daily",
-            "time_of_day": "03:00:00"
-        })
-        schedule_api.create_schedule({
-            "name": "Schedule 2",
-            "operations": ["trim_logs"],
-            "frequency": "daily",
-            "time_of_day": "03:00:00"
-        })
+        schedule_api.create_schedule(
+            {
+                "name": "Schedule 1",
+                "operations": ["verify_disk"],
+                "frequency": "daily",
+                "time_of_day": "03:00:00",
+            }
+        )
+        schedule_api.create_schedule(
+            {
+                "name": "Schedule 2",
+                "operations": ["trim_logs"],
+                "frequency": "daily",
+                "time_of_day": "03:00:00",
+            }
+        )
 
         # Check for conflicts
         conflicts = schedule_api.get_conflicts()
