@@ -430,8 +430,8 @@ class MaintenanceAPI(BaseAPI):
             "safe": True,
             "recommended": False,
         },
-        "application-support-report": {
-            "id": "application-support-report",
+        "app-support-report": {
+            "id": "app-support-report",
             "name": "Application Support Report",
             "description": "Report top space consumers in ~/Library/Application Support",
             "guidance": "Why: Application Support can grow to 50-200GB with app databases, caches, and project files. When: Quarterly exploration or when disk is low. What: Shows the 20 largest folders with sizes. Warning: DO NOT auto-delete - many folders contain irreplaceable data (DAW projects, databases, etc.).",

@@ -66,7 +66,7 @@ class TestMaintenanceAPI:
         op_ids = {op["id"] for op in operations}
 
         tier3_ops = [
-            "application-support-report",
+            "app-support-report",  # Note: ID matches CLI flag --app-support-report
             "dev-artifacts-report",
             "mail-size-report",
             "messages-attachments-report",

@@ -1,6 +1,6 @@
 [project]
 name = "upkeep"
-version = "3.0.0"
+version = "3.1.1"
 description = "A modern, safe-by-default maintenance toolkit for macOS"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -35,6 +35,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+tui = [
+    "textual>=0.47.0",      # Terminal UI framework
+]
 dev = [
     "pytest>=8.0.0",
     "pytest-cov>=4.1.0",
@@ -42,6 +45,7 @@ dev = [
     "mypy>=1.8.0",
     "ruff>=0.2.0",
     "black>=24.0.0",
+    "textual>=0.47.0",      # Needed for TUI tests
 ]
 
 [project.scripts]

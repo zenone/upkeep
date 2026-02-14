@@ -60,6 +60,51 @@
         "title": "Problems This Solves"
       }
     },
+    "brew-cleanup": {
+      "id": "brew-cleanup",
+      "name": "Homebrew Cleanup",
+      "category": "Cleanup",
+      "safety": "low-risk",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Homebrew downloads packages and keeps old versions as a cache. Over time this accumulates.",
+        "problems": [
+          {
+            "symptom": "Disk space consumed by old packages",
+            "description": "Old package versions and download cache accumulate in /opt/homebrew/Cellar"
+          },
+          {
+            "symptom": "Stale cached downloads",
+            "description": "Downloaded .tar.gz and .bottle files remain after installation"
+          }
+        ]
+      },
+      "when_to_run": [
+        "After updating Homebrew packages",
+        "When disk space is low",
+        "Monthly maintenance"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "30-60 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Space freed: Typically 1-10GB depending on usage"
+          },
+          {
+            "type": "positive",
+            "description": "Removes old package versions no longer needed"
+          },
+          {
+            "type": "positive",
+            "description": "Clears download cache"
+          }
+        ],
+        "side_effects": []
+      },
+      "note": "Runs 'brew cleanup' which is safe and recommended by Homebrew."
+    },
     "browser-cache": {
       "category": "Cleanup",
       "id": "browser-cache",

@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-155%2B%20passing-brightgreen.svg)](tests/)
-[![Operations](https://img.shields.io/badge/operations-49-blue.svg)](docs/ROADMAP.md)
+[![Operations](https://img.shields.io/badge/operations-43-blue.svg)](docs/ROADMAP.md)
 
 ---
 
@@ -118,7 +118,7 @@ Real-time system overview. CPU, memory, disk, health score, top processes—all 
 ![Dashboard](docs/screenshots/dashboard-v3.png)
 
 ### Maintenance Operations
-20 operations, each explaining **why** you'd run it and **what to expect**. No guesswork, no scary warnings.
+43 operations, each explaining **why** you'd run it and **what to expect**. No guesswork, no scary warnings.
 
 ### Roadmap
 Operator-first backlog: `docs/ROADMAP.md`
