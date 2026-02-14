@@ -4,12 +4,15 @@ Provides REST API endpoints and serves static web UI.
 Uses secure launchd daemon for privileged operations (no password handling).
 """
 
+import asyncio
 import json
 import logging
 import sys
 import time
+import uuid
 from collections import deque
 from contextlib import asynccontextmanager
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +26,8 @@ from upkeep import __version__
 from upkeep.api import MaintenanceAPI, ScheduleAPI, StorageAPI
 from upkeep.core import system as system_utils
 from upkeep.core.disk_scanner import DiskScanner
+from upkeep.core.duplicate_reporter import DuplicateReporter
+from upkeep.core.duplicate_scanner import DuplicateScanner, ScanConfig, ScanResult
 from upkeep.core.launchd import LaunchdGenerator
 from upkeep.web.models import (
     DeleteResponse,
@@ -54,6 +59,25 @@ system_history = {
     "disk": deque(maxlen=60),
     "timestamps": deque(maxlen=60),
 }
+
+
+# Duplicate scan storage (scan_id -> {status, progress, result})
+@dataclass
+class DuplicateScanState:
+    """Track state of a duplicate file scan."""
+
+    status: str = "pending"  # pending, running, complete, error
+    stage: str = ""
+    current: int = 0
+    total: int = 0
+    result: ScanResult | None = None
+    error: str | None = None
+    started_at: float = field(default_factory=time.time)
+
+
+# Store active/completed scans (limited to prevent memory bloat)
+_duplicate_scans: dict[str, DuplicateScanState] = {}
+MAX_SCAN_CACHE = 20  # Keep last N scan results
 
 
 @asynccontextmanager
@@ -598,6 +622,286 @@ async def get_disk_usage(
         raise  # Re-raise HTTP exceptions
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error scanning disk: {e}") from e
+
+
+# ============================================================================
+# Duplicate File Finder API
+# ============================================================================
+
+
+def _prune_old_scans() -> None:
+    """Remove old scan results to prevent memory bloat."""
+    global _duplicate_scans
+    if len(_duplicate_scans) > MAX_SCAN_CACHE:
+        # Sort by started_at, remove oldest
+        sorted_scans = sorted(
+            _duplicate_scans.items(),
+            key=lambda x: x[1].started_at,
+        )
+        to_remove = len(_duplicate_scans) - MAX_SCAN_CACHE
+        for scan_id, _ in sorted_scans[:to_remove]:
+            del _duplicate_scans[scan_id]
+
+
+async def _run_duplicate_scan(
+    scan_id: str,
+    paths: list[Path],
+    min_size_bytes: int,
+    include_hidden: bool,
+) -> None:
+    """Background task to run duplicate scan."""
+    state = _duplicate_scans.get(scan_id)
+    if not state:
+        return
+
+    def progress_callback(stage: str, current: int, total: int) -> None:
+        state.stage = stage
+        state.current = current
+        state.total = total
+
+    try:
+        state.status = "running"
+        config = ScanConfig(
+            paths=paths,
+            min_size_bytes=min_size_bytes,
+            include_hidden=include_hidden,
+        )
+        scanner = DuplicateScanner(config)
+
+        # Run scan in thread pool to avoid blocking
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(
+            None,
+            lambda: scanner.scan(progress_callback),
+        )
+
+        state.result = result
+        state.status = "complete"
+    except Exception as e:
+        state.status = "error"
+        state.error = str(e)
+        logger.exception(f"Duplicate scan {scan_id} failed")
+
+
+@app.post(
+    "/api/duplicates/scan",
+    tags=["duplicates"],
+    summary="Start a duplicate file scan",
+    description="""
+Start an asynchronous scan for duplicate files.
+
+Returns a scan_id to track progress and retrieve results.
+
+**Parameters:**
+- `paths`: Comma-separated paths to scan (default: home directory)
+- `min_size_mb`: Minimum file size in MB (default: 0.001 = 1KB)
+- `include_hidden`: Include hidden files (default: false)
+    """,
+)
+async def start_duplicate_scan(
+    paths: str = "",
+    min_size_mb: float = 0.001,
+    include_hidden: bool = False,
+) -> dict[str, Any]:
+    """Start a duplicate file scan.
+
+    Args:
+        paths: Comma-separated paths to scan (default: home directory)
+        min_size_mb: Minimum file size in MB
+        include_hidden: Include hidden/dotfiles
+
+    Returns:
+        Dict with scan_id and status
+    """
+    _prune_old_scans()
+
+    # Parse paths
+    if paths:
+        scan_paths = [Path(p.strip()) for p in paths.split(",") if p.strip()]
+    else:
+        scan_paths = [Path.home()]
+
+    # Validate paths exist
+    for p in scan_paths:
+        if not p.exists():
+            raise HTTPException(status_code=400, detail=f"Path does not exist: {p}")
+
+    # Create scan state
+    scan_id = str(uuid.uuid4())[:8]
+    _duplicate_scans[scan_id] = DuplicateScanState()
+
+    # Start background scan
+    min_size_bytes = int(min_size_mb * 1024 * 1024)
+    asyncio.create_task(_run_duplicate_scan(scan_id, scan_paths, min_size_bytes, include_hidden))
+
+    return {"scan_id": scan_id, "status": "started"}
+
+
+@app.get(
+    "/api/duplicates/status/{scan_id}",
+    tags=["duplicates"],
+    summary="Get duplicate scan status",
+    description="Check the progress of a running duplicate scan.",
+)
+async def get_duplicate_scan_status(scan_id: str) -> dict[str, Any]:
+    """Get status of a duplicate scan.
+
+    Args:
+        scan_id: ID from start_duplicate_scan
+
+    Returns:
+        Dict with status, progress info
+    """
+    state = _duplicate_scans.get(scan_id)
+    if not state:
+        raise HTTPException(status_code=404, detail=f"Scan not found: {scan_id}")
+
+    return {
+        "scan_id": scan_id,
+        "status": state.status,
+        "progress": {
+            "stage": state.stage,
+            "current": state.current,
+            "total": state.total,
+        },
+        "error": state.error,
+    }
+
+
+@app.get(
+    "/api/duplicates/results/{scan_id}",
+    tags=["duplicates"],
+    summary="Get duplicate scan results",
+    description="""
+Retrieve results of a completed duplicate scan.
+
+Results include duplicate groups sorted by potential space savings.
+    """,
+)
+async def get_duplicate_scan_results(
+    scan_id: str,
+    format: str = "json",
+) -> Any:
+    """Get results of a duplicate scan.
+
+    Args:
+        scan_id: ID from start_duplicate_scan
+        format: Output format (json, text, csv)
+
+    Returns:
+        Scan results in requested format
+    """
+    state = _duplicate_scans.get(scan_id)
+    if not state:
+        raise HTTPException(status_code=404, detail=f"Scan not found: {scan_id}")
+
+    if state.status == "running":
+        raise HTTPException(status_code=202, detail="Scan still in progress")
+
+    if state.status == "error":
+        raise HTTPException(status_code=500, detail=state.error or "Scan failed")
+
+    if not state.result:
+        raise HTTPException(status_code=500, detail="No results available")
+
+    reporter = DuplicateReporter()
+
+    if format == "text":
+        from fastapi.responses import PlainTextResponse
+
+        return PlainTextResponse(reporter.to_text(state.result))
+    elif format == "csv":
+        from fastapi.responses import PlainTextResponse
+
+        return PlainTextResponse(
+            reporter.to_csv(state.result),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename=duplicates-{scan_id}.csv"},
+        )
+    else:
+        # Default JSON
+        return json.loads(reporter.to_json(state.result))
+
+
+@app.post(
+    "/api/duplicates/delete",
+    tags=["duplicates"],
+    summary="Delete duplicate files",
+    description="""
+Move selected duplicate files to Trash.
+
+**Safety Features:**
+- Files are moved to Trash (recoverable)
+- Cannot delete the last copy of a file
+- Protected system paths are blocked
+    """,
+)
+async def delete_duplicates(
+    scan_id: str,
+    paths: list[str],
+) -> dict[str, Any]:
+    """Delete selected duplicate files.
+
+    Args:
+        scan_id: ID of the scan these files belong to
+        paths: List of file paths to delete
+
+    Returns:
+        Dict with deleted paths and any errors
+    """
+    state = _duplicate_scans.get(scan_id)
+    if not state:
+        raise HTTPException(status_code=404, detail=f"Scan not found: {scan_id}")
+
+    if not state.result:
+        raise HTTPException(status_code=400, detail="No scan results available")
+
+    # Build set of all duplicate paths for validation
+    all_duplicate_paths: set[str] = set()
+    for group in state.result.duplicate_groups:
+        for f in group.files:
+            all_duplicate_paths.add(str(f.path))
+
+    # Validate requested paths are in scan results
+    invalid_paths = [p for p in paths if p not in all_duplicate_paths]
+    if invalid_paths:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Paths not found in scan results: {invalid_paths[:3]}",
+        )
+
+    # Ensure we're not deleting ALL copies of any file
+    groups_by_hash: dict[str, list[str]] = {}
+    for group in state.result.duplicate_groups:
+        hash_key = group.hash
+        groups_by_hash[hash_key] = [str(f.path) for f in group.files]
+
+    for hash_key, group_paths in groups_by_hash.items():
+        paths_to_delete = [p for p in paths if p in group_paths]
+        remaining = len(group_paths) - len(paths_to_delete)
+        if remaining < 1:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot delete all copies. At least one must remain (hash: {hash_key[:8]}...)",
+            )
+
+    # Delete files (move to Trash)
+    deleted = []
+    errors = []
+
+    for path in paths:
+        result = storage_api.delete_path(path, mode="trash")
+        if result["success"]:
+            deleted.append(path)
+        else:
+            errors.append({"path": path, "error": result.get("error", "Unknown error")})
+
+    return {
+        "deleted": deleted,
+        "errors": errors,
+        "deleted_count": len(deleted),
+        "error_count": len(errors),
+    }
 
 
 # Delete file/directory
