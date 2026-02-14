@@ -155,7 +155,7 @@ def main(
 
     except Exception as e:
         console.print(f"[red]Error: {e}[/red]")
-        raise click.Abort()
+        raise click.Abort() from e
 
 
 if __name__ == "__main__":

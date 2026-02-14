@@ -33,7 +33,7 @@ def is_port_available(port: int, host: str = "127.0.0.1") -> bool:
         # Ensure socket is closed even if bind() raised an exception
         try:
             sock.close()
-        except:
+        except OSError:
             pass
 
 

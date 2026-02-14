@@ -103,7 +103,7 @@ class SystemAPI(BaseAPI):
         except SystemMetricsError:
             raise
         except Exception as e:
-            raise SystemMetricsError(f"Failed to get system info: {e}")
+            raise SystemMetricsError(f"Failed to get system info: {e}") from e
 
     def get_metrics(self) -> SystemMetrics:
         """Get current system metrics.
@@ -140,7 +140,7 @@ class SystemAPI(BaseAPI):
                 disk_percent=disk.percent,
             )
         except Exception as e:
-            raise SystemMetricsError(f"Failed to get system metrics: {e}")
+            raise SystemMetricsError(f"Failed to get system metrics: {e}") from e
 
     def get_health_score(self) -> HealthScore:
         """Calculate system health score (0-100).
@@ -217,7 +217,7 @@ class SystemAPI(BaseAPI):
                 issues=issues,
             )
         except Exception as e:
-            raise SystemMetricsError(f"Failed to calculate health score: {e}")
+            raise SystemMetricsError(f"Failed to calculate health score: {e}") from e
 
     def get_top_processes(
         self, by: ProcessSortBy = ProcessSortBy.CPU, limit: int = 5
@@ -278,4 +278,4 @@ class SystemAPI(BaseAPI):
             ]
 
         except Exception as e:
-            raise SystemMetricsError(f"Failed to get top processes: {e}")
+            raise SystemMetricsError(f"Failed to get top processes: {e}") from e

@@ -6,13 +6,12 @@ logging, error handling, and behavior.
 """
 
 import logging
-from abc import ABC
 from typing import Any
 
 from upkeep.core.exceptions import APIError, MacMaintenanceError
 
 
-class BaseAPI(ABC):
+class BaseAPI:
     """Base class for all API classes.
 
     Provides common functionality:

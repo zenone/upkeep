@@ -639,9 +639,9 @@ class MaintenanceAPI(BaseAPI):
         except (PermissionError, OSError) as e:
             raise DaemonNotAvailableError(
                 f"Cannot access job queue (is daemon running?): {e}"
-            )
+            ) from e
         except Exception as e:
-            raise DaemonNotAvailableError(f"Failed to enqueue job: {e}")
+            raise DaemonNotAvailableError(f"Failed to enqueue job: {e}") from e
 
         return job_id
 

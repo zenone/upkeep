@@ -44,6 +44,8 @@ logging.basicConfig(
     force=True,  # Override any existing configuration
 )
 
+logger = logging.getLogger("web.server")
+
 # System metrics history (circular buffer for last 60 data points)
 system_history = {
     "cpu": deque(maxlen=60),
@@ -469,7 +471,7 @@ async def reload_scripts() -> dict[str, Any]:
                 raise HTTPException(
                     status_code=403,
                     detail=f"Permission denied. Add sudoers rule: 'sudo tee /etc/sudoers.d/upkeep-reload <<< \"$(whoami) ALL=(ALL) NOPASSWD: /bin/cp {source_path} {dest_path}\"'",
-                )
+                ) from None
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to copy: {e}") from e
 
@@ -780,6 +782,8 @@ async def maintenance_doctor_fix(request: Request) -> dict[str, Any]:
     allowed = {"install_homebrew", "install_mas", "install_xcode_clt"}
     if action not in allowed:
         raise HTTPException(status_code=400, detail="Unknown fix action")
+
+    import subprocess
 
     # Open Terminal for interactive installers (avoids hanging the web server)
     def open_terminal(command: str) -> None:

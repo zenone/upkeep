@@ -201,12 +201,12 @@ class StorageAPI(BaseAPI):
             # Ensure we respect the limit (in case mock returns more)
             return entries[:limit] if entries else []
 
-        except PermissionError:
-            raise PathNotReadableError(f"Permission denied: {path}")
+        except PermissionError as e:
+            raise PathNotReadableError(f"Permission denied: {path}") from e
         except PathNotFoundError:
             raise
         except Exception as e:
-            raise self._handle_error(e)
+            raise self._handle_error(e) from e
 
     def get_category_breakdown(self, path: Path | str) -> dict[str, dict[str, any]]:
         """Get storage breakdown by file category.
@@ -247,12 +247,12 @@ class StorageAPI(BaseAPI):
 
             return breakdown
 
-        except PermissionError:
-            raise PathNotReadableError(f"Permission denied: {path}")
+        except PermissionError as e:
+            raise PathNotReadableError(f"Permission denied: {path}") from e
         except PathNotFoundError:
             raise
         except Exception as e:
-            raise self._handle_error(e)
+            raise self._handle_error(e) from e
 
     def delete_path(self, path: Path | str, mode: str = "trash") -> dict[str, any]:
         """Delete or move to trash a file or directory.

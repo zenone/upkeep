@@ -31,7 +31,7 @@ def get_macos_version() -> str:
         )
         return result.stdout.strip()
     except (subprocess.CalledProcessError, FileNotFoundError) as e:
-        raise RuntimeError(f"Could not determine macOS version: {e}")
+        raise RuntimeError(f"Could not determine macOS version: {e}") from e
 
 
 def get_macos_build() -> str:
@@ -56,7 +56,7 @@ def get_macos_build() -> str:
         )
         return result.stdout.strip()
     except (subprocess.CalledProcessError, FileNotFoundError) as e:
-        raise RuntimeError(f"Could not determine macOS build: {e}")
+        raise RuntimeError(f"Could not determine macOS build: {e}") from e
 
 
 def get_username() -> str:
