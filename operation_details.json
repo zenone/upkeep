@@ -1224,6 +1224,159 @@
       },
       "note": "Only affects user LaunchAgents. Use --login-items-list to see available items."
     },
+    "app-report": {
+      "id": "app-report",
+      "name": "Applications Report",
+      "category": "Reports",
+      "safety": "safe",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Apps accumulate data in multiple locations beyond just /Applications. Understanding total footprint helps identify space savings.",
+        "problems": [
+          {
+            "symptom": "Disk space mystery",
+            "description": "Apps using more space than their bundle size suggests"
+          },
+          {
+            "symptom": "Unknown storage consumers",
+            "description": "Need to identify which apps have large data footprints"
+          },
+          {
+            "symptom": "Cleanup planning",
+            "description": "Want to prioritize which apps to remove for maximum space recovery"
+          }
+        ]
+      },
+      "when_to_run": [
+        "When investigating disk space usage",
+        "Before uninstalling apps to understand impact",
+        "Quarterly cleanup review"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "10-30 seconds depending on number of apps",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Lists top 30 apps by total size (app bundle + all data locations)"
+          },
+          {
+            "type": "positive",
+            "description": "Shows both app bundle size and total data footprint"
+          },
+          {
+            "type": "neutral",
+            "description": "Includes bundle IDs for reference"
+          }
+        ],
+        "side_effects": []
+      },
+      "note": "Use --app-inspect for detailed breakdown of a specific app's data locations."
+    },
+    "app-inspect": {
+      "id": "app-inspect",
+      "name": "Inspect App Data",
+      "category": "Reports",
+      "safety": "safe",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Before uninstalling, understand exactly what data exists and where.",
+        "problems": [
+          {
+            "symptom": "Unknown data locations",
+            "description": "Apps store data in Application Support, Caches, Containers, and more"
+          },
+          {
+            "symptom": "Incomplete uninstalls",
+            "description": "Dragging to Trash leaves orphaned data behind"
+          }
+        ]
+      },
+      "when_to_run": [
+        "Before deciding to uninstall an app",
+        "When investigating why an app uses so much space",
+        "When troubleshooting app behavior (checking for corrupt data)"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "2-5 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Shows all data locations: App Support, Caches, Preferences, Containers, Logs, etc."
+          },
+          {
+            "type": "positive",
+            "description": "Shows size of each location"
+          },
+          {
+            "type": "positive",
+            "description": "Calculates total data footprint"
+          }
+        ],
+        "side_effects": []
+      },
+      "note": "Use --app-uninstall to remove the app and all identified data locations."
+    },
+    "app-uninstall": {
+      "id": "app-uninstall",
+      "name": "Uninstall Application",
+      "category": "Cleanup",
+      "safety": "medium-risk",
+      "warning": "Removes app and ALL associated data (moved to Trash for recovery). Make sure you have any important app data backed up.",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Simply dragging an app to Trash leaves behind gigabytes of orphaned data in Library folders.",
+        "problems": [
+          {
+            "symptom": "Incomplete removal",
+            "description": "Traditional uninstall leaves caches, preferences, containers behind"
+          },
+          {
+            "symptom": "Wasted disk space",
+            "description": "Orphaned app data consuming gigabytes"
+          },
+          {
+            "symptom": "Fresh start needed",
+            "description": "Want to completely remove an app before reinstalling"
+          }
+        ]
+      },
+      "when_to_run": [
+        "When uninstalling apps you no longer use",
+        "When doing a clean reinstall of a problematic app",
+        "When reclaiming disk space from unused software"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "5-30 seconds depending on data size",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Removes app bundle from /Applications"
+          },
+          {
+            "type": "positive",
+            "description": "Removes Application Support data"
+          },
+          {
+            "type": "positive",
+            "description": "Removes Caches, Preferences, Containers, Logs, Saved State"
+          },
+          {
+            "type": "warning",
+            "description": "All removed items go to Trash (recoverable until emptied)"
+          }
+        ],
+        "side_effects": [
+          "App and all data moved to Trash",
+          "May need to empty Trash to reclaim space",
+          "App will need to be reinstalled to use again",
+          "Any unsaved app data will be lost"
+        ]
+      },
+      "note": "Files are moved to Trash, not permanently deleted. Use --dry-run first to preview what will be removed."
+    },
     "downloads-cleanup": {
       "category": "Cleanup",
       "id": "downloads-cleanup",

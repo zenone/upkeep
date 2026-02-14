@@ -3837,6 +3837,469 @@ login_items_enable() {
   fi
 }
 
+# ====== App Uninstaller ======
+# Complete app removal with associated data cleanup
+
+# Get bundle identifier from an app bundle
+get_app_bundle_id() {
+  local app_path="$1"
+  local info_plist="${app_path}/Contents/Info.plist"
+  if [[ -f "$info_plist" ]]; then
+    /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$info_plist" 2>/dev/null || echo ""
+  fi
+}
+
+# Get app name from bundle
+get_app_name() {
+  local app_path="$1"
+  local info_plist="${app_path}/Contents/Info.plist"
+  if [[ -f "$info_plist" ]]; then
+    local display_name
+    display_name=$(/usr/libexec/PlistBuddy -c "Print :CFBundleDisplayName" "$info_plist" 2>/dev/null || \
+                   /usr/libexec/PlistBuddy -c "Print :CFBundleName" "$info_plist" 2>/dev/null || \
+                   basename "$app_path" .app)
+    echo "$display_name"
+  else
+    basename "$app_path" .app
+  fi
+}
+
+# Calculate directory size (returns bytes for sorting, human-readable for display)
+get_dir_size_bytes() {
+  local path="$1"
+  if [[ -d "$path" ]]; then
+    du -sk "$path" 2>/dev/null | awk '{print $1 * 1024}' || echo "0"
+  elif [[ -f "$path" ]]; then
+    stat -f%z "$path" 2>/dev/null || echo "0"
+  else
+    echo "0"
+  fi
+}
+
+get_dir_size_human() {
+  local path="$1"
+  if [[ -d "$path" ]]; then
+    du -sh "$path" 2>/dev/null | awk '{print $1}' || echo "0B"
+  elif [[ -f "$path" ]]; then
+    local bytes
+    bytes=$(stat -f%z "$path" 2>/dev/null || echo "0")
+    numfmt_human "$bytes"
+  else
+    echo "0B"
+  fi
+}
+
+numfmt_human() {
+  local bytes=$1
+  if (( bytes >= 1073741824 )); then
+    printf "%.1fG" "$(echo "scale=1; $bytes / 1073741824" | bc)"
+  elif (( bytes >= 1048576 )); then
+    printf "%.1fM" "$(echo "scale=1; $bytes / 1048576" | bc)"
+  elif (( bytes >= 1024 )); then
+    printf "%.1fK" "$(echo "scale=1; $bytes / 1024" | bc)"
+  else
+    printf "%dB" "$bytes"
+  fi
+}
+
+# Lowercase helper (bash 3.2 compatible)
+to_lower() {
+  echo "$1" | tr '[:upper:]' '[:lower:]'
+}
+
+# Find all data locations for an app
+find_app_data_locations() {
+  local app_path="$1"
+  local bundle_id="$2"
+  local app_name="$3"
+  local user_home
+  user_home=$(get_actual_user_home)
+
+  local locations=()
+
+  # App bundle itself
+  locations+=("$app_path")
+
+  # Application Support (try both bundle ID and app name patterns)
+  [[ -d "${user_home}/Library/Application Support/${app_name}" ]] && \
+    locations+=("${user_home}/Library/Application Support/${app_name}")
+  [[ -n "$bundle_id" && -d "${user_home}/Library/Application Support/${bundle_id}" ]] && \
+    locations+=("${user_home}/Library/Application Support/${bundle_id}")
+
+  # Caches
+  [[ -d "${user_home}/Library/Caches/${app_name}" ]] && \
+    locations+=("${user_home}/Library/Caches/${app_name}")
+  [[ -n "$bundle_id" && -d "${user_home}/Library/Caches/${bundle_id}" ]] && \
+    locations+=("${user_home}/Library/Caches/${bundle_id}")
+
+  # Preferences (plist files)
+  if [[ -n "$bundle_id" ]]; then
+    while IFS= read -r pref; do
+      [[ -n "$pref" ]] && locations+=("$pref")
+    done < <(find "${user_home}/Library/Preferences" -maxdepth 1 -name "${bundle_id}*.plist" 2>/dev/null)
+  fi
+
+  # Containers (sandboxed apps)
+  [[ -n "$bundle_id" && -d "${user_home}/Library/Containers/${bundle_id}" ]] && \
+    locations+=("${user_home}/Library/Containers/${bundle_id}")
+
+  # Group Containers
+  if [[ -n "$bundle_id" ]]; then
+    while IFS= read -r gc; do
+      [[ -n "$gc" ]] && locations+=("$gc")
+    done < <(find "${user_home}/Library/Group Containers" -maxdepth 1 -type d -name "*${bundle_id}*" 2>/dev/null)
+  fi
+
+  # Logs
+  [[ -d "${user_home}/Library/Logs/${app_name}" ]] && \
+    locations+=("${user_home}/Library/Logs/${app_name}")
+
+  # Saved Application State
+  [[ -n "$bundle_id" && -d "${user_home}/Library/Saved Application State/${bundle_id}.savedState" ]] && \
+    locations+=("${user_home}/Library/Saved Application State/${bundle_id}.savedState")
+
+  # HTTPStorages
+  [[ -n "$bundle_id" && -d "${user_home}/Library/HTTPStorages/${bundle_id}" ]] && \
+    locations+=("${user_home}/Library/HTTPStorages/${bundle_id}")
+
+  # WebKit data
+  [[ -n "$bundle_id" && -d "${user_home}/Library/WebKit/${bundle_id}" ]] && \
+    locations+=("${user_home}/Library/WebKit/${bundle_id}")
+
+  printf '%s\n' "${locations[@]}"
+}
+
+app_report() {
+  section "Installed Applications Report"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local app_count=0
+  local total_size=0
+
+  info "Scanning installed applications..."
+  echo ""
+
+  # Create temp file for sorting
+  local tmp_file
+  tmp_file=$(mktemp)
+
+  # Scan /Applications and ~/Applications
+  local app_dirs=("/Applications" "${user_home}/Applications")
+
+  for app_dir in "${app_dirs[@]}"; do
+    [[ -d "$app_dir" ]] || continue
+    while IFS= read -r app_path; do
+      [[ -d "$app_path" ]] || continue
+
+      local app_name bundle_id app_size_bytes app_size_human
+      app_name=$(get_app_name "$app_path")
+      bundle_id=$(get_app_bundle_id "$app_path")
+      app_size_bytes=$(get_dir_size_bytes "$app_path")
+      app_size_human=$(get_dir_size_human "$app_path")
+
+      # Calculate total data size (app + all data locations)
+      local total_data_size=0
+      while IFS= read -r loc; do
+        [[ -n "$loc" ]] || continue
+        local loc_size
+        loc_size=$(get_dir_size_bytes "$loc")
+        total_data_size=$((total_data_size + loc_size))
+      done < <(find_app_data_locations "$app_path" "$bundle_id" "$app_name")
+
+      # Store: total_size|app_size|app_name|bundle_id|app_path
+      echo "${total_data_size}|${app_size_bytes}|${app_name}|${bundle_id}|${app_path}" >> "$tmp_file"
+      ((app_count++))
+    done < <(find "$app_dir" -maxdepth 1 -name "*.app" -type d 2>/dev/null)
+  done
+
+  info "=== Top 30 Applications by Total Size (App + Data) ==="
+  echo ""
+  printf "  %-8s  %-8s  %-40s  %s\n" "TOTAL" "APP" "NAME" "BUNDLE ID"
+  printf "  %-8s  %-8s  %-40s  %s\n" "--------" "--------" "----------------------------------------" "--------------------"
+
+  # Sort by total size (descending) and display top 30
+  sort -t'|' -k1 -rn "$tmp_file" | head -30 | while IFS='|' read -r total_size app_size name bid path; do
+    local total_human app_human
+    total_human=$(numfmt_human "$total_size")
+    app_human=$(numfmt_human "$app_size")
+    printf "  %8s  %8s  %-40s  %s\n" "$total_human" "$app_human" "${name:0:40}" "${bid:0:30}"
+  done
+
+  # Calculate grand total
+  local grand_total=0
+  while IFS='|' read -r ts rest; do
+    grand_total=$((grand_total + ts))
+  done < "$tmp_file"
+
+  rm -f "$tmp_file"
+
+  echo ""
+  info "=== Summary ==="
+  printf "  %-25s %d\n" "Total applications:" "$app_count"
+  printf "  %-25s %s\n" "Total size (app+data):" "$(numfmt_human "$grand_total")"
+  echo ""
+
+  info "💡 To inspect an app's data: upkeep.sh --app-inspect \"App Name\""
+  info "💡 To uninstall an app:     upkeep.sh --app-uninstall \"App Name\""
+
+  success "Applications report complete."
+}
+
+app_inspect() {
+  local search_term="$1"
+  section "App Inspection: ${search_term}"
+
+  if [[ -z "$search_term" ]]; then
+    error "No app name specified. Use --app-report to list apps."
+    return 1
+  fi
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local found_app=""
+
+  # Search in /Applications and ~/Applications
+  local app_dirs=("/Applications" "${user_home}/Applications")
+
+  for app_dir in "${app_dirs[@]}"; do
+    [[ -d "$app_dir" ]] || continue
+    while IFS= read -r app_path; do
+      [[ -d "$app_path" ]] || continue
+      local app_name
+      app_name=$(get_app_name "$app_path")
+      local base_name
+      base_name=$(basename "$app_path" .app)
+
+      # Case-insensitive match on app name or base name
+      local app_name_lower base_name_lower search_term_lower
+      app_name_lower=$(to_lower "$app_name")
+      base_name_lower=$(to_lower "$base_name")
+      search_term_lower=$(to_lower "$search_term")
+      if [[ "$app_name_lower" == "$search_term_lower" ]] || \
+         [[ "$base_name_lower" == "$search_term_lower" ]] || \
+         [[ "$app_name_lower" == *"$search_term_lower"* ]]; then
+        found_app="$app_path"
+        break 2
+      fi
+    done < <(find "$app_dir" -maxdepth 1 -name "*.app" -type d 2>/dev/null)
+  done
+
+  if [[ -z "$found_app" ]]; then
+    error "App not found: ${search_term}"
+    info "Use --app-report to list all installed apps."
+    return 1
+  fi
+
+  local found_app_name bundle_id
+  found_app_name=$(get_app_name "$found_app")
+  bundle_id=$(get_app_bundle_id "$found_app")
+
+  info "Application: ${found_app_name}"
+  info "Bundle ID:   ${bundle_id:-unknown}"
+  info "Location:    ${found_app}"
+  echo ""
+
+  info "=== Data Locations ==="
+  echo ""
+
+  local total_size=0
+  local location_count=0
+
+  while IFS= read -r loc; do
+    [[ -n "$loc" ]] || continue
+    local loc_size_bytes loc_size_human loc_type
+    loc_size_bytes=$(get_dir_size_bytes "$loc")
+    loc_size_human=$(get_dir_size_human "$loc")
+    total_size=$((total_size + loc_size_bytes))
+
+    # Determine location type
+    case "$loc" in
+      *.app) loc_type="📦 App Bundle" ;;
+      */Application\ Support/*) loc_type="📁 App Support" ;;
+      */Caches/*) loc_type="🗄️  Cache" ;;
+      */Preferences/*) loc_type="⚙️  Preferences" ;;
+      */Containers/*) loc_type="📦 Container" ;;
+      */Group\ Containers/*) loc_type="📦 Group Container" ;;
+      */Logs/*) loc_type="📝 Logs" ;;
+      */Saved\ Application\ State/*) loc_type="💾 Saved State" ;;
+      */HTTPStorages/*) loc_type="🌐 HTTP Storage" ;;
+      */WebKit/*) loc_type="🌐 WebKit Data" ;;
+      *) loc_type="📄 Other" ;;
+    esac
+
+    printf "  %8s  %-18s %s\n" "$loc_size_human" "$loc_type" "${loc/#$user_home/~}"
+    ((location_count++))
+  done < <(find_app_data_locations "$found_app" "$bundle_id" "$found_app_name")
+
+  echo ""
+  info "=== Summary ==="
+  printf "  %-20s %d\n" "Data locations:" "$location_count"
+  printf "  %-20s %s\n" "Total size:" "$(numfmt_human "$total_size")"
+  echo ""
+
+  info "💡 To uninstall: upkeep.sh --app-uninstall \"${found_app_name}\""
+
+  success "App inspection complete."
+}
+
+app_uninstall() {
+  local search_term="$1"
+  section "App Uninstall: ${search_term}"
+
+  if [[ -z "$search_term" ]]; then
+    error "No app name specified. Use --app-report to list apps."
+    return 1
+  fi
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local found_app=""
+
+  # Search in /Applications and ~/Applications
+  local app_dirs=("/Applications" "${user_home}/Applications")
+
+  for app_dir in "${app_dirs[@]}"; do
+    [[ -d "$app_dir" ]] || continue
+    while IFS= read -r app_path; do
+      [[ -d "$app_path" ]] || continue
+      local app_name
+      app_name=$(get_app_name "$app_path")
+      local base_name
+      base_name=$(basename "$app_path" .app)
+
+      # Case-insensitive match
+      local app_name_lower base_name_lower search_term_lower
+      app_name_lower=$(to_lower "$app_name")
+      base_name_lower=$(to_lower "$base_name")
+      search_term_lower=$(to_lower "$search_term")
+      if [[ "$app_name_lower" == "$search_term_lower" ]] || \
+         [[ "$base_name_lower" == "$search_term_lower" ]] || \
+         [[ "$app_name_lower" == *"$search_term_lower"* ]]; then
+        found_app="$app_path"
+        break 2
+      fi
+    done < <(find "$app_dir" -maxdepth 1 -name "*.app" -type d 2>/dev/null)
+  done
+
+  if [[ -z "$found_app" ]]; then
+    error "App not found: ${search_term}"
+    info "Use --app-report to list all installed apps."
+    return 1
+  fi
+
+  local found_app_name bundle_id
+  found_app_name=$(get_app_name "$found_app")
+  bundle_id=$(get_app_bundle_id "$found_app")
+
+  info "Application: ${found_app_name}"
+  info "Bundle ID:   ${bundle_id:-unknown}"
+  echo ""
+
+  # Collect all locations to remove
+  local locations=()
+  local total_size=0
+
+  while IFS= read -r loc; do
+    [[ -n "$loc" ]] || continue
+    local loc_size_bytes
+    loc_size_bytes=$(get_dir_size_bytes "$loc")
+    total_size=$((total_size + loc_size_bytes))
+    locations+=("$loc")
+  done < <(find_app_data_locations "$found_app" "$bundle_id" "$found_app_name")
+
+  info "=== Files to Remove ==="
+  echo ""
+  for loc in "${locations[@]}"; do
+    local loc_size_human
+    loc_size_human=$(get_dir_size_human "$loc")
+    printf "  %8s  %s\n" "$loc_size_human" "${loc/#$user_home/~}"
+  done
+  echo ""
+  printf "  %-20s %s\n" "Total to remove:" "$(numfmt_human "$total_size")"
+  echo ""
+
+  # Check if app is running
+  local running_pids
+  running_pids=$(pgrep -f "$found_app" 2>/dev/null || true)
+  if [[ -n "$running_pids" ]]; then
+    warning "⚠️  ${found_app_name} appears to be running!"
+    info "Running processes: ${running_pids}"
+    if (( ! DRY_RUN )); then
+      info "Please quit the app before uninstalling."
+      return 1
+    fi
+  fi
+
+  # Dry run mode
+  if (( DRY_RUN )); then
+    info "[DRY RUN] Would remove ${#locations[@]} locations"
+    for loc in "${locations[@]}"; do
+      info "[DRY RUN] trash \"${loc}\""
+    done
+    success "[DRY RUN] App uninstall preview complete."
+    return 0
+  fi
+
+  # Confirmation gate (unless --yes was passed)
+  if (( ! SKIP_CONFIRM )); then
+    echo ""
+    warning "⚠️  This will move ${found_app_name} and all its data to Trash."
+    echo -n "Continue? [y/N] "
+    read -r confirm
+    if [[ ! "$confirm" =~ ^[Yy] ]]; then
+      info "Cancelled."
+      return 0
+    fi
+  fi
+
+  # Remove files (using trash for safety)
+  info "Removing ${found_app_name}..."
+  local removed_count=0
+  local failed_count=0
+
+  for loc in "${locations[@]}"; do
+    if [[ -e "$loc" ]]; then
+      # Use trash command if available, otherwise mv to ~/.Trash
+      if command -v trash &>/dev/null; then
+        if trash "$loc" 2>/dev/null; then
+          info "  ✅ Trashed: ${loc/#$user_home/~}"
+          ((removed_count++))
+        else
+          warning "  ❌ Failed: ${loc/#$user_home/~}"
+          ((failed_count++))
+        fi
+      else
+        # Fallback: move to Trash manually
+        local trash_name
+        trash_name=$(basename "$loc").$(date +%s)
+        if mv "$loc" "${user_home}/.Trash/${trash_name}" 2>/dev/null; then
+          info "  ✅ Trashed: ${loc/#$user_home/~}"
+          ((removed_count++))
+        else
+          warning "  ❌ Failed: ${loc/#$user_home/~}"
+          ((failed_count++))
+        fi
+      fi
+    fi
+  done
+
+  echo ""
+  info "=== Results ==="
+  printf "  %-20s %d\n" "Files removed:" "$removed_count"
+  printf "  %-20s %d\n" "Failed:" "$failed_count"
+  printf "  %-20s %s\n" "Space freed:" "$(numfmt_human "$total_size")"
+  echo ""
+
+  if (( failed_count > 0 )); then
+    warning "Some files could not be removed (may need admin permissions)."
+  fi
+
+  info "💡 Files moved to Trash. Empty Trash to permanently delete."
+
+  success "App uninstall complete."
+}
+
 downloads_report() {
   section "Downloads Report"
 
@@ -4275,6 +4738,9 @@ DO_LOGIN_ITEMS_REPORT=0
 DO_LOGIN_ITEMS_LIST=0
 DO_LOGIN_ITEMS_DISABLE=""
 DO_LOGIN_ITEMS_ENABLE=""
+DO_APP_REPORT=0
+DO_APP_INSPECT=""
+DO_APP_UNINSTALL=""
 DO_DOWNLOADS_REPORT=0
 DO_DOWNLOADS_CLEANUP=0
 DO_XCODE_CLEANUP=0
@@ -4369,6 +4835,9 @@ Tier 1 Operations (v3.1):
   --login-items-list         List user LaunchAgent labels (machine-readable)
   --login-items-disable <label>  Disable a user LaunchAgent
   --login-items-enable <label>   Enable a user LaunchAgent
+  --app-report               List all installed apps with sizes and data locations
+  --app-inspect <name>       Show detailed info about an app's data locations
+  --app-uninstall <name>     Remove an app and all associated data (moves to Trash)
   --downloads-report         Report size and age of Downloads files
   --downloads-cleanup        Remove old installers/archives from Downloads
   --xcode-cleanup            Clear Xcode DerivedData (not simulators)
@@ -4460,6 +4929,25 @@ while [[ $# -gt 0 ]]; do
         shift 2
       else
         error "--login-items-enable requires a label argument"
+        exit 1
+      fi
+      ;;
+    --app-report) DO_APP_REPORT=1; shift ;;
+    --app-inspect)
+      if [[ -n "${2:-}" && ! "$2" =~ ^-- ]]; then
+        DO_APP_INSPECT="$2"
+        shift 2
+      else
+        error "--app-inspect requires an app name argument"
+        exit 1
+      fi
+      ;;
+    --app-uninstall)
+      if [[ -n "${2:-}" && ! "$2" =~ ^-- ]]; then
+        DO_APP_UNINSTALL="$2"
+        shift 2
+      else
+        error "--app-uninstall requires an app name argument"
         exit 1
       fi
       ;;
@@ -4612,6 +5100,9 @@ else
   (( DO_LOGIN_ITEMS_LIST )) && login_items_list
   [[ -n "$DO_LOGIN_ITEMS_DISABLE" ]] && login_items_disable "$DO_LOGIN_ITEMS_DISABLE"
   [[ -n "$DO_LOGIN_ITEMS_ENABLE" ]] && login_items_enable "$DO_LOGIN_ITEMS_ENABLE"
+  (( DO_APP_REPORT )) && app_report
+  [[ -n "$DO_APP_INSPECT" ]] && app_inspect "$DO_APP_INSPECT"
+  [[ -n "$DO_APP_UNINSTALL" ]] && app_uninstall "$DO_APP_UNINSTALL"
   (( DO_DOWNLOADS_REPORT )) && downloads_report
   (( DO_DOWNLOADS_CLEANUP )) && downloads_cleanup
   (( DO_XCODE_CLEANUP )) && xcode_cleanup
