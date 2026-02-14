@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-95%2B%20passing-brightgreen.svg)](tests/)
-[![Operations](https://img.shields.io/badge/operations-44-blue.svg)](docs/ROADMAP.md)
+[![Operations](https://img.shields.io/badge/operations-53-blue.svg)](docs/ROADMAP.md)
 
 ---
 
@@ -118,7 +118,7 @@ Real-time system overview. CPU, memory, disk, health score, top processes—all 
 ![Dashboard](docs/screenshots/dashboard-v3.png)
 
 ### Maintenance Operations
-44 operations, each explaining **why** you'd run it and **what to expect**. No guesswork, no scary warnings.
+53 operations, each explaining **why** you'd run it and **what to expect**. No guesswork, no scary warnings.
 
 ### Roadmap
 Operator-first backlog: `docs/ROADMAP.md`
@@ -144,7 +144,7 @@ Set it and forget it. Daily, weekly, or monthly maintenance—runs automatically
 A modern, visual interface for Mac maintenance:
 
 - **System Overview**: CPU, memory, disk usage, health score at a glance
-- **29 Maintenance Operations**: Each explains *why* you'd run it and *what to expect*
+- **53 Maintenance Operations**: Each explains *why* you'd run it and *what to expect*
 - **Quick Start Wizard**: 6 presets—Quick Clean, Weekly, Full Checkup, Developer, Security, or Custom
 - **Progress Tracking**: Live output, elapsed time, ETA based on your history
 - **Skip & Cancel**: Changed your mind? Stop or skip mid-operation
@@ -695,12 +695,13 @@ MIT License – see [LICENSE](LICENSE) file for details.
 
 ## 🚦 Status & Roadmap
 
-**Current Version:** 3.0.0
+**Current Version:** 3.1.0
 
 **What's New in 3.1:**
+- 🗑️ **App Uninstaller** – Remove apps with ALL associated data (App Support, Caches, Preferences, Containers)
 - 📥 **Export Logs** – Download maintenance logs for troubleshooting or audit
-- 🖥️ **Login Items Report** – See all startup items and their status
-- 📱 **App Report** – List installed apps with sizes
+- 🖥️ **Login Items Manager** – View, enable, and disable startup items
+- 📱 **App Report** – List installed apps with sizes and data footprints
 - 🔋 **Battery Health** – Check battery condition and cycle count (laptops)
 - 💬 **Electron App Cache** – Clean Slack, Discord, VS Code caches
 - 📸 **Screenshot Folder Report** – Find forgotten screenshots
@@ -708,6 +709,8 @@ MIT License – see [LICENSE](LICENSE) file for details.
 - 🎯 **Category Filtering** – Filter operations by category
 - 📊 **Before/After Comparison** – See space recovered after operations
 - ⌨️ **Keyboard Shortcuts** – Navigate faster with hotkeys
+- 🎨 **Health Gauge** – Visual circular gauge showing system health score
+- 📂 **Smart Categories** – Collapsible operation categories with smart defaults
 
 **What's in 3.0:**
 - 🌐 **Web Dashboard** – Modern browser-based interface with live progress tracking
