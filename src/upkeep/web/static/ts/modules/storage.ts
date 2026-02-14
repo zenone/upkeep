@@ -61,6 +61,9 @@ export async function analyzeStorage(): Promise<void> {
 
     showToast(`Analyzed: ${data.file_count} files, ${data.total_size_gb.toFixed(2)} GB`, 'success');
 
+    // Generate category breakdown visualization
+    const categoryViz = renderCategoryBreakdown(data.category_sizes, data.total_size_bytes);
+
     resultsDiv.innerHTML = `
       <h3 style="margin-top: 2rem;">Results for ${data.path || path}</h3>
       <div class="metric-grid" style="margin-top: 1rem;">
@@ -77,6 +80,7 @@ export async function analyzeStorage(): Promise<void> {
           <div class="value">${data.dir_count.toLocaleString()}</div>
         </div>
       </div>
+      ${categoryViz}
       <h3 style="margin-top: 2rem;">Largest Items</h3>
       <p style="color: var(--text-secondary); margin-top: 0.5rem;">Select items to delete</p>
       <div class="file-list">
@@ -410,4 +414,113 @@ export function setPath(path: string): void {
 export function getUsername(): string {
   // Access global state from dashboard module
   return (window as any)._currentUsername || 'username';
+}
+
+// ============================================================================
+// Category Breakdown Visualization
+// ============================================================================
+
+/** Category display configuration */
+const CATEGORY_CONFIG: Record<string, { icon: string; color: string; label: string }> = {
+  images: { icon: '🖼️', color: '#ff6961', label: 'Images' },
+  videos: { icon: '🎬', color: '#779ecb', label: 'Videos' },
+  audio: { icon: '🎵', color: '#77dd77', label: 'Audio' },
+  documents: { icon: '📄', color: '#fdfd96', label: 'Documents' },
+  archives: { icon: '📦', color: '#c5a3ff', label: 'Archives' },
+  code: { icon: '💻', color: '#ffb347', label: 'Code' },
+};
+
+/**
+ * Format bytes to human-readable string
+ */
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+/**
+ * Render category breakdown as a visual bar chart
+ */
+export function renderCategoryBreakdown(
+  categorySizes: Record<string, number> | undefined,
+  totalBytes: number | undefined
+): string {
+  // Handle missing or empty data
+  if (!categorySizes || typeof categorySizes !== 'object') {
+    return '';
+  }
+
+  // Filter to categories with actual data
+  const entries = Object.entries(categorySizes)
+    .filter(([_, size]) => size > 0)
+    .sort((a, b) => b[1] - a[1]); // Sort by size descending
+
+  if (entries.length === 0) {
+    return '';
+  }
+
+  // Calculate total categorized bytes and "other" category
+  const categorizedTotal = entries.reduce((sum, [_, size]) => sum + size, 0);
+  const total = totalBytes || categorizedTotal;
+  const otherBytes = total > categorizedTotal ? total - categorizedTotal : 0;
+
+  // Find max for scaling bars (use largest category)
+  const maxSize = Math.max(...entries.map(([_, size]) => size), otherBytes);
+
+  // Build bar items
+  const bars = entries.map(([category, size]) => {
+    const config = CATEGORY_CONFIG[category] || { icon: '📁', color: '#888', label: category };
+    const percentage = total > 0 ? (size / total * 100).toFixed(1) : '0';
+    const barWidth = maxSize > 0 ? (size / maxSize * 100) : 0;
+
+    return `
+      <div class="category-bar-item">
+        <div class="category-bar-label">
+          <span class="category-icon">${config.icon}</span>
+          <span class="category-name">${config.label}</span>
+          <span class="category-size">${formatBytes(size)}</span>
+          <span class="category-percent">${percentage}%</span>
+        </div>
+        <div class="category-bar-track">
+          <div class="category-bar-fill" style="width: ${barWidth}%; background: ${config.color};"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Add "Other" category if significant
+  let otherBar = '';
+  if (otherBytes > 0 && total > 0) {
+    const otherPercent = (otherBytes / total * 100).toFixed(1);
+    const otherWidth = maxSize > 0 ? (otherBytes / maxSize * 100) : 0;
+    otherBar = `
+      <div class="category-bar-item">
+        <div class="category-bar-label">
+          <span class="category-icon">📁</span>
+          <span class="category-name">Other</span>
+          <span class="category-size">${formatBytes(otherBytes)}</span>
+          <span class="category-percent">${otherPercent}%</span>
+        </div>
+        <div class="category-bar-track">
+          <div class="category-bar-fill" style="width: ${otherWidth}%; background: #888;"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="category-breakdown">
+      <h3 style="margin-top: 2rem;">📊 Storage by Category</h3>
+      <p style="color: var(--text-secondary); margin-top: 0.5rem; margin-bottom: 1rem;">
+        Breakdown of ${formatBytes(categorizedTotal)} categorized across ${entries.length} file types
+      </p>
+      <div class="category-bars">
+        ${bars}
+        ${otherBar}
+      </div>
+    </div>
+  `;
 }

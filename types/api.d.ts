@@ -252,9 +252,11 @@ export interface StorageAnalyzeResponse {
   success: boolean;
   path: string;
   total_size_gb: number;
+  total_size_bytes: number;
   file_count: number;
   dir_count: number;
   largest_entries: StorageEntry[];
+  category_sizes: Record<string, number>;  // category -> bytes
   error?: string;
 }
 

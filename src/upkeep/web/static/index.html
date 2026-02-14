@@ -2102,6 +2102,79 @@
             color: var(--text-secondary);
         }
 
+        /* Category Breakdown Visualization */
+        .category-breakdown {
+            margin: 1.5rem 0;
+        }
+
+        .category-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .category-bar-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .category-bar-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .category-icon {
+            font-size: 1rem;
+            width: 1.5rem;
+            text-align: center;
+        }
+
+        .category-name {
+            font-weight: 500;
+            min-width: 80px;
+        }
+
+        .category-size {
+            color: var(--text-secondary);
+            margin-left: auto;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+
+        .category-percent {
+            color: var(--text-secondary);
+            width: 50px;
+            text-align: right;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+
+        .category-bar-track {
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .category-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        /* Responsive adjustments for category bars */
+        @media (max-width: 480px) {
+            .category-bar-label {
+                flex-wrap: wrap;
+            }
+            .category-size {
+                margin-left: 1.5rem;
+            }
+        }
+
     </style>
 </head>
 <body>
