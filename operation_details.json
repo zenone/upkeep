@@ -1952,6 +1952,62 @@
         ]
       },
       "note": "Requires confirmation. This permanently deletes all files in the Trash. Make sure you don't need to recover anything before running."
+    },
+    "docker-prune": {
+      "id": "docker-prune",
+      "name": "Docker Cleanup",
+      "category": "Cleanup Operations",
+      "safety": "low-risk",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Docker accumulates stopped containers, old images, and build cache that consume significant disk space. Active Docker developers can have 10-50GB of reclaimable space.",
+        "problems": [
+          {
+            "symptom": "Disk space consumption",
+            "description": "Stopped containers, unused images, and build cache using 10-50GB"
+          },
+          {
+            "symptom": "Image sprawl",
+            "description": "Old and dangling images from builds accumulating over time"
+          },
+          {
+            "symptom": "Build cache bloat",
+            "description": "Layer cache from builds growing unbounded"
+          }
+        ]
+      },
+      "when_to_run": [
+        "Monthly for active Docker users",
+        "When disk space is low",
+        "After completing a project",
+        "Before major Docker version upgrades"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "10-60 seconds depending on amount to prune",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Space freed: Typically 5-50GB for active Docker users"
+          },
+          {
+            "type": "positive",
+            "description": "Cleaner state: Removes stopped containers and dangling images"
+          },
+          {
+            "type": "neutral",
+            "description": "Running containers preserved: Only stopped/unused resources removed"
+          }
+        ],
+        "side_effects": [
+          "Running containers are NOT affected",
+          "Tagged images are NOT removed (only dangling/untagged)",
+          "Named volumes are NOT removed by default",
+          "Networks not used by running containers are removed",
+          "Subsequent builds may take longer (cache rebuilt)"
+        ]
+      },
+      "note": "Safe operation that only removes unused resources. Running containers, tagged images, and named volumes are preserved. Requires Docker to be installed and running."
     }
   },
   "version": "1.0"

@@ -3207,6 +3207,84 @@ trash_empty() {
   success "Trash emptied."
 }
 
+docker_prune() {
+  section "Docker Cleanup"
+
+  # Check if Docker is installed
+  if ! command -v docker &>/dev/null; then
+    info "Docker is not installed. Skipping."
+    return 0
+  fi
+
+  # Check if Docker daemon is running
+  if ! docker info &>/dev/null; then
+    warning "Docker daemon is not running. Start Docker Desktop first."
+    return 0
+  fi
+
+  info "Analyzing Docker disk usage..."
+
+  # Get Docker disk usage summary
+  local docker_df
+  docker_df=$(docker system df 2>/dev/null) || { warning "Failed to get Docker disk usage."; return 1; }
+
+  echo "$docker_df"
+  echo ""
+
+  # Get reclaimable space
+  local images_reclaimable volumes_reclaimable containers_reclaimable build_cache_reclaimable
+  images_reclaimable=$(docker system df 2>/dev/null | grep "Images" | awk '{print $NF}' | tr -d '()' || echo "0B")
+  build_cache_reclaimable=$(docker system df 2>/dev/null | grep "Build cache" | awk '{print $NF}' | tr -d '()' || echo "0B")
+
+  # Count stopped containers and dangling images
+  local stopped_containers dangling_images unused_volumes
+  stopped_containers=$(docker ps -aq --filter "status=exited" 2>/dev/null | wc -l | tr -d ' ')
+  dangling_images=$(docker images -q --filter "dangling=true" 2>/dev/null | wc -l | tr -d ' ')
+  unused_volumes=$(docker volume ls -q --filter "dangling=true" 2>/dev/null | wc -l | tr -d ' ')
+
+  info "Reclaimable: Images (${images_reclaimable}), Build cache (${build_cache_reclaimable})"
+  info "Stopped containers: ${stopped_containers}, Dangling images: ${dangling_images}, Unused volumes: ${unused_volumes}"
+
+  if [[ "$stopped_containers" -eq 0 ]] && [[ "$dangling_images" -eq 0 ]] && [[ "$unused_volumes" -eq 0 ]]; then
+    info "Docker is already clean. No resources to prune."
+    return 0
+  fi
+
+  if [[ "${PREVIEW:-0}" -eq 1 ]]; then
+    info "PREVIEW: Would prune stopped containers, dangling images, unused networks, and build cache."
+    info "  - Stopped containers: ${stopped_containers}"
+    info "  - Dangling images: ${dangling_images}"
+    info "  - Unused volumes: ${unused_volumes}"
+    return 0
+  fi
+
+  [[ "${DRY_RUN:-0}" -eq 1 ]] && { warning "DRY-RUN: would run docker system prune"; return 0; }
+
+  warning "This will remove:"
+  warning "  - All stopped containers"
+  warning "  - All networks not used by at least one container"
+  warning "  - All dangling images"
+  warning "  - All dangling build cache"
+  echo ""
+  warning "Note: Unused volumes are NOT removed by default (use --volumes flag in Docker CLI for that)."
+
+  if ! confirm "Proceed with Docker cleanup?"; then
+    warning "Skipped Docker cleanup."
+    return 0
+  fi
+
+  info "Running docker system prune..."
+  docker system prune -f 2>&1 | while read -r line; do
+    info "  $line"
+  done
+
+  success "Docker cleanup complete."
+
+  # Show updated disk usage
+  info "Updated Docker disk usage:"
+  docker system df 2>/dev/null || true
+}
+
 ########################################
 # Orchestrators
 ########################################
@@ -3289,6 +3367,9 @@ DO_CACHES_CLEANUP=0
 DO_LOGS_CLEANUP=0
 DO_TRASH_EMPTY=0
 
+# Tier 2 Operations
+DO_DOCKER_PRUNE=0
+
 SPACE_THRESHOLD=85
 TM_THIN_THRESHOLD=88
 TM_THIN_BYTES=20000000000  # ~20GB request
@@ -3364,6 +3445,9 @@ Tier 1 Operations (v3.1):
   --logs-cleanup             Remove log files older than 30 days
   --trash-empty              Empty the Trash (permanent delete)
 
+Tier 2 Operations:
+  --docker-prune             Clean up Docker (stopped containers, dangling images, build cache)
+
 Tuning:
   --space-threshold PCT
   --tm-thin-threshold PCT
@@ -3422,6 +3506,9 @@ while [[ $# -gt 0 ]]; do
     --caches-cleanup) DO_CACHES_CLEANUP=1; shift ;;
     --logs-cleanup) DO_LOGS_CLEANUP=1; shift ;;
     --trash-empty) DO_TRASH_EMPTY=1; shift ;;
+
+    # Tier 2 Operations
+    --docker-prune) DO_DOCKER_PRUNE=1; shift ;;
 
     --trim-logs)
       DO_TRIM_LOGS=1
@@ -3552,6 +3639,9 @@ else
   (( DO_CACHES_CLEANUP )) && caches_cleanup
   (( DO_LOGS_CLEANUP )) && logs_cleanup
   (( DO_TRASH_EMPTY )) && trash_empty
+
+  # Tier 2 Operations
+  (( DO_DOCKER_PRUNE )) && docker_prune
 fi
 
 END_TIME=$(date +%s)

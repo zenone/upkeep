@@ -370,6 +370,15 @@ class MaintenanceAPI(BaseAPI):
             "safe": False,
             "recommended": False,
         },
+        "docker-prune": {
+            "id": "docker-prune",
+            "name": "Docker Cleanup",
+            "description": "Clean up Docker (stopped containers, dangling images, build cache)",
+            "guidance": "Why: Docker accumulates stopped containers, old images, and build cache that consume significant disk space (often 10-50GB for active developers). When: Monthly for active Docker users, when disk is tight, after completing a project. After: Removes stopped containers, unused networks, dangling images, and build cache. Running containers and tagged images are preserved. Frees 5-50GB typically.",
+            "category": "Cleanup Operations",
+            "safe": True,
+            "recommended": False,
+        },
     }
 
     def __init__(self):

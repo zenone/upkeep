@@ -61,6 +61,8 @@ ALLOWED_OPERATIONS = {
     "mail-optimize": (["--mail-optimize", "--assume-yes"], 300),
     "messages-cache": (["--messages-cache", "--assume-yes"], 300),
     "wallpaper-aerials": (["--wallpaper-aerials", "--assume-yes"], 600),
+    # Tier 2 Operations
+    "docker-prune": (["--docker-prune", "--assume-yes"], 600),
 }
 
 
