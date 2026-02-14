@@ -1,18 +1,8 @@
 import pytest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-from upkeep.core.app_uninstaller import AppUninstaller
-from upkeep.core.app_finder import AppFinder
-
-@pytest.fixture
-def mock_app_finder():
-    with patch('upkeep.core.app_uninstaller.AppFinder') as MockFinder:
-        finder_instance = MockFinder.return_value
-        yield finder_instance
-
-@pytest.fixture
-def uninstaller(mock_app_finder):
-    return AppUninstaller()
+from upkeep.core.app_uninstaller import AppUninstaller, UninstallResult
+from upkeep.core.app_finder import AppScanResult, AppArtifact
 
 def test_init():
     uninstaller = AppUninstaller()
@@ -22,63 +12,77 @@ def test_init_force():
     uninstaller = AppUninstaller(dry_run=False)
     assert uninstaller.dry_run is False
 
-def test_plan_uninstall_calls_finder(uninstaller, mock_app_finder):
-    app_path = "/Applications/TestApp.app"
+def test_uninstall_dry_run_returns_result_no_deletion():
+    uninstaller = AppUninstaller(dry_run=True)
     
-    # Mock AppScanResult and Artifacts
-    mock_result = MagicMock()
-    mock_result.app_info = {"path": app_path}
-    
-    artifact1 = MagicMock()
-    artifact1.path = Path("/Library/Preferences/com.example.TestApp.plist")
-    
-    artifact2 = MagicMock()
-    artifact2.path = Path("/Library/Application Support/TestApp")
-    
-    mock_result.artifacts = [artifact1, artifact2]
-    
-    mock_app_finder.scan.return_value = mock_result
-
-    plan = uninstaller.plan_uninstall(app_path)
-    
-    mock_app_finder.scan.assert_called_once_with(app_path)
-    assert plan["app"] == Path(app_path)
-    assert len(plan["related"]) == 2
-    assert Path("/Library/Preferences/com.example.TestApp.plist") in plan["related"]
-
-def test_uninstall_dry_run_returns_plan_no_deletion(uninstaller, mock_app_finder):
-    app_path = "/Applications/TestApp.app"
-    related_files = [
-        Path("/Library/Preferences/com.example.TestApp.plist"),
-        Path("/Library/Application Support/TestApp")
-    ]
+    app_path = Path("/Applications/TestApp.app")
     
     # Mock AppScanResult
-    mock_result = MagicMock()
-    mock_result.app_info = {"path": app_path}
+    artifact1 = AppArtifact(
+        path=app_path,
+        kind="app",
+        size_bytes=100,
+        reason="App bundle"
+    )
     
-    artifact1 = MagicMock()
-    artifact1.path = related_files[0]
+    artifact2 = AppArtifact(
+        path=Path("/Library/Preferences/com.example.TestApp.plist"),
+        kind="preferences",
+        size_bytes=50,
+        reason="Bundle ID match"
+    )
     
-    artifact2 = MagicMock()
-    artifact2.path = related_files[1]
+    mock_result = AppScanResult(
+        app_info={"path": str(app_path), "name": "TestApp"},
+        artifacts=[artifact1, artifact2],
+        total_size_bytes=150
+    )
     
-    mock_result.artifacts = [artifact1, artifact2]
-    
-    mock_app_finder.scan.return_value = mock_result
+    # Mock exists() on paths
+    with patch('pathlib.Path.exists', return_value=True):
+        with patch('upkeep.core.app_uninstaller.shutil') as mock_shutil:
+            result = uninstaller.uninstall(mock_result)
+            
+            # Verify result structure
+            assert isinstance(result, UninstallResult)
+            assert result.success is True
+            assert len(result.deleted_paths) == 2
+            assert result.bytes_recovered == 150
+            
+            # Verify no deletion calls (move)
+            mock_shutil.move.assert_not_called()
 
-    with patch('upkeep.core.app_uninstaller.shutil') as mock_shutil, \
-         patch('upkeep.core.app_uninstaller.os') as mock_os:
+def test_uninstall_wet_run_deletes_files():
+    uninstaller = AppUninstaller(dry_run=False)
+    
+    app_path = Path("/Applications/TestApp.app")
+    
+    artifact1 = AppArtifact(
+        path=app_path,
+        kind="app",
+        size_bytes=100,
+        reason="App bundle"
+    )
+    
+    mock_result = AppScanResult(
+        app_info={"path": str(app_path), "name": "TestApp"},
+        artifacts=[artifact1],
+        total_size_bytes=100
+    )
+    
+    with patch('pathlib.Path.exists', return_value=True), \
+         patch('pathlib.Path.is_dir', return_value=True), \
+         patch('pathlib.Path.is_symlink', return_value=False), \
+         patch('upkeep.core.app_uninstaller.shutil') as mock_shutil:
+            
+        result = uninstaller.uninstall(mock_result)
         
-        result = uninstaller.uninstall(app_path)
+        assert result.success is True
+        assert len(result.deleted_paths) == 1
         
-        # Verify dry run behavior
-        assert result["dry_run"] is True
-        assert result["status"] == "planned"
-        # The result items include related files plus the app itself
-        assert len(result["items"]) == 3
-        assert Path(app_path) in result["items"]
-        
-        # Verify no deletion calls
-        mock_shutil.rmtree.assert_not_called()
-        mock_os.remove.assert_not_called()
+        # Verify move called
+        mock_shutil.move.assert_called()
+        # Check args
+        args, _ = mock_shutil.move.call_args
+        assert args[0] == str(app_path)
+        assert ".Trash" in args[1]

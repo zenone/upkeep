@@ -8,6 +8,7 @@ import { loadSystemInfo, loadHealthScore, loadTopProcesses, runQuickHealthCheck 
 import { loadOperations, runDoctor, fixDoctorIssue, runSelectedOperations, cancelOperations, skipCurrentOperation, applyTemplate, selectAllOperations, deselectAllOperations, copyOutputToClipboard, showQuickStartWizard, closeWizard, selectWizardOption, initKeyboardShortcuts, closeShortcuts, filterByCategory, toggleCategory, expandAllCategories, collapseAllCategories, exportLatestLog } from './modules/maintenance';
 import { analyzeStorage, setPath, getUsername } from './modules/storage';
 import { onScheduleTabShow, openScheduleModal, closeScheduleModal, loadSchedules, saveSchedule, deleteSchedule, toggleScheduleEnabled, runScheduleNow, applyScheduleTemplate } from './modules/schedule';
+import { AppUninstaller } from './modules/app_uninstaller';
 import type { TabName } from './types';
 
 console.log('╔════════════════════════════════════════════════╗');
@@ -161,6 +162,14 @@ document.addEventListener('DOMContentLoaded', () => {
   loadHealthScore();
   loadTopProcesses();
   console.log('✓ Initial dashboard data loading');
+
+  // Initialize App Uninstaller
+  try {
+    new AppUninstaller('app-uninstaller-container');
+    console.log('✓ App Uninstaller initialized');
+  } catch (e) {
+    console.warn('App Uninstaller init failed (container missing?):', e);
+  }
 
   // Note: Auto-refresh intervals are now managed by initSettings()
   // based on user preferences (Settings > Dashboard > Auto-Refresh)

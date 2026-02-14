@@ -1,9 +1,18 @@
 import shutil
-import os
+from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Dict, Union, Any, Optional
+from typing import Any
 
-from upkeep.core.app_finder import AppFinder
+from upkeep.core.app_finder import AppFinder, AppScanResult
+
+
+@dataclass
+class UninstallResult:
+    """Result of an uninstall operation."""
+    success: bool
+    deleted_paths: list[Path]
+    bytes_recovered: int
+    errors: list[str]
 
 class AppUninstaller:
     """
@@ -14,55 +23,96 @@ class AppUninstaller:
         self.dry_run = dry_run
         self.finder = AppFinder()
 
-    def plan_uninstall(self, app_path: str) -> Dict[str, Any]:
+    def generate_report(self, app: AppScanResult) -> Any:
         """
-        Finds all files related to the app without deleting anything.
-        Returns a dict with 'app' path and 'related' paths.
+        Generate a detailed report of what would be removed.
+        Returns an object that can be serialized to JSON (via to_dict or vars).
         """
-        scan_result = self.finder.scan(app_path)
-        
-        if not scan_result:
-            return {"app": Path(app_path), "related": []}
+        # Simply wrapping the AppScanResult artifacts for now
+        # Could grouping by kind here
+        artifacts_by_kind = {}
+        for a in app.artifacts:
+            k = a.kind
+            if k not in artifacts_by_kind:
+                artifacts_by_kind[k] = []
+            artifacts_by_kind[k].append({
+                "path": str(a.path),
+                "size_bytes": a.size_bytes,
+                "reason": a.reason
+            })
 
-        app_main_path = Path(scan_result.app_info.get("path", app_path))
-        
-        related_paths = []
-        for artifact in scan_result.artifacts:
-            # We want all artifacts EXCEPT the app bundle itself in the 'related' list
-            # The app bundle is tracked separately in the 'app' key
-            if artifact.kind == "app" and artifact.path == app_main_path:
+        return type("Report", (), {
+            "to_dict": lambda: {
+                "app_info": app.app_info,
+                "total_size": app.total_size_bytes,
+                "artifacts": artifacts_by_kind
+            }
+        })()
+
+    def uninstall(self, app: AppScanResult) -> UninstallResult:
+        """
+        Executes the uninstallation based on the scan result.
+        """
+        deleted = []
+        recovered = 0
+        errors = []
+
+        # Sort artifacts to delete deepest paths first (though for files it doesn't matter much)
+        # But for directories, we should be careful.
+        # Actually AppFinder returns paths.
+
+        # We need to delete all artifacts + the app bundle itself.
+        # Note: artifacts list includes the app bundle (kind="app").
+
+        to_delete = sorted(app.artifacts, key=lambda x: len(str(x.path)), reverse=True)
+
+        for artifact in to_delete:
+            p = artifact.path
+            if not p.exists():
                 continue
-            related_paths.append(artifact.path)
 
-        return {
-            "app": app_main_path,
-            "related": related_paths
-        }
+            try:
+                if self.dry_run:
+                    # Just simulate
+                    deleted.append(p)
+                    recovered += artifact.size_bytes
+                else:
+                    if p.is_dir() and not p.is_symlink():
+                        # Use send2trash or shutil.rmtree?
+                        # Requirements say "Safety: Moves to Trash"
+                        # But send2trash is external dependency.
+                        # server.py has delete_path using storage_api.
+                        # For now, let's use shutil.rmtree or os.remove if dry_run=False
+                        # BUT BETTER: Use the existing StorageAPI if possible, or just Move to Trash logic.
+                        # Since I don't want to add deps, I'll use a simple move to ~/.Trash
+                        trash_dir = Path.home() / ".Trash"
+                        dest = trash_dir / p.name
+                        if dest.exists():
+                            # timestamp it
+                            import time
+                            dest = trash_dir / f"{p.name}.{int(time.time())}"
 
-    def uninstall(self, app_path: str) -> Dict[str, Any]:
-        """
-        Executes the uninstallation based on the plan.
-        If dry_run is True, returns the plan with status='planned'.
-        If dry_run is False, deletes files and returns status='deleted'.
-        """
-        plan = self.plan_uninstall(app_path)
-        
-        # Combine app and related into one list for processing
-        # Ensure list contains Path objects
-        items_to_delete = plan.get("related", []) + [plan.get("app")]
-        
-        result = {
-            "app": plan.get("app"),
-            "items": items_to_delete,
-            "dry_run": self.dry_run,
-            "status": "planned" if self.dry_run else "deleted",
-            "errors": []
-        }
+                        shutil.move(str(p), str(dest))
+                        deleted.append(p)
+                        recovered += artifact.size_bytes
+                    else:
+                        # File
+                        trash_dir = Path.home() / ".Trash"
+                        dest = trash_dir / p.name
+                        if dest.exists():
+                            import time
+                            dest = trash_dir / f"{p.name}.{int(time.time())}"
+                        shutil.move(str(p), str(dest))
+                        deleted.append(p)
+                        recovered += artifact.size_bytes
 
-        if self.dry_run:
-            return result
+            except Exception as e:
+                errors.append(f"Failed to delete {p}: {e}")
 
-        # Actual deletion logic (for future slice)
-        # TODO: Implement deletion
-        
-        return result
+        return UninstallResult(
+            success=len(errors) == 0,
+            deleted_paths=deleted,
+            bytes_recovered=recovered,
+            errors=errors
+        )
+

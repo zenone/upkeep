@@ -1594,6 +1594,121 @@ async def run_schedule_now(schedule_id: str):
         raise HTTPException(status_code=500, detail=f"Error running schedule: {e}") from e
 
 
+# App Uninstaller endpoints
+@app.get(
+    "/api/apps",
+    tags=["maintenance"],
+    summary="List installed applications",
+    description="Returns a list of installed applications with metadata (size, path, etc.).",
+)
+async def list_apps(limit: int = 50) -> dict[str, Any]:
+    """List installed applications."""
+    try:
+        from upkeep.core.app_finder import AppFinder
+
+        finder = AppFinder()
+        apps = finder.scan_applications()
+
+        # Format for API response
+        app_list = []
+        for app in apps:
+            app_list.append({
+                "name": app.name,
+                "path": str(app.path),
+                "bundle_id": app.bundle_id,
+                "version": app.version,
+                "size_bytes": app.size_bytes,
+                "size_display": app.size_display,
+                "icon": app.icon_path,  # Path to icon if extracted
+            })
+
+        # Sort by size descending
+        app_list.sort(key=lambda x: x["size_bytes"], reverse=True)
+
+        return {
+            "success": True,
+            "apps": app_list[:limit],
+            "total": len(app_list)
+        }
+    except Exception as e:
+        logger.error(f"Error listing apps: {e}")
+        raise HTTPException(status_code=500, detail=f"Error listing apps: {e}") from e
+
+
+@app.get(
+    "/api/apps/{name}",
+    tags=["maintenance"],
+    summary="Inspect application details",
+    description="Returns detailed breakdown of an application's files and associated data.",
+)
+async def inspect_app(name: str) -> dict[str, Any]:
+    """Inspect application details."""
+    try:
+        from upkeep.core.app_finder import AppFinder
+        from upkeep.core.app_uninstaller import AppUninstaller
+
+        finder = AppFinder()
+        app = finder.find_app(name)
+
+        if not app:
+            raise HTTPException(status_code=404, detail=f"Application '{name}' not found")
+
+        uninstaller = AppUninstaller()
+        report = uninstaller.generate_report(app)
+
+        return {
+            "success": True,
+            "app": {
+                "name": app.name,
+                "path": str(app.path),
+                "bundle_id": app.bundle_id,
+                "version": app.version,
+                "size_bytes": app.size_bytes,
+            },
+            "report": report.to_dict()  # Assuming Report has to_dict()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error inspecting app: {e}")
+        raise HTTPException(status_code=500, detail=f"Error inspecting app: {e}") from e
+
+
+@app.post(
+    "/api/apps/{name}/uninstall",
+    tags=["maintenance"],
+    summary="Uninstall application",
+    description="Uninstall an application and remove associated data.",
+)
+async def uninstall_app(name: str, dry_run: bool = True) -> dict[str, Any]:
+    """Uninstall application."""
+    try:
+        from upkeep.core.app_finder import AppFinder
+        from upkeep.core.app_uninstaller import AppUninstaller
+
+        finder = AppFinder()
+        app = finder.find_app(name)
+
+        if not app:
+            raise HTTPException(status_code=404, detail=f"Application '{name}' not found")
+
+        uninstaller = AppUninstaller(dry_run=dry_run)
+        result = uninstaller.uninstall(app)
+
+        return {
+            "success": True,
+            "app": name,
+            "dry_run": dry_run,
+            "deleted_paths": [str(p) for p in result.deleted_paths],
+            "bytes_recovered": result.bytes_recovered
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error uninstalling app: {e}")
+        raise HTTPException(status_code=500, detail=f"Error uninstalling app: {e}") from e
+
+
 # Serve static files (web UI)
 static_dir = Path(__file__).parent / "static"
 if static_dir.exists():

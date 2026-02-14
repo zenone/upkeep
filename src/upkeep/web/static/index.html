@@ -2186,6 +2186,7 @@
                 <button onclick="showTab('dashboard')" class="active" role="tab" aria-selected="true" aria-controls="dashboard" id="tab-dashboard">Dashboard</button>
                 <button onclick="showTab('storage')" role="tab" aria-selected="false" aria-controls="storage" id="tab-storage">Storage</button>
                 <button onclick="showTab('maintenance')" role="tab" aria-selected="false" aria-controls="maintenance" id="tab-maintenance">Maintenance</button>
+                <button onclick="showTab('uninstaller')" role="tab" aria-selected="false" aria-controls="uninstaller" id="tab-uninstaller">Uninstaller</button>
                 <button onclick="showTab('schedule')" role="tab" aria-selected="false" aria-controls="schedule" id="tab-schedule">Schedule</button>
             </div>
             <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme (Light → Dark → System)" aria-label="Toggle color theme">
@@ -2439,6 +2440,17 @@
                         <!-- Copy button will be added here dynamically -->
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Uninstaller Tab -->
+        <div id="uninstaller" class="tab-content">
+            <div class="card">
+                <h2>App Uninstaller</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                    Find and remove applications and their associated data (caches, preferences, etc.).
+                </p>
+                <div id="app-uninstaller-container"></div>
             </div>
         </div>
 
