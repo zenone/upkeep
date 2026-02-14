@@ -10,8 +10,9 @@ interface DiskNode {
     name: string;
     path: string;
     value: number;
-    size_display: string;
-    percent: number;
+    sizeFormatted: string;  // from backend
+    percentage: number;      // from backend
+    totalSizeFormatted?: string;
     children?: DiskNode[];
 }
 
@@ -356,19 +357,31 @@ export class DiskVisualizer {
         
         try {
             const response = await fetch(`/api/disk/usage?path=${encodeURIComponent(path)}&depth=${depth}&min_size_mb=${minSizeMb}`);
-            const result: DiskUsageResponse = await response.json();
             
-            if (result.success && result.data) {
-                this.renderTreemap(result.data);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ detail: 'Request failed' }));
+                this.showError(errorData.detail || `HTTP ${response.status}`);
+                return;
+            }
+            
+            const result = await response.json();
+            
+            // Backend returns tree directly (not wrapped in { success, data })
+            // Check if it's an error response or valid tree data
+            if (result.error && !result.name) {
+                this.showError(result.error);
+            } else if (result.name) {
+                // Valid tree data - render it
+                this.renderTreemap(result as DiskNode);
                 this.updateBreadcrumbs();
                 
                 if (result.warnings && result.warnings.length > 0) {
                     showToast(`Scan complete with ${result.warnings.length} permission warning(s)`, 'warning');
-                } else if (result.scan_time_seconds) {
-                    showToast(`Scan complete in ${result.scan_time_seconds.toFixed(1)}s`, 'success');
+                } else {
+                    showToast(`Scan complete: ${result.totalSizeFormatted || 'done'}`, 'success');
                 }
             } else {
-                this.showError(result.error || 'Unknown error');
+                this.showError('Invalid response from server');
             }
         } catch (error) {
             this.showError(`Failed to scan: ${error}`);
@@ -482,7 +495,7 @@ export class DiskVisualizer {
             .on('mouseover', (event, d) => this.showDetails(d))
             .on('mouseout', () => this.hideDetails())
             .append('title')
-            .text(d => `${d.data.path}\n${d.data.size_display}\n${d.data.percent.toFixed(1)}%`);
+            .text(d => `${d.data.path}\n${d.data.sizeFormatted || 'N/A'}\n${(d.data.percentage || 0).toFixed(1)}%`);
         
         // Labels (only for cells large enough)
         cell.filter(d => (d.x1 - d.x0) > 60 && (d.y1 - d.y0) > 30)
@@ -498,7 +511,7 @@ export class DiskVisualizer {
             .attr('class', 'treemap-size')
             .attr('x', 4)
             .attr('y', 26)
-            .text(d => d.data.size_display);
+            .text(d => d.data.sizeFormatted || '');
         
         // Update legend
         this.renderLegend(colorScale);
@@ -536,8 +549,8 @@ export class DiskVisualizer {
         infoEl.innerHTML = `
             <strong>${d.data.name}</strong><br>
             Path: ${d.data.path}<br>
-            Size: ${d.data.size_display}<br>
-            Percent: ${d.data.percent.toFixed(2)}% of parent
+            Size: ${d.data.sizeFormatted || 'N/A'}<br>
+            Percent: ${(d.data.percentage || 0).toFixed(2)}% of parent
         `;
     }
 
