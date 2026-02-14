@@ -1048,6 +1048,84 @@ async def get_last_run() -> dict[str, Any]:
         raise HTTPException(status_code=500, detail=f"Error getting last run: {e}") from e
 
 
+@app.get(
+    "/api/maintenance/export-log",
+    tags=["maintenance"],
+    summary="Export latest maintenance log",
+    description="""
+Download the most recent maintenance log as a text file.
+
+Returns the contents of the latest upkeep-*.log file from ~/Library/Logs/upkeep.
+Useful for sharing logs when troubleshooting or for audit purposes.
+    """,
+)
+async def export_maintenance_log():
+    """Export the latest maintenance log as a downloadable text file.
+
+    Returns:
+        Plain text file with the latest log contents
+    """
+    from fastapi.responses import PlainTextResponse
+
+    try:
+        log_dir = Path.home() / "Library" / "Logs" / "upkeep"
+        log_files = sorted(log_dir.glob("upkeep-*.log"), reverse=True)
+
+        if not log_files:
+            return PlainTextResponse(
+                content="No maintenance logs found.\n",
+                media_type="text/plain",
+                headers={"Content-Disposition": "attachment; filename=upkeep-log.txt"},
+            )
+
+        latest_log = log_files[0]
+        content = latest_log.read_text(encoding="utf-8", errors="replace")
+
+        # Generate filename with timestamp from log
+        filename = f"upkeep-{latest_log.stem.split('-', 1)[1] if '-' in latest_log.stem else 'latest'}.txt"
+
+        return PlainTextResponse(
+            content=content,
+            media_type="text/plain",
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error exporting log: {e}") from e
+
+
+@app.get(
+    "/api/maintenance/logs",
+    tags=["maintenance"],
+    summary="List available maintenance logs",
+    description="List all maintenance log files available for export.",
+)
+async def list_maintenance_logs():
+    """List all available maintenance log files.
+
+    Returns:
+        List of log files with timestamps and sizes
+    """
+    try:
+        log_dir = Path.home() / "Library" / "Logs" / "upkeep"
+        log_files = sorted(log_dir.glob("upkeep-*.log"), reverse=True)
+
+        logs = []
+        for log_file in log_files[:20]:  # Limit to 20 most recent
+            stat = log_file.stat()
+            logs.append({
+                "filename": log_file.name,
+                "size_bytes": stat.st_size,
+                "size_display": f"{stat.st_size / 1024:.1f} KB" if stat.st_size > 1024 else f"{stat.st_size} B",
+                "modified": time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(stat.st_mtime)),
+            })
+
+        return {"success": True, "logs": logs, "total": len(log_files)}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error listing logs: {e}") from e
+
+
 # ===================================================================
 # SCHEDULE ENDPOINTS
 # ===================================================================

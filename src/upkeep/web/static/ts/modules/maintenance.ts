@@ -1389,3 +1389,17 @@ export function initKeyboardShortcuts(): void {
   });
 }
 
+/**
+ * Export the latest maintenance log as a downloadable text file.
+ * Calls the /api/maintenance/export-log endpoint which returns a file download.
+ */
+export function exportLatestLog(): void {
+  // Create a temporary link to trigger the download
+  const link = document.createElement('a');
+  link.href = '/api/maintenance/export-log';
+  link.download = 'upkeep-log.txt';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+

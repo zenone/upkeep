@@ -529,6 +529,15 @@ class MaintenanceAPI(BaseAPI):
             "safe": True,
             "recommended": False,
         },
+        "app-report": {
+            "id": "app-report",
+            "name": "Applications Report",
+            "description": "List all installed applications with size information",
+            "guidance": "Why: See what apps are installed and how much space they use. When: Looking for apps to remove or checking disk usage. What: Lists all apps in /Applications with sizes.",
+            "category": "Reports",
+            "safe": True,
+            "recommended": False,
+        },
     }
 
     def __init__(self):

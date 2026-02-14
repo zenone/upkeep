@@ -77,6 +77,7 @@ ALLOWED_OPERATIONS = {
     "electron-apps-cache-report": (["--electron-apps-cache"], 300),
     "battery-health-report": (["--battery-health-report"], 300),
     "login-items-report": (["--login-items-report"], 300),
+    "app-report": (["--app-report"], 600),  # List all installed apps with sizes
     "downloads-report": (["--downloads-report"], 300),
     # Tier 1 Cleanup Operations (require --assume-yes)
     "downloads-cleanup": (["--downloads-cleanup", "--assume-yes"], 300),
