@@ -717,6 +717,38 @@
             border: 1px solid var(--border-color);
         }
 
+        /* Category filter buttons */
+        .category-filter-btn {
+            padding: 0.4rem 0.8rem;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .category-filter-btn:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent-color);
+        }
+
+        .category-filter-btn.active {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .category-header {
+            user-select: none;
+        }
+
+        .category-header:hover {
+            background: var(--border-light) !important;
+        }
+
         /* Toast notifications */
         .toast-container {
             position: fixed;

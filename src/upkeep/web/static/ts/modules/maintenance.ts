@@ -30,6 +30,10 @@ export let selectedOperationIds: string[] = [];  // Track which operations were 
 // Per-operation stats from server (last run + typical runtime)
 let operationStats: Record<string, any> = {};
 
+// Category filter state
+let activeCategory: string | null = null;
+let collapsedCategories: Set<string> = new Set();
+
 // ============================================================================
 // Load Operations
 // ============================================================================
@@ -76,7 +80,11 @@ export async function loadOperations(): Promise<void> {
     // Run preflight checks (Doctor)
     runDoctor().catch(() => {});
 
-    const html = allOperations.map(op => {
+    // Generate operation HTML with category grouping
+    let html = '';
+    
+    // Build operations map for reference
+    allOperations.map(op => {
       const opHistory = operationsHistory[op.id];
 
       // Typical duration (server-provided preferred; fallback to localStorage)
@@ -171,7 +179,7 @@ export async function loadOperations(): Promise<void> {
       }
 
       return `
-        <div class="operation-item" data-operation-id="${op.id}">
+        <div class="operation-item" data-operation-id="${op.id}" data-category="${op.category}">
           <input type="checkbox" id="op-${op.id}" value="${op.id}"
                  ${op.recommended ? 'checked' : ''}>
           <div class="operation-info">
@@ -185,7 +193,91 @@ export async function loadOperations(): Promise<void> {
           </div>
         </div>
       `;
-    }).join('');
+    });
+    
+    // Group operations by category and add headers
+    const categories = [...new Set(allOperations.map(op => op.category))].sort();
+    const categoryIcons: Record<string, string> = {
+      'Cleanup Operations': '🧹',
+      'Update Operations': '📦',
+      'Disk / Filesystem': '💾',
+      'Reports': '📊',
+      'System': '⚙️',
+      'Cache Cleanup': '🗑️',
+      'Space Cleanup': '📁',
+    };
+    
+    // Build category filter buttons
+    const filterButtonsHtml = `
+      <div class="category-filters" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+        <button class="category-filter-btn active" data-category="" onclick="window.upkeepFilterByCategory(null)">
+          All (${allOperations.length})
+        </button>
+        ${categories.map(cat => {
+          const count = allOperations.filter(op => op.category === cat).length;
+          const icon = categoryIcons[cat] || '📋';
+          return `<button class="category-filter-btn" data-category="${cat}" onclick="window.upkeepFilterByCategory('${cat}')">
+            ${icon} ${cat} (${count})
+          </button>`;
+        }).join('')}
+      </div>
+    `;
+    
+    // Build HTML with category headers
+    html = filterButtonsHtml;
+    lastCategory = '';
+    for (const op of allOperations) {
+      if (op.category !== lastCategory) {
+        const icon = categoryIcons[op.category] || '📋';
+        const categoryCount = allOperations.filter(o => o.category === op.category).length;
+        html += `
+          <div class="category-header" data-category="${op.category}" 
+               style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; background: var(--bg-tertiary); border-radius: 6px; margin: 1rem 0 0.5rem; cursor: pointer;"
+               onclick="window.upkeepToggleCategory('${op.category}')">
+            <span class="collapse-icon" style="font-size: 0.75rem;">▼</span>
+            <span style="font-size: 1.1rem;">${icon}</span>
+            <strong>${op.category}</strong>
+            <span style="color: var(--text-secondary); font-size: 0.85rem;">(${categoryCount})</span>
+          </div>
+        `;
+        lastCategory = op.category;
+      }
+      
+      const opHistory = operationsHistory[op.id];
+      const typicalDuration = opHistory?.typical_display || getTypicalDurationDisplay(op.id);
+      const durationHtml = typicalDuration ? ` | ⏱️ Typically <strong>${typicalDuration}</strong>` : '';
+      
+      let lastRunHtml = '';
+      if (opHistory && opHistory.last_run_relative) {
+        const statusIcon = opHistory.success ? '✓' : '✗';
+        const statusColor = opHistory.success ? 'var(--success-color)' : 'var(--error-color)';
+        lastRunHtml = `<div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">
+          📅 Last run: <strong>${opHistory.last_run_relative}</strong> <span style="color: ${statusColor}">${statusIcon}</span>${durationHtml}
+        </div>`;
+      } else {
+        lastRunHtml = `<div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">
+          📅 Last run: <strong>Never run</strong>${durationHtml || ' | ⏱️ Typically <strong>—</strong> (first run)'}
+        </div>`;
+      }
+      
+      // Build WHY/WHAT (simplified for brevity)
+      let whyWhatHtml = '';
+      if (op.why || op.what || (op.when_to_run && op.when_to_run.length > 0)) {
+        whyWhatHtml = `<details class="operation-details"><summary>ℹ️ Why run this & What to expect</summary><div class="operation-details-content">Details available</div></details>`;
+      }
+      
+      html += `
+        <div class="operation-item" data-operation-id="${op.id}" data-category="${op.category}">
+          <input type="checkbox" id="op-${op.id}" value="${op.id}" ${op.recommended ? 'checked' : ''}>
+          <div class="operation-info">
+            <h4>${op.name} ${op.recommended ? '<span class="badge recommended">Recommended</span>' : '<span class="badge optional">Optional</span>'}</h4>
+            <p>${op.description}</p>
+            ${whyWhatHtml}
+            ${lastRunHtml}
+          </div>
+        </div>
+      `;
+    }
 
     const operationsDiv = document.getElementById('operations-list');
     if (operationsDiv) {
@@ -251,6 +343,62 @@ export function deselectAllOperations(): void {
   const checkboxes = document.querySelectorAll<HTMLInputElement>('#operations-list input[type="checkbox"]');
   checkboxes.forEach(cb => cb.checked = false);
   showToast('Deselected all operations', 'info', 2000);
+}
+
+/**
+ * Filter operations by category
+ */
+export function filterByCategory(category: string | null): void {
+  activeCategory = category;
+  
+  // Update filter button states
+  document.querySelectorAll('.category-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-category') === category);
+  });
+  
+  // Show/hide operations
+  document.querySelectorAll<HTMLElement>('.operation-item').forEach(item => {
+    const opId = item.getAttribute('data-operation-id');
+    const op = allOperations.find(o => o.id === opId);
+    if (op) {
+      const shouldShow = !category || op.category === category;
+      item.style.display = shouldShow ? '' : 'none';
+    }
+  });
+  
+  // Show/hide category headers
+  document.querySelectorAll<HTMLElement>('.category-header').forEach(header => {
+    const cat = header.getAttribute('data-category');
+    header.style.display = !category || cat === category ? '' : 'none';
+  });
+  
+  const filterText = category || 'all';
+  showToast(`Showing ${filterText} operations`, 'info', 1500);
+}
+
+/**
+ * Toggle category collapse
+ */
+export function toggleCategory(category: string): void {
+  if (collapsedCategories.has(category)) {
+    collapsedCategories.delete(category);
+  } else {
+    collapsedCategories.add(category);
+  }
+  
+  // Toggle visibility of operations in this category
+  document.querySelectorAll<HTMLElement>(`.operation-item[data-category="${category}"]`).forEach(item => {
+    item.style.display = collapsedCategories.has(category) ? 'none' : '';
+  });
+  
+  // Update header icon
+  const header = document.querySelector(`.category-header[data-category="${category}"]`);
+  if (header) {
+    const icon = header.querySelector('.collapse-icon');
+    if (icon) {
+      icon.textContent = collapsedCategories.has(category) ? '▶' : '▼';
+    }
+  }
 }
 
 /**

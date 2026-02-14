@@ -5,7 +5,7 @@
 
 import { initTheme, toggleTheme, switchTab, showToast, reloadScripts } from './modules/ui';
 import { loadSystemInfo, loadHealthScore, loadTopProcesses } from './modules/dashboard';
-import { loadOperations, runDoctor, fixDoctorIssue, runSelectedOperations, cancelOperations, skipCurrentOperation, applyTemplate, selectAllOperations, deselectAllOperations, copyOutputToClipboard, showQuickStartWizard, closeWizard, selectWizardOption, initKeyboardShortcuts, closeShortcuts } from './modules/maintenance';
+import { loadOperations, runDoctor, fixDoctorIssue, runSelectedOperations, cancelOperations, skipCurrentOperation, applyTemplate, selectAllOperations, deselectAllOperations, copyOutputToClipboard, showQuickStartWizard, closeWizard, selectWizardOption, initKeyboardShortcuts, closeShortcuts, filterByCategory, toggleCategory } from './modules/maintenance';
 import { analyzeStorage, setPath, getUsername } from './modules/storage';
 import { onScheduleTabShow, openScheduleModal, closeScheduleModal, loadSchedules, saveSchedule, deleteSchedule, toggleScheduleEnabled, runScheduleNow, applyScheduleTemplate } from './modules/schedule';
 import type { TabName } from './types';
@@ -45,6 +45,8 @@ declare global {
     applyTemplate: (template: { name: string; operations: string[] }) => void;
     selectAllOperations: () => void;
     deselectAllOperations: () => void;
+    upkeepFilterByCategory: (category: string | null) => void;
+    upkeepToggleCategory: (category: string) => void;
     copyOutputToClipboard: () => void;
     showQuickStartWizard: () => void;
     closeWizard: () => void;
@@ -91,6 +93,8 @@ window.skipCurrentOperation = skipCurrentOperation;
 window.applyTemplate = applyTemplate;
 window.selectAllOperations = selectAllOperations;
 window.deselectAllOperations = deselectAllOperations;
+window.upkeepFilterByCategory = filterByCategory;
+window.upkeepToggleCategory = toggleCategory;
 window.copyOutputToClipboard = copyOutputToClipboard;
 window.showQuickStartWizard = showQuickStartWizard;
 window.closeWizard = closeWizard;
