@@ -2179,20 +2179,20 @@
 </head>
 <body>
     <a href="#main-content" class="skip-link">Skip to main content</a>
-    <nav>
+    <nav role="navigation" aria-label="Main navigation">
         <h1>🔧 Upkeep</h1>
         <div class="nav-controls">
-            <div class="tabs">
-                <button onclick="showTab('dashboard')" class="active">Dashboard</button>
-                <button onclick="showTab('storage')">Storage</button>
-                <button onclick="showTab('maintenance')">Maintenance</button>
-                <button onclick="showTab('schedule')">Schedule</button>
+            <div class="tabs" role="tablist" aria-label="Main sections">
+                <button onclick="showTab('dashboard')" class="active" role="tab" aria-selected="true" aria-controls="dashboard" id="tab-dashboard">Dashboard</button>
+                <button onclick="showTab('storage')" role="tab" aria-selected="false" aria-controls="storage" id="tab-storage">Storage</button>
+                <button onclick="showTab('maintenance')" role="tab" aria-selected="false" aria-controls="maintenance" id="tab-maintenance">Maintenance</button>
+                <button onclick="showTab('schedule')" role="tab" aria-selected="false" aria-controls="schedule" id="tab-schedule">Schedule</button>
             </div>
-            <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme (Light → Dark → System)">
-                <span id="theme-icon">🌙</span>
+            <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme (Light → Dark → System)" aria-label="Toggle color theme">
+                <span id="theme-icon" aria-hidden="true">🌙</span>
             </button>
-            <button class="theme-toggle" onclick="showTab('settings')" title="Settings">
-                <span>⚙️</span>
+            <button class="theme-toggle" onclick="showTab('settings')" title="Settings" aria-label="Open settings">
+                <span aria-hidden="true">⚙️</span>
             </button>
         </div>
     </nav>
@@ -2200,9 +2200,19 @@
     <!-- Toast notification container -->
     <div class="toast-container" id="toast-container"></div>
 
-    <main id="main-content">
+    <main id="main-content" role="main" aria-label="Main content">
         <!-- Dashboard Tab -->
-        <div id="dashboard" class="tab-content active">
+        <div id="dashboard" class="tab-content active" role="tabpanel" aria-labelledby="tab-dashboard">
+            <!-- Quick Action Hero Section -->
+            <div class="card hero-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center; padding: 2rem;">
+                <h2 style="color: white; margin-bottom: 0.5rem;">🩺 Quick Health Check</h2>
+                <p style="opacity: 0.9; margin-bottom: 1.5rem;">Run a comprehensive system scan and get personalized recommendations</p>
+                <button onclick="runQuickHealthCheck()" class="primary" style="background: white; color: #667eea; font-size: 1.1rem; padding: 0.8rem 2rem; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 15px rgba(0,0,0,0.2);" aria-label="Run quick health check">
+                    ✨ Start Health Check
+                </button>
+                <p style="font-size: 0.85rem; opacity: 0.8; margin-top: 1rem;">Takes about 30 seconds • No changes made</p>
+            </div>
+
             <div class="card">
                 <h2>System Overview</h2>
                 <div class="metric-grid" id="system-metrics">

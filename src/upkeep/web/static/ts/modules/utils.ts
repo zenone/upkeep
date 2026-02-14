@@ -1,6 +1,33 @@
 /**
- * Utility functions for formatting and sanitization
+ * Utility functions for formatting, sanitization, and logging
  */
+
+// Debug mode - set to false for production
+const DEBUG_MODE = false;
+
+/**
+ * Debug logger - only logs when DEBUG_MODE is true
+ * Use this instead of console.log for development debugging
+ */
+export function debug(...args: unknown[]): void {
+  if (DEBUG_MODE) {
+    console.log('[DEBUG]', ...args);
+  }
+}
+
+/**
+ * Error logger - always logs errors
+ */
+export function logError(message: string, error?: unknown): void {
+  console.error(`[Upkeep Error] ${message}`, error ?? '');
+}
+
+/**
+ * Warning logger - for non-critical issues
+ */
+export function logWarn(message: string, ...args: unknown[]): void {
+  console.warn(`[Upkeep] ${message}`, ...args);
+}
 
 /**
  * Format bytes to human-readable string

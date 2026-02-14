@@ -4,7 +4,7 @@
  */
 
 import { initTheme, toggleTheme, switchTab, showToast, reloadScripts, setTheme, toggleAutoRefresh, setRefreshInterval, togglePreviewMode, toggleConfirmations, initSettings, showKeyboardShortcuts } from './modules/ui';
-import { loadSystemInfo, loadHealthScore, loadTopProcesses } from './modules/dashboard';
+import { loadSystemInfo, loadHealthScore, loadTopProcesses, runQuickHealthCheck } from './modules/dashboard';
 import { loadOperations, runDoctor, fixDoctorIssue, runSelectedOperations, cancelOperations, skipCurrentOperation, applyTemplate, selectAllOperations, deselectAllOperations, copyOutputToClipboard, showQuickStartWizard, closeWizard, selectWizardOption, initKeyboardShortcuts, closeShortcuts, filterByCategory, toggleCategory, expandAllCategories, collapseAllCategories, exportLatestLog } from './modules/maintenance';
 import { analyzeStorage, setPath, getUsername } from './modules/storage';
 import { onScheduleTabShow, openScheduleModal, closeScheduleModal, loadSchedules, saveSchedule, deleteSchedule, toggleScheduleEnabled, runScheduleNow, applyScheduleTemplate } from './modules/schedule';
@@ -41,6 +41,7 @@ declare global {
     // Dashboard
     loadSystemInfo: () => Promise<void>;
     loadHealthScore: () => Promise<void>;
+    runQuickHealthCheck: () => Promise<void>;
     loadTopProcesses: () => Promise<void>;
 
     // Maintenance
@@ -102,6 +103,7 @@ window.toggleConfirmations = toggleConfirmations;
 window.showKeyboardShortcuts = showKeyboardShortcuts;
 window.loadSystemInfo = loadSystemInfo;
 window.loadHealthScore = loadHealthScore;
+window.runQuickHealthCheck = runQuickHealthCheck;
 window.loadTopProcesses = loadTopProcesses;
 window.loadOperations = loadOperations;
 window.runDoctor = runDoctor;

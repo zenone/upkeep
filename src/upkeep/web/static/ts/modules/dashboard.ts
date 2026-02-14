@@ -604,3 +604,64 @@ export function getStatusClass(percent: number): string {
   if (percent > 75) return 'warning';
   return '';
 }
+
+/**
+ * Run a quick health check - comprehensive system scan with recommendations
+ * This is the "one-click" feature that makes Upkeep competitive with CleanMyMac X
+ */
+export async function runQuickHealthCheck(): Promise<void> {
+  const btn = document.querySelector('.hero-card button') as HTMLButtonElement;
+  const originalText = btn?.innerHTML;
+  
+  try {
+    // Update button to show loading state
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '🔄 Scanning...';
+    }
+    
+    // Show toast
+    showToast('Starting health check...', 'info');
+    
+    // Run the preflight/doctor check which scans the system
+    const response = await fetch('/api/maintenance/doctor', {
+      method: 'POST'
+    });
+    
+    if (!response.ok) {
+      throw new Error('Health check failed');
+    }
+    
+    const result = await response.json();
+    
+    // Reload all dashboard data
+    await Promise.all([
+      loadSystemInfo(),
+      loadHealthScore(),
+      loadTopProcesses()
+    ]);
+    
+    // Show results
+    const issueCount = result.issues?.length ?? 0;
+    if (issueCount === 0) {
+      showToast('✅ Your Mac is healthy! No issues found.', 'success');
+    } else {
+      showToast(`Found ${issueCount} item${issueCount > 1 ? 's' : ''} to review. Check the Maintenance tab.`, 'warning');
+      // Switch to maintenance tab to show issues
+      const switchTab = (window as any).showTab;
+      if (switchTab) {
+        setTimeout(() => switchTab('maintenance'), 1500);
+      }
+    }
+    
+  } catch (error) {
+    console.error('Health check error:', error);
+    showToast('Health check encountered an error. Please try again.', 'error');
+  } finally {
+    // Restore button
+    if (btn && originalText) {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+    }
+  }
+}
