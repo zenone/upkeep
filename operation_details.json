@@ -1791,6 +1791,62 @@
       },
       "note": "Safe to run anytime. Xcode automatically rebuilds DerivedData on next build. This is equivalent to 'Product > Clean Build Folder' for all projects."
     },
+    "xcode-device-support": {
+      "id": "xcode-device-support",
+      "name": "Xcode Device Support Cleanup",
+      "category": "Cleanup Operations",
+      "safety": "low-risk",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Xcode caches device symbols for every iOS, watchOS, and tvOS version you've ever connected to. This can accumulate to 20-40GB over time, especially with frequent iOS updates.",
+        "problems": [
+          {
+            "symptom": "Massive disk usage",
+            "description": "Device support folders consuming 10-40GB"
+          },
+          {
+            "symptom": "Old device versions",
+            "description": "Cached symbols for iOS versions no longer used"
+          },
+          {
+            "symptom": "Multiple platforms",
+            "description": "Separate caches for iOS, watchOS, and tvOS devices"
+          }
+        ]
+      },
+      "when_to_run": [
+        "After upgrading devices to new iOS versions",
+        "Annually during spring cleaning",
+        "When disk space is low",
+        "When you no longer develop for older iOS versions"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "5-15 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Space freed: Removes device caches (typically 10-40GB)"
+          },
+          {
+            "type": "temporary",
+            "description": "Re-download on next connection: Takes 2-5 minutes per device"
+          },
+          {
+            "type": "positive",
+            "description": "Clean state: Only keep symbols for devices you currently use"
+          }
+        ],
+        "side_effects": [
+          "Source code is NOT affected",
+          "Project files are NOT affected",
+          "Xcode and simulators are NOT affected",
+          "Will download fresh symbols on next device connection (2-5 min)",
+          "Only removes cached device symbols, not your actual iOS device data"
+        ]
+      },
+      "note": "Safe to run periodically. Different from xcode-cleanup (DerivedData). This clears device-specific symbol caches that Xcode downloads when you connect physical iOS/watchOS/tvOS devices for debugging."
+    },
     "caches-cleanup": {
       "id": "caches-cleanup",
       "name": "Clear User Caches",

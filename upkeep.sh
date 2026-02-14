@@ -3097,6 +3097,62 @@ xcode_cleanup() {
   success "Xcode DerivedData cleared. Next build will be a full rebuild."
 }
 
+xcode_device_support_cleanup() {
+  section "Xcode Device Support Cleanup"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+
+  # Device support paths for iOS, watchOS, tvOS
+  local ios_support="${user_home}/Library/Developer/Xcode/iOS DeviceSupport"
+  local watchos_support="${user_home}/Library/Developer/Xcode/watchOS DeviceSupport"
+  local tvos_support="${user_home}/Library/Developer/Xcode/tvOS DeviceSupport"
+
+  local found_any=0
+  local total_size=0
+
+  # Check each device support directory
+  for support_dir in "$ios_support" "$watchos_support" "$tvos_support"; do
+    if [[ -d "$support_dir" ]]; then
+      found_any=1
+      local dir_name
+      dir_name=$(basename "$support_dir")
+      local size
+      size=$(du -sh "$support_dir" 2>/dev/null | awk '{print $1}' || echo "0")
+      local count
+      count=$(find "$support_dir" -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+      count=$((count - 1))  # Subtract the directory itself
+      info "${dir_name}: ${size} (${count} device versions)"
+    fi
+  done
+
+  if [[ "$found_any" -eq 0 ]]; then
+    info "No Xcode Device Support folders found. Xcode may not be installed or no devices connected."
+    return 0
+  fi
+
+  if [[ "${PREVIEW:-0}" -eq 1 ]]; then
+    info "PREVIEW: Would delete contents of:"
+    [[ -d "$ios_support" ]] && info "  - $ios_support/*"
+    [[ -d "$watchos_support" ]] && info "  - $watchos_support/*"
+    [[ -d "$tvos_support" ]] && info "  - $tvos_support/*"
+    info "Note: Will re-download when you connect a device (2-5 minutes)."
+    return 0
+  fi
+
+  [[ "${DRY_RUN:-0}" -eq 1 ]] && { warning "DRY-RUN: would clear device support caches"; return 0; }
+
+  info "Clearing Xcode Device Support caches..."
+
+  for support_dir in "$ios_support" "$watchos_support" "$tvos_support"; do
+    if [[ -d "$support_dir" ]]; then
+      rm -rf "${support_dir:?}"/* 2>/dev/null || true
+    fi
+  done
+
+  success "Xcode Device Support caches cleared. Will re-download on next device connection."
+}
+
 caches_cleanup() {
   section "Clear User Caches"
 
@@ -3363,6 +3419,7 @@ DO_DISK_TRIAGE=0
 DO_DOWNLOADS_REPORT=0
 DO_DOWNLOADS_CLEANUP=0
 DO_XCODE_CLEANUP=0
+DO_XCODE_DEVICE_SUPPORT=0
 DO_CACHES_CLEANUP=0
 DO_LOGS_CLEANUP=0
 DO_TRASH_EMPTY=0
@@ -3441,6 +3498,7 @@ Tier 1 Operations (v3.1):
   --downloads-report         Report size and age of Downloads files
   --downloads-cleanup        Remove old installers/archives from Downloads
   --xcode-cleanup            Clear Xcode DerivedData (not simulators)
+  --xcode-device-support     Clear iOS/watchOS/tvOS device support caches
   --caches-cleanup           Clear all user caches (~~/Library/Caches)
   --logs-cleanup             Remove log files older than 30 days
   --trash-empty              Empty the Trash (permanent delete)
@@ -3503,6 +3561,7 @@ while [[ $# -gt 0 ]]; do
     --downloads-report) DO_DOWNLOADS_REPORT=1; shift ;;
     --downloads-cleanup) DO_DOWNLOADS_CLEANUP=1; shift ;;
     --xcode-cleanup) DO_XCODE_CLEANUP=1; shift ;;
+    --xcode-device-support) DO_XCODE_DEVICE_SUPPORT=1; shift ;;
     --caches-cleanup) DO_CACHES_CLEANUP=1; shift ;;
     --logs-cleanup) DO_LOGS_CLEANUP=1; shift ;;
     --trash-empty) DO_TRASH_EMPTY=1; shift ;;
@@ -3636,6 +3695,7 @@ else
   (( DO_DOWNLOADS_REPORT )) && downloads_report
   (( DO_DOWNLOADS_CLEANUP )) && downloads_cleanup
   (( DO_XCODE_CLEANUP )) && xcode_cleanup
+  (( DO_XCODE_DEVICE_SUPPORT )) && xcode_device_support_cleanup
   (( DO_CACHES_CLEANUP )) && caches_cleanup
   (( DO_LOGS_CLEANUP )) && logs_cleanup
   (( DO_TRASH_EMPTY )) && trash_empty

@@ -379,6 +379,15 @@ class MaintenanceAPI(BaseAPI):
             "safe": True,
             "recommended": False,
         },
+        "xcode-device-support": {
+            "id": "xcode-device-support",
+            "name": "Xcode Device Support Cleanup",
+            "description": "Remove old iOS/watchOS/tvOS device support files",
+            "guidance": "Why: Xcode caches device symbols for every iOS version you've connected to. Can grow to 20-40GB over time, especially with frequent iOS updates. When: After upgrading your devices to new iOS versions, annually, or when disk is tight. After: Removes device support caches. Will re-download when you connect a device (takes 2-5 minutes). Frees 10-40GB typically.",
+            "category": "Cleanup Operations",
+            "safe": True,
+            "recommended": False,
+        },
     }
 
     def __init__(self):
