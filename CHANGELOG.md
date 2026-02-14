@@ -9,6 +9,47 @@ This project follows a pragmatic versioning model:
 
 ---
 
+## [3.1.0] – Complete Disk Maintenance Suite
+### _38 operations, 8 schedule bundles, comprehensive reporting_
+
+### 🔍 New Report Operations
+- **disk-triage** - Quick disk usage overview with top offenders
+- **downloads-report** - Size and age of Downloads folder files
+- **ios-backups-report** - iPhone/iPad backup sizes and dates
+- **application-support-report** - Top 20 Application Support folders
+- **dev-artifacts-report** - node_modules, .venv, build directories across projects
+- **mail-size-report** - Mail.app data breakdown
+- **messages-attachments-report** - Messages attachments size
+- **cloudstorage-report** - Dropbox, iCloud, Google Drive cache sizes
+- **virtualbox-report** - VirtualBox VM sizes
+
+### 🧹 New Cleanup Operations
+- **downloads-cleanup** - Remove old .dmg, .zip, .pkg files (30+ days)
+- **xcode-cleanup** - Clear DerivedData (5-50GB savings)
+- **caches-cleanup** - Safe ~/Library/Caches removal
+- **logs-cleanup** - Remove logs older than 30 days
+- **trash-empty** - Empty Trash via Finder
+- **docker-prune** - Prune unused Docker images/volumes
+- **xcode-device-support** - Clear iOS DeviceSupport cache
+
+### 📅 New Schedule Bundles (8 total)
+- **Storage Recovery** - Emergency disk space recovery
+- **Pre-Update Cleanup** - Run before macOS updates
+- **Developer Deep Clean** - Quarterly dev machine cleanup
+
+### 🔧 Infrastructure
+- **Per-operation history** - Track last run time per operation
+- **Accurate daemon status** - Real launchctl-based detection
+- **13 new unit tests** - MaintenanceAPI test coverage
+- **0 lint errors, 0 shellcheck warnings** - Clean codebase
+
+### 📊 Metrics
+- 38 operations (up from 20)
+- 8 schedule bundles (up from 5)
+- 108 passing tests
+
+---
+
 ## [3.0.0] – Web Dashboard & Scheduling
 ### _Modern interface, automation, and comprehensive guidance_
 

@@ -5,7 +5,8 @@
 [![macOS](https://img.shields.io/badge/macOS-Sequoia%20%7C%20Sonoma%20%7C%20Ventura-blue.svg)](https://www.apple.com/macos/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-47%20suites%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-108%20passing-brightgreen.svg)](tests/)
+[![Operations](https://img.shields.io/badge/operations-38-blue.svg)](docs/ROADMAP.md)
 
 ---
 
