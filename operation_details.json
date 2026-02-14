@@ -2911,6 +2911,275 @@
         ]
       },
       "note": "Safe operation that only removes unused resources. Running containers, tagged images, and named volumes are preserved. Requires Docker to be installed and running."
+    },
+    "security-audit": {
+      "id": "security-audit",
+      "name": "Security Audit",
+      "category": "Security",
+      "safety": "safe",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "macOS has multiple security layers (SIP, FileVault, Gatekeeper, Firewall) that can be misconfigured or disabled, leaving your system vulnerable.",
+        "problems": [
+          {
+            "symptom": "Unknown security posture",
+            "description": "Not sure which security features are enabled or properly configured"
+          },
+          {
+            "symptom": "Outdated security settings",
+            "description": "Settings changed during troubleshooting and never restored"
+          },
+          {
+            "symptom": "Compliance requirements",
+            "description": "Need to verify security configuration for work or audit purposes"
+          }
+        ]
+      },
+      "when_to_run": [
+        "Monthly security review",
+        "After major macOS updates",
+        "When setting up a new Mac",
+        "After allowing any recovery mode changes",
+        "Before connecting to sensitive networks"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "10-20 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "SIP status: Verifies System Integrity Protection is enabled"
+          },
+          {
+            "type": "positive",
+            "description": "FileVault status: Checks if disk encryption is active"
+          },
+          {
+            "type": "positive",
+            "description": "Gatekeeper status: Verifies app signing enforcement"
+          },
+          {
+            "type": "positive",
+            "description": "Firewall status: Checks firewall configuration"
+          },
+          {
+            "type": "positive",
+            "description": "Sudo vulnerabilities: Scans for common misconfigurations"
+          }
+        ],
+        "side_effects": []
+      },
+      "note": "Read-only audit that checks configuration. Does not modify any settings. Green checks indicate proper configuration; warnings require attention."
+    },
+    "status": {
+      "id": "status",
+      "name": "System Health Dashboard",
+      "category": "Reports",
+      "safety": "safe",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Quickly assess overall system health without running individual diagnostic commands.",
+        "problems": [
+          {
+            "symptom": "Unknown system state",
+            "description": "Need a quick overview of disk space, updates, and security"
+          },
+          {
+            "symptom": "Multiple tools needed",
+            "description": "Checking health requires running many separate commands"
+          },
+          {
+            "symptom": "Proactive maintenance",
+            "description": "Want to catch issues before they become problems"
+          }
+        ]
+      },
+      "when_to_run": [
+        "Daily quick check",
+        "Before important work sessions",
+        "When Mac feels slow or different",
+        "After returning from travel or extended offline period"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "5-15 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Disk usage: Current free space and percentage"
+          },
+          {
+            "type": "positive",
+            "description": "Update status: Pending macOS, Homebrew, and App Store updates"
+          },
+          {
+            "type": "positive",
+            "description": "Security posture: Quick security configuration summary"
+          },
+          {
+            "type": "positive",
+            "description": "Health score: Overall system health rating"
+          }
+        ],
+        "side_effects": []
+      },
+      "note": "Quick read-only dashboard. For detailed checks, use specific report commands."
+    },
+    "periodic": {
+      "id": "periodic",
+      "name": "Run Periodic Maintenance",
+      "category": "System",
+      "safety": "safe",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "macOS has built-in daily, weekly, and monthly maintenance scripts that clean logs, rebuild databases, and perform housekeeping. If your Mac sleeps through scheduled times, these may not run.",
+        "problems": [
+          {
+            "symptom": "Skipped maintenance",
+            "description": "Mac sleeping during scheduled maintenance windows"
+          },
+          {
+            "symptom": "Growing log files",
+            "description": "System logs not being rotated or compressed"
+          },
+          {
+            "symptom": "Stale databases",
+            "description": "locate database and other system caches not refreshed"
+          }
+        ]
+      },
+      "when_to_run": [
+        "Weekly for Macs that sleep overnight",
+        "After extended periods of Mac being off",
+        "When investigating disk space or performance issues",
+        "Monthly as part of routine maintenance"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "1-5 minutes",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Logs rotated: Old log files compressed or removed"
+          },
+          {
+            "type": "positive",
+            "description": "Databases rebuilt: locate and other system databases updated"
+          },
+          {
+            "type": "positive",
+            "description": "Temp files cleaned: Stale temporary files removed"
+          },
+          {
+            "type": "neutral",
+            "description": "Requires admin: Runs with sudo for system-level maintenance"
+          }
+        ],
+        "side_effects": [
+          "Brief CPU spike during database rebuilds",
+          "Log files compressed (originals removed)",
+          "Temporary files in /tmp and /var/tmp cleaned"
+        ]
+      },
+      "note": "Runs the same scripts macOS schedules automatically. Safe to run manually if you suspect maintenance has been skipped."
+    },
+    "all-safe": {
+      "id": "all-safe",
+      "name": "All Safe Operations",
+      "category": "Presets",
+      "safety": "low-risk",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Comprehensive but safe maintenance without running each operation individually.",
+        "problems": [
+          {
+            "symptom": "Want thorough maintenance",
+            "description": "Need to run multiple operations but don't want to remember each command"
+          },
+          {
+            "symptom": "Cautious approach",
+            "description": "Want maintenance without risky operations"
+          }
+        ]
+      },
+      "when_to_run": [
+        "Weekly maintenance routine",
+        "When disk space is low but unsure what to clean",
+        "Before major projects or updates"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "5-15 minutes",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Runs preflight checks, posture report, update list, disk verify, space reports, and light trim"
+          },
+          {
+            "type": "positive",
+            "description": "Skips destructive operations (requires explicit confirmation)"
+          },
+          {
+            "type": "neutral",
+            "description": "Reports what could be cleaned without actually deleting"
+          }
+        ],
+        "side_effects": [
+          "No data deleted without explicit confirmation",
+          "Some operations may take time on large disks"
+        ]
+      },
+      "note": "Safe starting point for maintenance. Review reports and run specific cleanup operations as needed."
+    },
+    "all-deep": {
+      "id": "all-deep",
+      "name": "All Deep Operations",
+      "category": "Presets",
+      "safety": "medium-risk",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Maximum maintenance when you need thorough cleanup and are willing to accept temporary slowdowns.",
+        "problems": [
+          {
+            "symptom": "Need aggressive cleanup",
+            "description": "Disk critically low or preparing for major update"
+          },
+          {
+            "symptom": "Performance degradation",
+            "description": "Mac feeling sluggish after months of use"
+          }
+        ]
+      },
+      "when_to_run": [
+        "Quarterly deep clean",
+        "Before major macOS updates",
+        "When preparing to sell or hand off Mac",
+        "When disk space is critically low"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "15-45 minutes",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Includes all-safe operations plus snapshot thinning, cache trim, periodic, DNS flush"
+          },
+          {
+            "type": "positive",
+            "description": "Spotlight reindex for improved search performance"
+          },
+          {
+            "type": "warning",
+            "description": "Confirmation prompts for destructive operations"
+          }
+        ],
+        "side_effects": [
+          "Spotlight temporarily unavailable during reindex (30-60 min)",
+          "First app launches may be slower after cache clearing",
+          "Some websites may need re-authentication after DNS flush"
+        ]
+      },
+      "note": "More aggressive than all-safe. Still has confirmation prompts for destructive operations. Best run when you have time for system to recover."
     }
   },
   "version": "1.0"
