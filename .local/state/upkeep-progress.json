@@ -2,8 +2,8 @@
   "lastUpdated": "2026-02-14T20:55:00Z",
   "phase": "duplicate_finder",
   "totalUnits": 45,
-  "completedUnits": 40,
-  "currentUnit": "duplicate_finder_reporter",
+  "completedUnits": 42,
+  "currentUnit": "duplicate_finder_ui",
   "completed": [
     "tier1_all", "tier2_all", "tier3_all",
     "lint_errors", "shellcheck", "schedule_bundles",
@@ -24,7 +24,9 @@
     "disk_viz_backend",
     "disk_viz_frontend",
     "duplicate_finder_design",
-    "duplicate_finder_scanner"
+    "duplicate_finder_scanner",
+    "duplicate_finder_reporter",
+    "duplicate_finder_api"
   ],
   "priority": [
     "duplicate_finder_reporter",

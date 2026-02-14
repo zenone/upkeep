@@ -2175,6 +2175,234 @@
             }
         }
 
+        /* Duplicate Finder Styles */
+        .duplicate-finder .scan-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .duplicate-finder .control-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .duplicate-finder .control-row label {
+            font-weight: 500;
+            min-width: 60px;
+        }
+
+        .duplicate-finder .control-row input[type="text"] {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .duplicate-finder .control-row select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .duplicate-finder .scan-progress {
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .duplicate-finder .progress-bar {
+            height: 8px;
+            background: var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .duplicate-finder .progress-fill {
+            height: 100%;
+            background: var(--accent-color, #4f46e5);
+            transition: width 0.3s ease;
+        }
+
+        .duplicate-finder .progress-text {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .duplicate-finder .results-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+        }
+
+        .duplicate-finder .summary-stat {
+            text-align: center;
+            padding: 0.75rem;
+        }
+
+        .duplicate-finder .summary-stat.highlight {
+            background: var(--accent-color, #4f46e5);
+            color: white;
+            border-radius: 6px;
+        }
+
+        .duplicate-finder .stat-value {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .duplicate-finder .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .duplicate-finder .summary-stat.highlight .stat-label {
+            color: rgba(255,255,255,0.8);
+        }
+
+        .duplicate-finder .results-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .duplicate-finder .groups-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .duplicate-finder .duplicate-group {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .duplicate-finder .group-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .duplicate-finder .group-header:hover {
+            background: var(--bg-hover, #f1f5f9);
+        }
+
+        .duplicate-finder .group-toggle {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .duplicate-finder .group-title {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .duplicate-finder .group-size {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .duplicate-finder .group-savings {
+            font-size: 0.875rem;
+            color: var(--success-color, #22c55e);
+            font-weight: 500;
+        }
+
+        .duplicate-finder .group-files {
+            padding: 0.75rem 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .duplicate-finder .file-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .duplicate-finder .file-row:last-of-type {
+            border-bottom: none;
+        }
+
+        .duplicate-finder .file-row label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .duplicate-finder .file-path {
+            font-family: monospace;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .duplicate-finder .file-mtime {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            margin-left: 1rem;
+        }
+
+        .duplicate-finder .group-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .duplicate-finder .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+        }
+
+        .duplicate-finder .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .duplicate-finder .empty-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .duplicate-finder .empty-text {
+            color: var(--text-secondary);
+        }
+
+        /* Dark mode adjustments for duplicate finder */
+        [data-theme="dark"] .duplicate-finder .group-header:hover {
+            background: var(--bg-hover, #374151);
+        }
+
     </style>
 </head>
 <body>
@@ -2188,6 +2416,7 @@
                 <button onclick="showTab('maintenance')" role="tab" aria-selected="false" aria-controls="maintenance" id="tab-maintenance">Maintenance</button>
                 <button onclick="showTab('uninstaller')" role="tab" aria-selected="false" aria-controls="uninstaller" id="tab-uninstaller">Uninstaller</button>
                 <button onclick="showTab('diskviz')" role="tab" aria-selected="false" aria-controls="diskviz" id="tab-diskviz">Disk Viz</button>
+                <button onclick="showTab('duplicates')" role="tab" aria-selected="false" aria-controls="duplicates" id="tab-duplicates">Duplicates</button>
                 <button onclick="showTab('schedule')" role="tab" aria-selected="false" aria-controls="schedule" id="tab-schedule">Schedule</button>
             </div>
             <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme (Light → Dark → System)" aria-label="Toggle color theme">
@@ -2461,6 +2690,17 @@
                     Interactive treemap visualization of disk usage. Click on folders to drill down and explore what's using your storage.
                 </p>
                 <div id="disk-viz-container"></div>
+            </div>
+        </div>
+
+        <!-- Duplicates Tab -->
+        <div id="duplicates" class="tab-content">
+            <div class="card">
+                <h2>🔍 Duplicate File Finder</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                    Find and remove duplicate files to reclaim disk space. Files are safely moved to Trash.
+                </p>
+                <div id="duplicates-container"></div>
             </div>
         </div>
 

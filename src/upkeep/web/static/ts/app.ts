@@ -10,6 +10,7 @@ import { analyzeStorage, setPath, getUsername } from './modules/storage';
 import { onScheduleTabShow, openScheduleModal, closeScheduleModal, loadSchedules, saveSchedule, deleteSchedule, toggleScheduleEnabled, runScheduleNow, applyScheduleTemplate } from './modules/schedule';
 import { AppUninstaller } from './modules/app_uninstaller';
 import { DiskVisualizer } from './modules/disk_viz';
+import { DuplicateFinder } from './modules/duplicate_finder';
 import type { TabName } from './types';
 
 console.log('╔════════════════════════════════════════════════╗');
@@ -178,6 +179,14 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('✓ Disk Visualizer initialized');
   } catch (e) {
     console.warn('Disk Visualizer init failed (container missing?):', e);
+  }
+
+  // Initialize Duplicate Finder
+  try {
+    new DuplicateFinder('duplicates-container');
+    console.log('✓ Duplicate Finder initialized');
+  } catch (e) {
+    console.warn('Duplicate Finder init failed (container missing?):', e);
   }
 
   // Note: Auto-refresh intervals are now managed by initSettings()
