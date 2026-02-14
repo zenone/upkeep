@@ -1,8 +1,8 @@
 # Current State - Upkeep
 
-**Last Updated:** 2026-02-14 12:30 PST
+**Last Updated:** 2026-02-14 12:35 PST
 **Branch:** main
-**Status:** ✅ Wave 4 complete — Disk Visualization frontend implemented with D3.js treemap
+**Status:** ✅ Duplicate Finder design complete — ready for implementation
 
 ---
 
@@ -15,10 +15,28 @@ Upkeep v3.1.0 — macOS maintenance toolkit with **53 operations**.
 |-------|------|--------|
 | 22 | Disk Visualization Backend (DiskScanner + API) | ✅ |
 | 23 | Disk Visualization Frontend (D3.js Treemap) | ✅ |
+| 24 | Duplicate Finder Design Doc | ✅ |
+
+---
+
+## Current Phase: Duplicate Finder
+
+Design doc complete at `docs/design/DUPLICATE_FINDER.md`:
+- Multi-stage filtering pipeline (size → partial hash → full hash)
+- Safe-by-default approach (never auto-delete)
+- API contracts for `DuplicateScanner` and `DuplicateReporter`
+- REST API endpoints defined
+- CLI interface planned
+- Web UI mockup with expandable groups
+
+**Next:** Implement `DuplicateScanner` backend with TDD approach.
 
 ---
 
 ## Completed
+
+### Duplicate Finder (In Progress)
+- ✅ Design doc with architecture and API contracts
 
 ### Disk Visualization ✅ (COMPLETE)
 Interactive treemap visualization of disk usage:
@@ -72,9 +90,13 @@ Full app removal with associated data:
 ## Remaining Roadmap
 
 ### Priority Queue (Next)
-1. [ ] Duplicate Finder - Design doc and safe implementation
-2. [ ] Historical Trends - Track health/disk over time
-3. [ ] Menu Bar Widget - Quick status indicator
+1. [ ] Duplicate Finder - Implement DuplicateScanner backend
+2. [ ] Duplicate Finder - Implement DuplicateReporter
+3. [ ] Duplicate Finder - API endpoints
+4. [ ] Duplicate Finder - CLI integration
+5. [ ] Duplicate Finder - Web UI
+6. [ ] Historical Trends - Track health/disk over time
+7. [ ] Menu Bar Widget - Quick status indicator
 
 ---
 
