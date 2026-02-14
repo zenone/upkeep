@@ -1142,12 +1142,12 @@ class MaintenanceAPI(BaseAPI):
 
     def _check_daemon_running(self) -> bool:
         """Check if the upkeep daemon is running via launchctl.
-        
+
         Returns:
             True if daemon is loaded and running, False otherwise.
         """
         import subprocess
-        
+
         try:
             # Check launchctl for daemon status
             result = subprocess.run(
@@ -1156,7 +1156,7 @@ class MaintenanceAPI(BaseAPI):
                 text=True,
                 timeout=5,
             )
-            
+
             # If exit code is 0 and we have output, daemon is loaded
             if result.returncode == 0 and result.stdout.strip():
                 # Check if PID is present (running) vs just loaded
@@ -1171,7 +1171,7 @@ class MaintenanceAPI(BaseAPI):
                             return True
                         # PID of "-" means loaded but not running
                         return pid != "-"
-            
+
             # Also check for PID file as fallback
             pid_file = self.QUEUE_DIR / "daemon.pid"
             if pid_file.exists():
@@ -1183,9 +1183,9 @@ class MaintenanceAPI(BaseAPI):
                     return True
                 except (ValueError, ProcessLookupError, PermissionError):
                     pass
-            
+
             return False
-            
+
         except (subprocess.TimeoutExpired, subprocess.SubprocessError, FileNotFoundError):
             return False
 

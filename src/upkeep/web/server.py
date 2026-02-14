@@ -815,7 +815,7 @@ end tell'''
 
 def _load_operation_history() -> dict[str, Any]:
     """Load per-operation history from operation_history.json.
-    
+
     Returns dict mapping operation_id to history data:
     {
         "operation_id": {
@@ -829,7 +829,7 @@ def _load_operation_history() -> dict[str, Any]:
     history_file = Path.home() / "Library" / "Logs" / "upkeep" / "operation_history.json"
     if not history_file.exists():
         return {}
-    
+
     try:
         import json
         data = json.loads(history_file.read_text())
