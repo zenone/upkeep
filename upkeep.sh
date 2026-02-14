@@ -3561,6 +3561,282 @@ battery_health_report() {
   success "Battery health report complete."
 }
 
+login_items_report() {
+  section "Login Items Report"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local launch_agents_dir="${user_home}/Library/LaunchAgents"
+  local system_launch_agents="/Library/LaunchAgents"
+  local total_items=0
+  local enabled_items=0
+  local disabled_items=0
+
+  info "Scanning startup items..."
+  echo ""
+
+  # Part 1: User LaunchAgents
+  info "=== User LaunchAgents (~Library/LaunchAgents) ==="
+  if [[ -d "$launch_agents_dir" ]]; then
+    local user_agents
+    user_agents=$(find "$launch_agents_dir" -maxdepth 1 -name "*.plist" -type f 2>/dev/null | sort)
+
+    if [[ -n "$user_agents" ]]; then
+      while IFS= read -r plist; do
+        local name status label
+        name=$(basename "$plist" .plist)
+        label=$(/usr/libexec/PlistBuddy -c "Print :Label" "$plist" 2>/dev/null || echo "$name")
+
+        # Check if loaded/running
+        if launchctl list 2>/dev/null | grep -q "$label"; then
+          status="✅ Running"
+          ((enabled_items++))
+        else
+          # Check if disabled
+          if launchctl print-disabled "gui/$(id -u)" 2>/dev/null | grep -q "\"$label\" => disabled"; then
+            status="⏸️  Disabled"
+            ((disabled_items++))
+          else
+            status="⏹️  Not loaded"
+            ((disabled_items++))
+          fi
+        fi
+
+        printf "  %-50s %s\n" "${name:0:50}" "$status"
+        ((total_items++))
+      done <<< "$user_agents"
+    else
+      info "  No user LaunchAgents found"
+    fi
+  else
+    info "  LaunchAgents directory not found"
+  fi
+  echo ""
+
+  # Part 2: System LaunchAgents (read-only listing)
+  info "=== System LaunchAgents (/Library/LaunchAgents) ==="
+  if [[ -d "$system_launch_agents" ]]; then
+    local system_agents
+    system_agents=$(find "$system_launch_agents" -maxdepth 1 -name "*.plist" -type f 2>/dev/null | sort)
+
+    if [[ -n "$system_agents" ]]; then
+      while IFS= read -r plist; do
+        local name status label
+        name=$(basename "$plist" .plist)
+        label=$(/usr/libexec/PlistBuddy -c "Print :Label" "$plist" 2>/dev/null || echo "$name")
+
+        # Check if loaded
+        if launchctl list 2>/dev/null | grep -q "$label"; then
+          status="✅ Running"
+          ((enabled_items++))
+        else
+          status="⏹️  Not loaded"
+          ((disabled_items++))
+        fi
+
+        printf "  %-50s %s\n" "${name:0:50}" "$status"
+        ((total_items++))
+      done <<< "$system_agents"
+    else
+      info "  No system LaunchAgents found"
+    fi
+  else
+    info "  System LaunchAgents directory not found"
+  fi
+  echo ""
+
+  # Part 3: Login Items via SMAppService (macOS 13+)
+  info "=== App Login Items (System Preferences) ==="
+  # Try sfltool first (requires Full Disk Access)
+  if command -v sfltool &>/dev/null; then
+    local btm_output
+    btm_output=$(sfltool dumpbtm 2>/dev/null || true)
+    if [[ -n "$btm_output" ]]; then
+      echo "$btm_output" | grep -E "^\s+[0-9]+\)" | head -20 || info "  No app login items found"
+    else
+      info "  Unable to query app login items (may require Full Disk Access)"
+    fi
+  else
+    info "  sfltool not available (macOS 13+ required)"
+  fi
+  echo ""
+
+  # Summary
+  info "=== Summary ==="
+  printf "  %-20s %d\n" "Total items:" "$total_items"
+  printf "  %-20s %d\n" "Running/Enabled:" "$enabled_items"
+  printf "  %-20s %d\n" "Stopped/Disabled:" "$disabled_items"
+  echo ""
+
+  # Recommendations
+  if [[ $total_items -gt 20 ]]; then
+    warning "⚠️  Many startup items (${total_items}). Consider disabling unused ones to improve boot time."
+  elif [[ $total_items -gt 10 ]]; then
+    info "ℹ️  Moderate startup items (${total_items}). Review for unused services."
+  else
+    info "✅ Reasonable number of startup items (${total_items})"
+  fi
+
+  success "Login items report complete."
+}
+
+# Login Items Management - List all user LaunchAgent labels
+login_items_list() {
+  local user_home
+  user_home=$(get_actual_user_home)
+  local launch_agents_dir="${user_home}/Library/LaunchAgents"
+
+  if [[ ! -d "$launch_agents_dir" ]]; then
+    return 0
+  fi
+
+  local user_agents
+  user_agents=$(find "$launch_agents_dir" -maxdepth 1 -name "*.plist" -type f 2>/dev/null | sort)
+
+  if [[ -z "$user_agents" ]]; then
+    return 0
+  fi
+
+  while IFS= read -r plist; do
+    local label status
+    label=$(/usr/libexec/PlistBuddy -c "Print :Label" "$plist" 2>/dev/null || basename "$plist" .plist)
+
+    # Check status
+    if launchctl list 2>/dev/null | grep -q "^[0-9-]*[[:space:]]*[0-9-]*[[:space:]]*${label}$"; then
+      status="running"
+    elif launchctl print-disabled "gui/$(id -u)" 2>/dev/null | grep -q "\"$label\" => disabled"; then
+      status="disabled"
+    else
+      status="not_loaded"
+    fi
+
+    echo "${label}|${status}|${plist}"
+  done <<< "$user_agents"
+}
+
+# Login Items Management - Disable a user LaunchAgent
+login_items_disable() {
+  local target_label="$1"
+  section "Disable Login Item: ${target_label}"
+
+  if [[ -z "$target_label" ]]; then
+    error "No label specified. Use --login-items-list to see available items."
+    return 1
+  fi
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local launch_agents_dir="${user_home}/Library/LaunchAgents"
+  local found_plist=""
+
+  # Find the plist for this label
+  for plist in "${launch_agents_dir}"/*.plist; do
+    [[ -f "$plist" ]] || continue
+    local label
+    label=$(/usr/libexec/PlistBuddy -c "Print :Label" "$plist" 2>/dev/null || basename "$plist" .plist)
+    if [[ "$label" == "$target_label" ]]; then
+      found_plist="$plist"
+      break
+    fi
+  done
+
+  if [[ -z "$found_plist" ]]; then
+    error "Login item not found: ${target_label}"
+    info "Use --login-items-list to see available items."
+    return 1
+  fi
+
+  # Check if already disabled
+  if launchctl print-disabled "gui/$(id -u)" 2>/dev/null | grep -q "\"$target_label\" => disabled"; then
+    info "Login item already disabled: ${target_label}"
+    return 0
+  fi
+
+  if (( DRY_RUN )); then
+    info "[DRY RUN] Would disable: ${target_label}"
+    info "[DRY RUN] Commands: launchctl bootout gui/$(id -u)/${target_label}"
+    info "[DRY RUN]           launchctl disable gui/$(id -u)/${target_label}"
+    return 0
+  fi
+
+  # Unload if running
+  if launchctl list 2>/dev/null | grep -q "^[0-9-]*[[:space:]]*[0-9-]*[[:space:]]*${target_label}$"; then
+    info "Stopping running service..."
+    launchctl bootout "gui/$(id -u)/${target_label}" 2>/dev/null || true
+  fi
+
+  # Disable the service
+  info "Disabling login item..."
+  if launchctl disable "gui/$(id -u)/${target_label}" 2>/dev/null; then
+    success "Disabled: ${target_label}"
+    info "The service will not start on next login."
+  else
+    error "Failed to disable: ${target_label}"
+    return 1
+  fi
+}
+
+# Login Items Management - Enable a user LaunchAgent
+login_items_enable() {
+  local target_label="$1"
+  section "Enable Login Item: ${target_label}"
+
+  if [[ -z "$target_label" ]]; then
+    error "No label specified. Use --login-items-list to see available items."
+    return 1
+  fi
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local launch_agents_dir="${user_home}/Library/LaunchAgents"
+  local found_plist=""
+
+  # Find the plist for this label
+  for plist in "${launch_agents_dir}"/*.plist; do
+    [[ -f "$plist" ]] || continue
+    local label
+    label=$(/usr/libexec/PlistBuddy -c "Print :Label" "$plist" 2>/dev/null || basename "$plist" .plist)
+    if [[ "$label" == "$target_label" ]]; then
+      found_plist="$plist"
+      break
+    fi
+  done
+
+  if [[ -z "$found_plist" ]]; then
+    error "Login item not found: ${target_label}"
+    info "Use --login-items-list to see available items."
+    return 1
+  fi
+
+  if (( DRY_RUN )); then
+    info "[DRY RUN] Would enable: ${target_label}"
+    info "[DRY RUN] Commands: launchctl enable gui/$(id -u)/${target_label}"
+    info "[DRY RUN]           launchctl bootstrap gui/$(id -u) ${found_plist}"
+    return 0
+  fi
+
+  # Enable the service
+  info "Enabling login item..."
+  if launchctl enable "gui/$(id -u)/${target_label}" 2>/dev/null; then
+    info "Enabled: ${target_label}"
+  else
+    warning "Enable command returned non-zero (may already be enabled)"
+  fi
+
+  # Load/start the service
+  info "Loading service..."
+  if launchctl bootstrap "gui/$(id -u)" "$found_plist" 2>/dev/null; then
+    success "Started: ${target_label}"
+  else
+    # Might already be loaded
+    if launchctl list 2>/dev/null | grep -q "^[0-9-]*[[:space:]]*[0-9-]*[[:space:]]*${target_label}$"; then
+      success "Service already running: ${target_label}"
+    else
+      warning "Could not start service (may require logout/login)"
+    fi
+  fi
+}
+
 downloads_report() {
   section "Downloads Report"
 
@@ -3995,6 +4271,10 @@ DO_LARGE_FILES_REPORT=0
 DO_SCREENSHOT_FOLDER_REPORT=0
 DO_ELECTRON_APPS_CACHE_REPORT=0
 DO_BATTERY_HEALTH_REPORT=0
+DO_LOGIN_ITEMS_REPORT=0
+DO_LOGIN_ITEMS_LIST=0
+DO_LOGIN_ITEMS_DISABLE=""
+DO_LOGIN_ITEMS_ENABLE=""
 DO_DOWNLOADS_REPORT=0
 DO_DOWNLOADS_CLEANUP=0
 DO_XCODE_CLEANUP=0
@@ -4085,6 +4365,10 @@ Tier 1 Operations (v3.1):
   --screenshot-folder-report Report screenshots on Desktop
   --electron-apps-cache      Report Slack/Discord/Teams/VS Code caches
   --battery-health-report    Report battery health (laptops)
+  --login-items-report       Report startup/login items (LaunchAgents)
+  --login-items-list         List user LaunchAgent labels (machine-readable)
+  --login-items-disable <label>  Disable a user LaunchAgent
+  --login-items-enable <label>   Enable a user LaunchAgent
   --downloads-report         Report size and age of Downloads files
   --downloads-cleanup        Remove old installers/archives from Downloads
   --xcode-cleanup            Clear Xcode DerivedData (not simulators)
@@ -4159,6 +4443,26 @@ while [[ $# -gt 0 ]]; do
     --screenshot-folder-report) DO_SCREENSHOT_FOLDER_REPORT=1; shift ;;
     --electron-apps-cache) DO_ELECTRON_APPS_CACHE_REPORT=1; shift ;;
     --battery-health-report) DO_BATTERY_HEALTH_REPORT=1; shift ;;
+    --login-items-report) DO_LOGIN_ITEMS_REPORT=1; shift ;;
+    --login-items-list) DO_LOGIN_ITEMS_LIST=1; shift ;;
+    --login-items-disable)
+      if [[ -n "${2:-}" && ! "$2" =~ ^-- ]]; then
+        DO_LOGIN_ITEMS_DISABLE="$2"
+        shift 2
+      else
+        error "--login-items-disable requires a label argument"
+        exit 1
+      fi
+      ;;
+    --login-items-enable)
+      if [[ -n "${2:-}" && ! "$2" =~ ^-- ]]; then
+        DO_LOGIN_ITEMS_ENABLE="$2"
+        shift 2
+      else
+        error "--login-items-enable requires a label argument"
+        exit 1
+      fi
+      ;;
     --downloads-report) DO_DOWNLOADS_REPORT=1; shift ;;
     --downloads-cleanup) DO_DOWNLOADS_CLEANUP=1; shift ;;
     --xcode-cleanup) DO_XCODE_CLEANUP=1; shift ;;
@@ -4304,6 +4608,10 @@ else
   (( DO_SCREENSHOT_FOLDER_REPORT )) && screenshot_folder_report
   (( DO_ELECTRON_APPS_CACHE_REPORT )) && electron_apps_cache_report
   (( DO_BATTERY_HEALTH_REPORT )) && battery_health_report
+  (( DO_LOGIN_ITEMS_REPORT )) && login_items_report
+  (( DO_LOGIN_ITEMS_LIST )) && login_items_list
+  [[ -n "$DO_LOGIN_ITEMS_DISABLE" ]] && login_items_disable "$DO_LOGIN_ITEMS_DISABLE"
+  [[ -n "$DO_LOGIN_ITEMS_ENABLE" ]] && login_items_enable "$DO_LOGIN_ITEMS_ENABLE"
   (( DO_DOWNLOADS_REPORT )) && downloads_report
   (( DO_DOWNLOADS_CLEANUP )) && downloads_cleanup
   (( DO_XCODE_CLEANUP )) && xcode_cleanup

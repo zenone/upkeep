@@ -63,6 +63,28 @@ ALLOWED_OPERATIONS = {
     "wallpaper-aerials": (["--wallpaper-aerials", "--assume-yes"], 600),
     # Tier 2 Operations
     "docker-prune": (["--docker-prune", "--assume-yes"], 600),
+    # Tier 1 Report Operations (read-only, no --assume-yes needed)
+    "disk-triage": (["--disk-triage"], 300),
+    "ios-backups-report": (["--ios-backups-report"], 300),
+    "app-support-report": (["--app-support-report"], 300),
+    "dev-artifacts-report": (["--dev-artifacts-report"], 600),
+    "mail-size-report": (["--mail-size-report"], 300),
+    "messages-attachments-report": (["--messages-attachments"], 300),
+    "cloudstorage-report": (["--cloudstorage-report"], 300),
+    "virtualbox-report": (["--virtualbox-report"], 300),
+    "large-files-report": (["--large-files-report"], 900),  # Can take time on large disks
+    "screenshot-folder-report": (["--screenshot-folder-report"], 300),
+    "electron-apps-cache-report": (["--electron-apps-cache"], 300),
+    "battery-health-report": (["--battery-health-report"], 300),
+    "login-items-report": (["--login-items-report"], 300),
+    "downloads-report": (["--downloads-report"], 300),
+    # Tier 1 Cleanup Operations (require --assume-yes)
+    "downloads-cleanup": (["--downloads-cleanup", "--assume-yes"], 300),
+    "xcode-cleanup": (["--xcode-cleanup", "--assume-yes"], 600),
+    "xcode-device-support": (["--xcode-device-support", "--assume-yes"], 600),
+    "caches-cleanup": (["--caches-cleanup", "--assume-yes"], 600),
+    "logs-cleanup": (["--logs-cleanup", "--assume-yes"], 300),
+    "trash-empty": (["--trash-empty", "--assume-yes"], 600),
 }
 
 

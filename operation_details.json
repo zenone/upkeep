@@ -1060,6 +1060,56 @@
       },
       "note": "Apple rates MacBook batteries for approximately 1000 charge cycles."
     },
+    "login-items-report": {
+      "id": "login-items-report",
+      "name": "Login Items Report",
+      "category": "Reports",
+      "safety": "safe",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Too many startup items can slow boot time and drain battery with unnecessary background processes.",
+        "problems": [
+          {
+            "symptom": "Slow startup/login",
+            "description": "Too many apps launching at boot"
+          },
+          {
+            "symptom": "Unknown background processes",
+            "description": "Apps running without your knowledge"
+          },
+          {
+            "symptom": "Battery drain while idle",
+            "description": "Background services consuming power"
+          }
+        ]
+      },
+      "when_to_run": [
+        "When Mac feels slow to start",
+        "When investigating battery drain",
+        "After installing new apps",
+        "Quarterly cleanup review"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "2-5 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Lists all user LaunchAgents with running status"
+          },
+          {
+            "type": "positive",
+            "description": "Lists system LaunchAgents (read-only view)"
+          },
+          {
+            "type": "neutral",
+            "description": "Shows app login items (requires Full Disk Access for full list)"
+          }
+        ],
+        "side_effects": []
+      },
+      "note": "Disable unused startup items in System Settings > General > Login Items to speed up boot."
+    },
     "downloads-cleanup": {
       "category": "Cleanup",
       "id": "downloads-cleanup",

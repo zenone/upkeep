@@ -520,6 +520,15 @@ class MaintenanceAPI(BaseAPI):
             "safe": True,
             "recommended": False,
         },
+        "login-items-report": {
+            "id": "login-items-report",
+            "name": "Login Items Report",
+            "description": "Report all startup/login items (LaunchAgents and app login items)",
+            "guidance": "Why: Too many startup items slow boot and drain battery. When: Slow startup or unknown background processes. What: Lists user/system LaunchAgents and app login items with status.",
+            "category": "Reports",
+            "safe": True,
+            "recommended": False,
+        },
     }
 
     def __init__(self):
