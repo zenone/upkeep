@@ -12,6 +12,7 @@ from typing import Any
 @dataclass
 class AppArtifact:
     """Represents a file or directory associated with an application."""
+
     path: Path
     kind: str  # "app", "cache", "config", "data", "log", "container", "preferences"
     size_bytes: int
@@ -21,6 +22,7 @@ class AppArtifact:
 @dataclass
 class AppScanResult:
     """Result of scanning an application for artifacts."""
+
     app_info: dict[str, Any]  # name, version, bundle_id, icon_path
     artifacts: list[AppArtifact] = field(default_factory=list)
     total_size_bytes: int = 0
@@ -56,12 +58,11 @@ class AppScanResult:
         if s < 1024:
             return f"{s} B"
         elif s < 1024**2:
-            return f"{s/1024:.1f} KB"
+            return f"{s / 1024:.1f} KB"
         elif s < 1024**3:
-            return f"{s/1024**2:.1f} MB"
+            return f"{s / 1024**2:.1f} MB"
         else:
-            return f"{s/1024**3:.1f} GB"
-
+            return f"{s / 1024**3:.1f} GB"
 
 
 class AppFinder:
@@ -70,7 +71,7 @@ class AppFinder:
     def __init__(self, root_path: Path | None = None):
         """
         Initialize AppFinder.
-        
+
         Args:
             root_path: Optional root path for testing (default: /)
         """
@@ -92,7 +93,7 @@ class AppFinder:
     def scan_applications(self) -> list[AppScanResult]:
         """
         Find all installed applications in standard locations.
-        
+
         Returns:
             List of AppScanResult objects for found apps.
         """
@@ -100,7 +101,7 @@ class AppFinder:
         search_dirs = [
             Path("/Applications"),
             Path("/System/Applications"),
-            self.user_home / "Applications"
+            self.user_home / "Applications",
         ]
 
         for d in search_dirs:
@@ -135,13 +136,13 @@ class AppFinder:
         """
         # If full path given
         if "/" in name_or_path and Path(name_or_path).exists():
-             return self.scan(name_or_path)
+            return self.scan(name_or_path)
 
         # Search standard locations
         search_dirs = [
             Path("/Applications"),
             Path("/System/Applications"),
-            self.user_home / "Applications"
+            self.user_home / "Applications",
         ]
 
         # Try exact name match with .app extension
@@ -164,10 +165,10 @@ class AppFinder:
     def scan(self, app_path_str: str) -> AppScanResult | None:
         """
         Scan an application path and find all associated artifacts.
-        
+
         Args:
             app_path_str: Path to the .app bundle
-            
+
         Returns:
             AppScanResult or None if app not found/invalid
         """
@@ -207,20 +208,17 @@ class AppFinder:
                 "name": app_name,
                 "bundle_id": bundle_id,
                 "version": version,
-                "path": str(app_path)
+                "path": str(app_path),
             },
             artifacts=[],
-            total_size_bytes=0
+            total_size_bytes=0,
         )
 
         # Add the app itself as an artifact
         app_size = self._get_size(app_path)
-        result.artifacts.append(AppArtifact(
-            path=app_path,
-            kind="app",
-            size_bytes=app_size,
-            reason="Application bundle"
-        ))
+        result.artifacts.append(
+            AppArtifact(path=app_path, kind="app", size_bytes=app_size, reason="Application bundle")
+        )
         result.total_size_bytes += app_size
 
         # 3. Scan for associated artifacts using Bundle ID and Name
@@ -265,12 +263,7 @@ class AppFinder:
             return
 
         size = self._get_size(path)
-        result.artifacts.append(AppArtifact(
-            path=path,
-            kind=kind,
-            size_bytes=size,
-            reason=reason
-        ))
+        result.artifacts.append(AppArtifact(path=path, kind=kind, size_bytes=size, reason=reason))
         result.total_size_bytes += size
 
     def _get_size(self, path: Path) -> int:

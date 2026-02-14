@@ -2,8 +2,8 @@
   "lastUpdated": "2026-02-14T08:50:00Z",
   "phase": "disk_viz",
   "totalUnits": 45,
-  "completedUnits": 35,
-  "currentUnit": "disk_viz_design",
+  "completedUnits": 36,
+  "currentUnit": "disk_viz_backend",
   "completed": [
     "tier1_all", "tier2_all", "tier3_all",
     "lint_errors", "shellcheck", "schedule_bundles",
@@ -19,10 +19,12 @@
     "app_uninstaller_finder_backend",
     "app_uninstaller_backend_uninstaller",
     "app_uninstaller_backend_api",
-    "app_uninstaller_ui"
+    "app_uninstaller_ui",
+    "disk_viz_design"
   ],
   "priority": [
-    "disk_viz_design",
+    "disk_viz_backend",
+    "disk_viz_frontend",
     "duplicate_finder_design",
     "trends_design",
     "menu_bar_research"
@@ -46,5 +48,5 @@
     "wave3": "complete",
     "wave4": "complete"
   },
-  "notes": "Implemented AppUninstaller backend with dry-run support (TDD)."
+  "notes": "Completed Disk Visualization design doc. Fixed lint errors in AppUninstaller backend."
 }
