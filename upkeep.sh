@@ -1715,13 +1715,13 @@ brew_maintenance() {
   #
   # If ownership was fixed: brew runs as user, no sudo needed for cask operations
   # If ownership fix failed: HOMEBREW_ALLOW_UNSAFE allows running as root
-  run_with_progress "Updating Homebrew" run_as_user $brew update || warning "brew update reported issues."
-  run_with_progress "Upgrading Homebrew packages" run_as_user $brew upgrade || warning "brew upgrade reported issues."
+  run_with_progress "Updating Homebrew" run_as_user "$brew" update || warning "brew update reported issues."
+  run_with_progress "Upgrading Homebrew packages" run_as_user "$brew" upgrade || warning "brew upgrade reported issues."
 
   # Cleanup may show permission warnings but still succeed in freeing space
   # Capture output to detect partial success
   local cleanup_output
-  cleanup_output=$(run_as_user $brew cleanup 2>&1 || true)
+  cleanup_output=$(run_as_user "$brew" cleanup 2>&1 || true)
 
   # Check if any space was freed (indicates partial/full success)
   if echo "$cleanup_output" | grep -q "freed approximately"; then
@@ -1734,13 +1734,13 @@ brew_maintenance() {
     fi
   else
     # No space freed or cleanup had issues - just run silently
-    run_as_user $brew cleanup >/dev/null 2>&1 || true
+    run_as_user "$brew" cleanup >/dev/null 2>&1 || true
   fi
 
   # Doctor is helpful but noisy; parse for actionable warnings
   info "brew doctor (summary):"
   local doctor_output
-  doctor_output=$(run_as_user $brew doctor 2>&1 || true)
+  doctor_output=$(run_as_user "$brew" doctor 2>&1 || true)
 
   # Check for deprecated/disabled packages
   if echo "$doctor_output" | grep -q "deprecated or disabled"; then
@@ -1921,7 +1921,7 @@ brew_cleanup() {
 
   # 1. Cleanup old versions
   info "Removing old package versions..."
-  if run_as_user $brew cleanup 2>&1; then
+  if run_as_user "$brew" cleanup 2>&1; then
     success "✓ Old versions removed"
   else
     warning "brew cleanup reported issues (non-fatal)"
@@ -1929,7 +1929,7 @@ brew_cleanup() {
 
   # 2. Auto-remove unused dependencies
   info "Removing unused dependencies..."
-  if run_as_user $brew autoremove 2>&1; then
+  if run_as_user "$brew" autoremove 2>&1; then
     success "✓ Unused dependencies removed"
   else
     info "No unused dependencies found"
@@ -1942,16 +1942,16 @@ brew_cleanup() {
 
   # Get list of all formulae and try to link each one
   local formulae
-  formulae=$(run_as_user $brew list --formula 2>/dev/null || true)
+  formulae=$(run_as_user "$brew" list --formula 2>/dev/null || true)
 
   if [ -n "$formulae" ]; then
     while IFS= read -r formula; do
       [ -z "$formula" ] && continue
 
       # Try to link (suppress output, check exit code)
-      if run_as_user $brew link "$formula" >/dev/null 2>&1; then
+      if run_as_user "$brew" link "$formula" >/dev/null 2>&1; then
         ((linked_count++))
-      elif run_as_user $brew link --overwrite "$formula" >/dev/null 2>&1; then
+      elif run_as_user "$brew" link --overwrite "$formula" >/dev/null 2>&1; then
         ((linked_count++))
         info "  Linked (overwrite): $formula"
       else
@@ -2023,18 +2023,18 @@ mas_updates() {
         # Automated mode: auto-install mas via Homebrew
         # Run as actual user (not root) - Homebrew refuses to run as root
         info "Installing mas CLI via Homebrew (one-time setup)..."
-        local install_output=$(run_as_user $brew install mas 2>&1)
+        local install_output=$(run_as_user "$brew" install mas 2>&1)
         local install_status=$?
 
         if [[ $install_status -eq 0 ]]; then
           # Check if mas is installed but not linked
           if echo "$install_output" | grep -q "not linked"; then
             info "mas is installed but not linked - linking now..."
-            if run_as_user $brew link mas 2>&1; then
+            if run_as_user "$brew" link mas 2>&1; then
               success "✓ mas CLI linked successfully"
             else
               warning "Failed to link mas - trying to force link..."
-              run_as_user $brew link --overwrite mas 2>&1 || true
+              run_as_user "$brew" link --overwrite mas 2>&1 || true
             fi
           fi
           success "✓ mas CLI installed successfully"
@@ -2048,18 +2048,18 @@ mas_updates() {
         if confirm "Install mas CLI now via Homebrew to enable App Store updates?"; then
           info "Installing mas CLI..."
           # Run as actual user (not root) - Homebrew refuses to run as root
-          local install_output=$(run_as_user $brew install mas 2>&1)
+          local install_output=$(run_as_user "$brew" install mas 2>&1)
           local install_status=$?
 
           if [[ $install_status -eq 0 ]]; then
             # Check if mas is installed but not linked
             if echo "$install_output" | grep -q "not linked"; then
               info "mas is installed but not linked - linking now..."
-              if run_as_user $brew link mas 2>&1; then
+              if run_as_user "$brew" link mas 2>&1; then
                 success "✓ mas CLI linked successfully"
               else
                 warning "Failed to link mas - trying to force link..."
-                run_as_user $brew link --overwrite mas 2>&1 || true
+                run_as_user "$brew" link --overwrite mas 2>&1 || true
               fi
             fi
             success "✓ mas CLI installed successfully"
@@ -2216,7 +2216,7 @@ mas_updates() {
 
     # Run mas install for this specific app
     # Use run_as_user to avoid "Failed to get sudo uid" error
-    if run_as_user $mas install "$app_id" 2>&1; then
+    if run_as_user "$mas" install "$app_id" 2>&1; then
       success "  ✅ Updated $app_name"
       apps_updated+=("$app_name")
     else
@@ -3029,9 +3029,6 @@ ios_backups_report() {
   for backup_path in "$backups_dir"/*/; do
     [[ -d "$backup_path" ]] || continue
 
-    local backup_name
-    backup_name=$(basename "$backup_path")
-
     local backup_size
     backup_size=$(du -sh "$backup_path" 2>/dev/null | awk '{print $1}' || echo "?")
 
@@ -3352,7 +3349,7 @@ docker_prune() {
   echo ""
 
   # Get reclaimable space
-  local images_reclaimable volumes_reclaimable containers_reclaimable build_cache_reclaimable
+  local images_reclaimable build_cache_reclaimable
   images_reclaimable=$(docker system df 2>/dev/null | grep "Images" | awk '{print $NF}' | tr -d '()' || echo "0B")
   build_cache_reclaimable=$(docker system df 2>/dev/null | grep "Build cache" | awk '{print $NF}' | tr -d '()' || echo "0B")
 
