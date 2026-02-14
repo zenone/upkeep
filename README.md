@@ -5,8 +5,8 @@
 [![macOS](https://img.shields.io/badge/macOS-Sequoia%20%7C%20Sonoma%20%7C%20Ventura-blue.svg)](https://www.apple.com/macos/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-108%20passing-brightgreen.svg)](tests/)
-[![Operations](https://img.shields.io/badge/operations-38-blue.svg)](docs/ROADMAP.md)
+[![Tests](https://img.shields.io/badge/tests-155%2B%20passing-brightgreen.svg)](tests/)
+[![Operations](https://img.shields.io/badge/operations-49-blue.svg)](docs/ROADMAP.md)
 
 ---
 
@@ -576,7 +576,7 @@ Open an issue on GitHub: [https://github.com/zenone/upkeep/issues](https://githu
 
 ### Testing
 
-- ✅ 245 automated tests (100% passing)
+- ✅ 155+ automated tests (100% passing)
 - ✅ Integration tests (bash + Python)
 - ✅ Safety tests (file count limits, input validation)
 - ✅ Platform tests (Apple Silicon + Intel)
