@@ -5,8 +5,8 @@
 [![macOS](https://img.shields.io/badge/macOS-Sequoia%20%7C%20Sonoma%20%7C%20Ventura-blue.svg)](https://www.apple.com/macos/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-155%2B%20passing-brightgreen.svg)](tests/)
-[![Operations](https://img.shields.io/badge/operations-53-blue.svg)](docs/ROADMAP.md)
+[![Tests](https://img.shields.io/badge/tests-95%2B%20passing-brightgreen.svg)](tests/)
+[![Operations](https://img.shields.io/badge/operations-44-blue.svg)](docs/ROADMAP.md)
 
 ---
 
@@ -118,7 +118,7 @@ Real-time system overview. CPU, memory, disk, health score, top processes—all 
 ![Dashboard](docs/screenshots/dashboard-v3.png)
 
 ### Maintenance Operations
-43 operations, each explaining **why** you'd run it and **what to expect**. No guesswork, no scary warnings.
+44 operations, each explaining **why** you'd run it and **what to expect**. No guesswork, no scary warnings.
 
 ### Roadmap
 Operator-first backlog: `docs/ROADMAP.md`
