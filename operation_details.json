@@ -638,6 +638,64 @@
       },
       "note": "⚠️ DO NOT auto-delete Application Support folders. Many contain irreplaceable data like DAW projects, databases, game saves. To clean up: uninstall apps properly or manually review contents."
     },
+    "dev-artifacts-report": {
+      "id": "dev-artifacts-report",
+      "name": "Dev Artifacts Report",
+      "category": "Reports",
+      "safety": "safe",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Developers accumulate build artifacts across many projects: node_modules (often 500MB+ each), Python venvs, build/dist/target directories. These can total 10-100GB.",
+        "problems": [
+          {
+            "symptom": "node_modules sprawl",
+            "description": "Hundreds of node_modules directories consuming 20-50GB total"
+          },
+          {
+            "symptom": "Virtual environment bloat",
+            "description": "Python .venv directories with duplicate packages"
+          },
+          {
+            "symptom": "Stale build artifacts",
+            "description": "build/dist/target directories from old projects"
+          }
+        ]
+      },
+      "when_to_run": [
+        "Quarterly for active developers",
+        "When disk space is low",
+        "Before archiving old projects",
+        "When investigating disk usage"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "30-120 seconds depending on filesystem size",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "node_modules: Lists all node_modules directories with sizes"
+          },
+          {
+            "type": "positive",
+            "description": "venvs: Lists all Python virtual environments"
+          },
+          {
+            "type": "positive",
+            "description": "build artifacts: Lists build/dist/target directories"
+          },
+          {
+            "type": "neutral",
+            "description": "No changes made: Read-only report"
+          }
+        ],
+        "side_effects": [
+          "Scanning can take 1-2 minutes on large filesystems",
+          "Results are limited to top 20 per category",
+          "Hidden directories and Library are excluded"
+        ]
+      },
+      "note": "Before deleting any artifacts, verify the project is not active. Use 'rm -rf <path>' to clean up. Consider keeping node_modules for projects you're actively working on."
+    },
     "downloads-cleanup": {
       "category": "Cleanup",
       "id": "downloads-cleanup",

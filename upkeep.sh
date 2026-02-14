@@ -3090,6 +3090,83 @@ application_support_report() {
   success "Application Support report complete."
 }
 
+dev_artifacts_report() {
+  section "Dev Artifacts Report"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+
+  info "Scanning for development artifacts in ${user_home}..."
+  info "This may take 1-2 minutes on large codebases."
+  echo ""
+
+  local total_node_modules=0
+  local total_venv=0
+  local total_build=0
+  local count_node_modules=0
+  local count_venv=0
+  local count_build=0
+
+  # Find node_modules directories (exclude hidden and common non-project paths)
+  info "📦 node_modules directories:"
+  while IFS= read -r dir; do
+    if [[ -n "$dir" ]]; then
+      local size
+      size=$(du -sh "$dir" 2>/dev/null | awk '{print $1}')
+      local parent
+      parent=$(dirname "$dir")
+      printf "  %8s  %s\n" "$size" "${parent/#$user_home/~}"
+      ((count_node_modules++))
+    fi
+  done < <(find "$user_home" -type d -name "node_modules" -not -path "*/.*" -not -path "*/Library/*" 2>/dev/null | head -20)
+
+  if [[ $count_node_modules -eq 0 ]]; then
+    info "  (none found)"
+  fi
+  echo ""
+
+  # Find Python virtual environments
+  info "🐍 Python virtual environments (.venv, venv):"
+  while IFS= read -r dir; do
+    if [[ -n "$dir" ]]; then
+      local size
+      size=$(du -sh "$dir" 2>/dev/null | awk '{print $1}')
+      local parent
+      parent=$(dirname "$dir")
+      printf "  %8s  %s\n" "$size" "${parent/#$user_home/~}"
+      ((count_venv++))
+    fi
+  done < <(find "$user_home" -type d \( -name ".venv" -o -name "venv" \) -not -path "*/Library/*" 2>/dev/null | head -20)
+
+  if [[ $count_venv -eq 0 ]]; then
+    info "  (none found)"
+  fi
+  echo ""
+
+  # Find build/dist/target directories
+  info "🔨 Build artifacts (build, dist, target):"
+  while IFS= read -r dir; do
+    if [[ -n "$dir" ]]; then
+      local size
+      size=$(du -sh "$dir" 2>/dev/null | awk '{print $1}')
+      local parent
+      parent=$(dirname "$dir")
+      printf "  %8s  %s\n" "$size" "${parent/#$user_home/~}"
+      ((count_build++))
+    fi
+  done < <(find "$user_home" -type d \( -name "build" -o -name "dist" -o -name "target" \) -not -path "*/.*" -not -path "*/Library/*" -not -path "*/node_modules/*" 2>/dev/null | head -20)
+
+  if [[ $count_build -eq 0 ]]; then
+    info "  (none found)"
+  fi
+  echo ""
+
+  info "Summary: ${count_node_modules} node_modules, ${count_venv} venvs, ${count_build} build dirs found"
+  info "To clean: Verify project is not active, then delete with 'rm -rf <path>'"
+
+  success "Dev artifacts report complete."
+}
+
 downloads_report() {
   section "Downloads Report"
 
@@ -3515,6 +3592,7 @@ DO_WALLPAPER_AERIALS=0
 DO_DISK_TRIAGE=0
 DO_IOS_BACKUPS_REPORT=0
 DO_APP_SUPPORT_REPORT=0
+DO_DEV_ARTIFACTS_REPORT=0
 DO_DOWNLOADS_REPORT=0
 DO_DOWNLOADS_CLEANUP=0
 DO_XCODE_CLEANUP=0
@@ -3596,6 +3674,7 @@ Tier 1 Operations (v3.1):
   --disk-triage              Quick overview of disk usage across key directories
   --ios-backups-report       Report size and details of iPhone/iPad backups
   --app-support-report       Report top space consumers in Application Support
+  --dev-artifacts-report     Find node_modules, .venv, build directories
   --downloads-report         Report size and age of Downloads files
   --downloads-cleanup        Remove old installers/archives from Downloads
   --xcode-cleanup            Clear Xcode DerivedData (not simulators)
@@ -3661,6 +3740,7 @@ while [[ $# -gt 0 ]]; do
     --disk-triage) DO_DISK_TRIAGE=1; shift ;;
     --ios-backups-report) DO_IOS_BACKUPS_REPORT=1; shift ;;
     --app-support-report) DO_APP_SUPPORT_REPORT=1; shift ;;
+    --dev-artifacts-report) DO_DEV_ARTIFACTS_REPORT=1; shift ;;
     --downloads-report) DO_DOWNLOADS_REPORT=1; shift ;;
     --downloads-cleanup) DO_DOWNLOADS_CLEANUP=1; shift ;;
     --xcode-cleanup) DO_XCODE_CLEANUP=1; shift ;;
@@ -3797,6 +3877,7 @@ else
   (( DO_DISK_TRIAGE )) && disk_triage
   (( DO_IOS_BACKUPS_REPORT )) && ios_backups_report
   (( DO_APP_SUPPORT_REPORT )) && application_support_report
+  (( DO_DEV_ARTIFACTS_REPORT )) && dev_artifacts_report
   (( DO_DOWNLOADS_REPORT )) && downloads_report
   (( DO_DOWNLOADS_CLEANUP )) && downloads_cleanup
   (( DO_XCODE_CLEANUP )) && xcode_cleanup

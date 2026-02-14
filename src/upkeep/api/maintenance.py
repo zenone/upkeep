@@ -402,6 +402,15 @@ class MaintenanceAPI(BaseAPI):
             "safe": True,
             "recommended": False,
         },
+        "dev-artifacts-report": {
+            "id": "dev-artifacts-report",
+            "name": "Dev Artifacts Report",
+            "description": "Find node_modules, .venv, build directories across projects",
+            "guidance": "Why: Development artifacts (node_modules, .venv, build/) pile up across projects and can consume 10-100GB. When: Quarterly for developers or when disk is low. What: Scans home directory for common dev artifacts and shows total sizes. Manual cleanup recommended - verify project isn't active before deleting.",
+            "category": "Reports",
+            "safe": True,
+            "recommended": False,
+        },
     }
 
     def __init__(self):
