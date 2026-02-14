@@ -273,7 +273,113 @@ export async function loadSystemInfo(): Promise<void> {
 }
 
 /**
- * Load and display system health score
+ * Get color for health score
+ */
+function getHealthColor(score: number, overall: string): string {
+  // Use overall status for consistent coloring
+  switch (overall) {
+    case 'excellent': return '#32d74b';  // Green
+    case 'good': return '#0a84ff';       // Blue
+    case 'fair': return '#ff9500';       // Orange
+    case 'poor': return '#ff3b30';       // Red
+    default:
+      // Fallback to score-based coloring
+      if (score >= 90) return '#32d74b';
+      if (score >= 70) return '#0a84ff';
+      if (score >= 50) return '#ff9500';
+      return '#ff3b30';
+  }
+}
+
+/**
+ * Generate SVG health gauge
+ */
+function generateHealthGaugeSVG(score: number, overall: string): string {
+  const size = 180;
+  const strokeWidth = 12;
+  const radius = (size - strokeWidth) / 2;
+  const center = size / 2;
+
+  // Arc spans 240 degrees (from 150° to 390°, or -30° to 210° from top)
+  const startAngle = 150;  // degrees
+  const endAngle = 390;    // degrees
+  const totalArc = endAngle - startAngle;  // 240 degrees
+
+  // Calculate the arc length based on score (0-100)
+  const scoreAngle = startAngle + (totalArc * score / 100);
+
+  // Convert to radians and calculate path
+  const toRadians = (deg: number) => (deg - 90) * Math.PI / 180;
+
+  const startX = center + radius * Math.cos(toRadians(startAngle));
+  const startY = center + radius * Math.sin(toRadians(startAngle));
+  const endX = center + radius * Math.cos(toRadians(endAngle));
+  const endY = center + radius * Math.sin(toRadians(endAngle));
+  const scoreX = center + radius * Math.cos(toRadians(scoreAngle));
+  const scoreY = center + radius * Math.sin(toRadians(scoreAngle));
+
+  // Large arc flag (1 if arc > 180 degrees)
+  const bgLargeArc = totalArc > 180 ? 1 : 0;
+  const scoreLargeArc = (scoreAngle - startAngle) > 180 ? 1 : 0;
+
+  const color = getHealthColor(score, overall);
+
+  // Background track path
+  const bgPath = `M ${startX} ${startY} A ${radius} ${radius} 0 ${bgLargeArc} 1 ${endX} ${endY}`;
+
+  // Score arc path
+  const scorePath = score > 0
+    ? `M ${startX} ${startY} A ${radius} ${radius} 0 ${scoreLargeArc} 1 ${scoreX} ${scoreY}`
+    : '';
+
+  // Status emoji
+  const emoji = overall === 'excellent' ? '✨' :
+                overall === 'good' ? '👍' :
+                overall === 'fair' ? '⚠️' : '🔴';
+
+  return `
+    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" class="health-gauge-svg">
+      <!-- Background track -->
+      <path
+        d="${bgPath}"
+        fill="none"
+        stroke="var(--border-light)"
+        stroke-width="${strokeWidth}"
+        stroke-linecap="round"
+      />
+      <!-- Score arc with gradient -->
+      <defs>
+        <linearGradient id="healthGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:${color};stop-opacity:0.7" />
+          <stop offset="100%" style="stop-color:${color};stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      ${score > 0 ? `
+      <path
+        d="${scorePath}"
+        fill="none"
+        stroke="url(#healthGradient)"
+        stroke-width="${strokeWidth}"
+        stroke-linecap="round"
+        class="health-gauge-arc"
+      />
+      ` : ''}
+      <!-- Center score text -->
+      <text x="${center}" y="${center - 10}" text-anchor="middle" class="health-gauge-score" fill="${color}">
+        ${score}
+      </text>
+      <text x="${center}" y="${center + 20}" text-anchor="middle" class="health-gauge-label">
+        ${overall.toUpperCase()}
+      </text>
+      <text x="${center}" y="${center + 45}" text-anchor="middle" class="health-gauge-emoji">
+        ${emoji}
+      </text>
+    </svg>
+  `;
+}
+
+/**
+ * Load and display system health score with visual gauge
  */
 export async function loadHealthScore(): Promise<void> {
   const healthDiv = document.getElementById('health-score');
@@ -283,25 +389,37 @@ export async function loadHealthScore(): Promise<void> {
     const response = await fetch('/api/system/health');
     const data = await response.json();
 
+    // Generate SVG gauge
+    const gaugeSVG = generateHealthGaugeSVG(data.score, data.overall);
+
+    // Build issues list
     let issuesHTML = '';
     if (data.issues && data.issues.length > 0) {
       issuesHTML = `
-        <div class="health-issues" style="margin-top: 1rem; text-align: left;">
-          <h4 style="margin-bottom: 0.5rem;">Issues Detected:</h4>
-          ${data.issues.map((issue: string) => `
-            <div class="warning" style="margin-bottom: 0.5rem;">
-              ${issue.includes('Critical') ? '🔴' : '⚠️'} ${issue}
-            </div>
-          `).join('')}
+        <div class="health-issues">
+          <h4>Issues Detected:</h4>
+          <ul class="health-issues-list">
+            ${data.issues.map((issue: string) => `
+              <li class="${issue.includes('Critical') ? 'critical' : 'warning'}">
+                ${issue.includes('Critical') ? '🔴' : '⚠️'} ${issue}
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      `;
+    } else {
+      issuesHTML = `
+        <div class="health-all-clear">
+          <span class="health-check-icon">✓</span>
+          All systems healthy
         </div>
       `;
     }
 
     healthDiv.innerHTML = `
-      <div class="health-score-value ${data.overall}">
-        ${data.score}
+      <div class="health-gauge-container">
+        ${gaugeSVG}
       </div>
-      <div class="health-status">${data.overall.toUpperCase()}</div>
       ${issuesHTML}
     `;
   } catch (error) {

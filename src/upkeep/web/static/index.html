@@ -743,10 +743,44 @@
 
         .category-header {
             user-select: none;
+            transition: all 0.2s ease;
         }
 
         .category-header:hover {
             background: var(--border-light) !important;
+            transform: translateX(2px);
+        }
+
+        .category-header.collapsed {
+            opacity: 0.8;
+        }
+
+        .category-header .collapse-icon {
+            transition: transform 0.2s ease;
+        }
+
+        .expand-collapse-btn {
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .expand-collapse-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .recommended-header {
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.2);
+        }
+
+        .operation-item {
+            transition: all 0.2s ease;
         }
 
         /* Toast notifications */
@@ -1011,6 +1045,106 @@
         /* Health score card */
         .health-score-card {
             text-align: center;
+        }
+
+        /* Health Gauge Visualization */
+        .health-gauge-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 1rem 0;
+        }
+
+        .health-gauge-svg {
+            filter: drop-shadow(0 2px 4px var(--shadow));
+        }
+
+        .health-gauge-arc {
+            animation: gaugeArcDraw 1s ease-out forwards;
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+        }
+
+        @keyframes gaugeArcDraw {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        .health-gauge-score {
+            font-size: 2.5rem;
+            font-weight: 700;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+        }
+
+        .health-gauge-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            fill: var(--text-secondary);
+            letter-spacing: 0.5px;
+        }
+
+        .health-gauge-emoji {
+            font-size: 1.25rem;
+        }
+
+        .health-issues {
+            margin-top: 1.5rem;
+            text-align: left;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+        }
+
+        .health-issues h4 {
+            margin: 0 0 0.75rem 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .health-issues-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .health-issues-list li {
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+
+        .health-issues-list li.warning {
+            background: var(--warning-bg);
+            color: var(--warning-color);
+        }
+
+        .health-issues-list li.critical {
+            background: var(--error-bg);
+            color: var(--error-color);
+        }
+
+        .health-issues-list li:last-child {
+            margin-bottom: 0;
+        }
+
+        .health-all-clear {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--success-bg);
+            color: var(--success-color);
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .health-check-icon {
+            font-size: 1.25rem;
+            font-weight: 700;
         }
 
         .health-score-value {

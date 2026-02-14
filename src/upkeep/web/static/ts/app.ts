@@ -5,7 +5,7 @@
 
 import { initTheme, toggleTheme, switchTab, showToast, reloadScripts, setTheme, toggleAutoRefresh, setRefreshInterval, togglePreviewMode, toggleConfirmations, initSettings, showKeyboardShortcuts } from './modules/ui';
 import { loadSystemInfo, loadHealthScore, loadTopProcesses } from './modules/dashboard';
-import { loadOperations, runDoctor, fixDoctorIssue, runSelectedOperations, cancelOperations, skipCurrentOperation, applyTemplate, selectAllOperations, deselectAllOperations, copyOutputToClipboard, showQuickStartWizard, closeWizard, selectWizardOption, initKeyboardShortcuts, closeShortcuts, filterByCategory, toggleCategory } from './modules/maintenance';
+import { loadOperations, runDoctor, fixDoctorIssue, runSelectedOperations, cancelOperations, skipCurrentOperation, applyTemplate, selectAllOperations, deselectAllOperations, copyOutputToClipboard, showQuickStartWizard, closeWizard, selectWizardOption, initKeyboardShortcuts, closeShortcuts, filterByCategory, toggleCategory, expandAllCategories, collapseAllCategories } from './modules/maintenance';
 import { analyzeStorage, setPath, getUsername } from './modules/storage';
 import { onScheduleTabShow, openScheduleModal, closeScheduleModal, loadSchedules, saveSchedule, deleteSchedule, toggleScheduleEnabled, runScheduleNow, applyScheduleTemplate } from './modules/schedule';
 import type { TabName } from './types';
@@ -55,6 +55,8 @@ declare global {
     deselectAllOperations: () => void;
     upkeepFilterByCategory: (category: string | null) => void;
     upkeepToggleCategory: (category: string) => void;
+    upkeepExpandAll: () => void;
+    upkeepCollapseAll: () => void;
     copyOutputToClipboard: () => void;
     showQuickStartWizard: () => void;
     closeWizard: () => void;
@@ -109,6 +111,8 @@ window.selectAllOperations = selectAllOperations;
 window.deselectAllOperations = deselectAllOperations;
 window.upkeepFilterByCategory = filterByCategory;
 window.upkeepToggleCategory = toggleCategory;
+window.upkeepExpandAll = expandAllCategories;
+window.upkeepCollapseAll = collapseAllCategories;
 window.copyOutputToClipboard = copyOutputToClipboard;
 window.showQuickStartWizard = showQuickStartWizard;
 window.closeWizard = closeWizard;

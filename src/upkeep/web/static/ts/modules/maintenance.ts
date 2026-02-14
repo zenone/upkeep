@@ -34,6 +34,44 @@ let operationStats: Record<string, any> = {};
 let activeCategory: string | null = null;
 let collapsedCategories: Set<string> = new Set();
 
+// Smart category defaults - these start collapsed
+const DEFAULT_COLLAPSED_CATEGORIES = new Set([
+  'Reports',
+  'Cleanup Operations',
+  'Cache Cleanup',
+  'Space Cleanup',
+]);
+
+// Category display order and icons
+const CATEGORY_CONFIG: Record<string, { icon: string; order: number }> = {
+  'Update Operations': { icon: '📦', order: 1 },
+  'Disk / Filesystem': { icon: '💾', order: 2 },
+  'System': { icon: '⚙️', order: 3 },
+  'Cleanup Operations': { icon: '🧹', order: 4 },
+  'Cache Cleanup': { icon: '🗑️', order: 5 },
+  'Space Cleanup': { icon: '📁', order: 6 },
+  'Reports': { icon: '📊', order: 7 },
+};
+
+// Initialize collapsed state from localStorage or defaults
+function initCollapsedState(): void {
+  const saved = localStorage.getItem('upkeep-collapsed-categories');
+  if (saved) {
+    try {
+      collapsedCategories = new Set(JSON.parse(saved));
+    } catch {
+      collapsedCategories = new Set(DEFAULT_COLLAPSED_CATEGORIES);
+    }
+  } else {
+    collapsedCategories = new Set(DEFAULT_COLLAPSED_CATEGORIES);
+  }
+}
+
+// Save collapsed state to localStorage
+function saveCollapsedState(): void {
+  localStorage.setItem('upkeep-collapsed-categories', JSON.stringify([...collapsedCategories]));
+}
+
 // ============================================================================
 // Load Operations
 // ============================================================================
@@ -195,54 +233,44 @@ export async function loadOperations(): Promise<void> {
       `;
     });
     
-    // Group operations by category and add headers
-    const categories = [...new Set(allOperations.map(op => op.category))].sort();
-    const categoryIcons: Record<string, string> = {
-      'Cleanup Operations': '🧹',
-      'Update Operations': '📦',
-      'Disk / Filesystem': '💾',
-      'Reports': '📊',
-      'System': '⚙️',
-      'Cache Cleanup': '🗑️',
-      'Space Cleanup': '📁',
-    };
+    // Initialize collapsed state from localStorage
+    initCollapsedState();
+    
+    // Get unique categories and sort by defined order
+    const categories = [...new Set(allOperations.map(op => op.category))].sort((a, b) => {
+      const orderA = CATEGORY_CONFIG[a]?.order ?? 99;
+      const orderB = CATEGORY_CONFIG[b]?.order ?? 99;
+      return orderA - orderB;
+    });
+    
+    // Separate recommended operations
+    const recommendedOps = allOperations.filter(op => op.recommended);
     
     // Build category filter buttons
     const filterButtonsHtml = `
-      <div class="category-filters" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+      <div class="category-filters" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; align-items: center;">
         <button class="category-filter-btn active" data-category="" onclick="window.upkeepFilterByCategory(null)">
           All (${allOperations.length})
         </button>
         ${categories.map(cat => {
           const count = allOperations.filter(op => op.category === cat).length;
-          const icon = categoryIcons[cat] || '📋';
+          const icon = CATEGORY_CONFIG[cat]?.icon || '📋';
           return `<button class="category-filter-btn" data-category="${cat}" onclick="window.upkeepFilterByCategory('${cat}')">
             ${icon} ${cat} (${count})
           </button>`;
         }).join('')}
+        <span style="flex-grow: 1;"></span>
+        <button class="expand-collapse-btn" onclick="window.upkeepExpandAll()" title="Expand all categories">
+          ⊞ Expand
+        </button>
+        <button class="expand-collapse-btn" onclick="window.upkeepCollapseAll()" title="Collapse all categories">
+          ⊟ Collapse
+        </button>
       </div>
     `;
     
-    // Build HTML with category headers
-    html = filterButtonsHtml;
-    let lastCategory = '';
-    for (const op of allOperations) {
-      if (op.category !== lastCategory) {
-        const icon = categoryIcons[op.category] || '📋';
-        const categoryCount = allOperations.filter(o => o.category === op.category).length;
-        html += `
-          <div class="category-header" data-category="${op.category}" 
-               style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; background: var(--bg-tertiary); border-radius: 6px; margin: 1rem 0 0.5rem; cursor: pointer;"
-               onclick="window.upkeepToggleCategory('${op.category}')">
-            <span class="collapse-icon" style="font-size: 0.75rem;">▼</span>
-            <span style="font-size: 1.1rem;">${icon}</span>
-            <strong>${op.category}</strong>
-            <span style="color: var(--text-secondary); font-size: 0.85rem;">(${categoryCount})</span>
-          </div>
-        `;
-        lastCategory = op.category;
-      }
-      
+    // Helper to render an operation item
+    const renderOperationItem = (op: any, isRecommendedSection = false): string => {
       const opHistory = operationsHistory[op.id];
       const typicalDuration = opHistory?.typical_display || getTypicalDurationDisplay(op.id);
       const durationHtml = typicalDuration ? ` | ⏱️ Typically <strong>${typicalDuration}</strong>` : '';
@@ -260,14 +288,13 @@ export async function loadOperations(): Promise<void> {
         </div>`;
       }
       
-      // Build WHY/WHAT (simplified for brevity)
       let whyWhatHtml = '';
       if (op.why || op.what || (op.when_to_run && op.when_to_run.length > 0)) {
         whyWhatHtml = `<details class="operation-details"><summary>ℹ️ Why run this & What to expect</summary><div class="operation-details-content">Details available</div></details>`;
       }
       
-      html += `
-        <div class="operation-item" data-operation-id="${op.id}" data-category="${op.category}">
+      return `
+        <div class="operation-item" data-operation-id="${op.id}" data-category="${op.category}" style="transition: all 0.2s ease;">
           <input type="checkbox" id="op-${op.id}" value="${op.id}" ${op.recommended ? 'checked' : ''}>
           <div class="operation-info">
             <h4>${op.name} ${op.recommended ? '<span class="badge recommended">Recommended</span>' : '<span class="badge optional">Optional</span>'}</h4>
@@ -277,6 +304,48 @@ export async function loadOperations(): Promise<void> {
           </div>
         </div>
       `;
+    };
+    
+    // Build HTML with smart collapsible categories
+    html = filterButtonsHtml;
+    
+    // Add Recommended section (always visible)
+    if (recommendedOps.length > 0) {
+      html += `
+        <div class="category-header recommended-header" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; background: linear-gradient(135deg, var(--accent-color) 0%, #5856d6 100%); color: white; border-radius: 6px; margin: 0.5rem 0;">
+          <span style="font-size: 1.1rem;">⭐</span>
+          <strong>Recommended</strong>
+          <span style="opacity: 0.8; font-size: 0.85rem;">(${recommendedOps.length})</span>
+        </div>
+      `;
+      recommendedOps.forEach(op => {
+        html += renderOperationItem(op, true);
+      });
+    }
+    
+    // Add each category with collapsible sections
+    for (const category of categories) {
+      const categoryOps = allOperations.filter(op => op.category === category && !op.recommended);
+      if (categoryOps.length === 0) continue;
+      
+      const icon = CATEGORY_CONFIG[category]?.icon || '📋';
+      const isCollapsed = collapsedCategories.has(category);
+      
+      html += `
+        <div class="category-header ${isCollapsed ? 'collapsed' : ''}" data-category="${category}" 
+             style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; background: var(--bg-tertiary); border-radius: 6px; margin: 1rem 0 0.5rem; cursor: pointer; user-select: none;"
+             onclick="window.upkeepToggleCategory('${category}')">
+          <span class="collapse-icon" style="font-size: 0.75rem; transition: transform 0.2s;">${isCollapsed ? '▶' : '▼'}</span>
+          <span style="font-size: 1.1rem;">${icon}</span>
+          <strong>${category}</strong>
+          <span style="color: var(--text-secondary); font-size: 0.85rem;">(${categoryOps.length})</span>
+        </div>
+      `;
+      
+      categoryOps.forEach(op => {
+        const itemStyle = isCollapsed ? 'display: none; max-height: 0; opacity: 0;' : '';
+        html += renderOperationItem(op).replace('style="transition:', `style="${itemStyle} transition:`);
+      });
     }
 
     const operationsDiv = document.getElementById('operations-list');
@@ -377,7 +446,7 @@ export function filterByCategory(category: string | null): void {
 }
 
 /**
- * Toggle category collapse
+ * Toggle category collapse with animation
  */
 export function toggleCategory(category: string): void {
   if (collapsedCategories.has(category)) {
@@ -386,19 +455,68 @@ export function toggleCategory(category: string): void {
     collapsedCategories.add(category);
   }
   
-  // Toggle visibility of operations in this category
-  document.querySelectorAll<HTMLElement>(`.operation-item[data-category="${category}"]`).forEach(item => {
-    item.style.display = collapsedCategories.has(category) ? 'none' : '';
+  // Save preference
+  saveCollapsedState();
+  
+  // Toggle visibility of operations in this category with animation
+  const items = document.querySelectorAll<HTMLElement>(`.operation-item[data-category="${category}"]`);
+  const isCollapsed = collapsedCategories.has(category);
+  
+  items.forEach(item => {
+    if (isCollapsed) {
+      item.style.maxHeight = '0';
+      item.style.opacity = '0';
+      item.style.overflow = 'hidden';
+      item.style.marginBottom = '0';
+      item.style.padding = '0';
+      setTimeout(() => { item.style.display = 'none'; }, 200);
+    } else {
+      item.style.display = '';
+      item.style.overflow = 'hidden';
+      setTimeout(() => {
+        item.style.maxHeight = '500px';
+        item.style.opacity = '1';
+        item.style.marginBottom = '';
+        item.style.padding = '';
+      }, 10);
+    }
   });
   
-  // Update header icon
-  const header = document.querySelector(`.category-header[data-category="${category}"]`);
+  // Update header icon and style
+  const header = document.querySelector<HTMLElement>(`.category-header[data-category="${category}"]`);
   if (header) {
     const icon = header.querySelector('.collapse-icon');
     if (icon) {
-      icon.textContent = collapsedCategories.has(category) ? '▶' : '▼';
+      icon.textContent = isCollapsed ? '▶' : '▼';
     }
+    header.classList.toggle('collapsed', isCollapsed);
   }
+}
+
+/**
+ * Expand all categories
+ */
+export function expandAllCategories(): void {
+  const categories = [...new Set(allOperations.map(op => op.category))];
+  categories.forEach(cat => {
+    if (collapsedCategories.has(cat)) {
+      toggleCategory(cat);
+    }
+  });
+  showToast('All categories expanded', 'info', 1500);
+}
+
+/**
+ * Collapse all categories
+ */
+export function collapseAllCategories(): void {
+  const categories = [...new Set(allOperations.map(op => op.category))];
+  categories.forEach(cat => {
+    if (!collapsedCategories.has(cat)) {
+      toggleCategory(cat);
+    }
+  });
+  showToast('All categories collapsed', 'info', 1500);
 }
 
 /**
