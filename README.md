@@ -143,7 +143,7 @@ Set it and forget it. Daily, weekly, or monthly maintenance—runs automatically
 A modern, visual interface for Mac maintenance:
 
 - **System Overview**: CPU, memory, disk usage, health score at a glance
-- **20 Maintenance Operations**: Each explains *why* you'd run it and *what to expect*
+- **29 Maintenance Operations**: Each explains *why* you'd run it and *what to expect*
 - **Quick Start Wizard**: 6 presets—Quick Clean, Weekly, Full Checkup, Developer, Security, or Custom
 - **Progress Tracking**: Live output, elapsed time, ETA based on your history
 - **Skip & Cancel**: Changed your mind? Stop or skip mid-operation
@@ -210,6 +210,15 @@ All the maintenance tasks you'd want, with guardrails:
 - Trim old log files (30+ days old)
 - Clean old caches (30+ days old)
 - Thin Time Machine snapshots (when space is low)
+
+**Tier 1 Operations (v3.1):**
+- `disk-triage` – Quick overview of disk usage across key directories
+- `downloads-report` – Report size and age of Downloads files
+- `downloads-cleanup` – Remove old installers (DMG, ZIP, PKG, ISO)
+- `xcode-cleanup` – Clear Xcode DerivedData build cache
+- `caches-cleanup` – Clear all user caches
+- `logs-cleanup` – Remove log files older than 30 days
+- `trash-empty` – Empty the Trash permanently
 
 **System Maintenance:**
 - Run macOS periodic scripts
