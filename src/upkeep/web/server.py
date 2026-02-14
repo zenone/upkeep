@@ -813,6 +813,33 @@ end tell'''
     return {"success": False, "message": "No action taken"}
 
 
+def _load_operation_history() -> dict[str, Any]:
+    """Load per-operation history from operation_history.json.
+    
+    Returns dict mapping operation_id to history data:
+    {
+        "operation_id": {
+            "last_run": "ISO timestamp",
+            "success": true/false,
+            "last_duration_seconds": float,
+            "durations_seconds": [list of recent durations]
+        }
+    }
+    """
+    history_file = Path.home() / "Library" / "Logs" / "upkeep" / "operation_history.json"
+    if not history_file.exists():
+        return {}
+    
+    try:
+        import json
+        data = json.loads(history_file.read_text())
+        if not isinstance(data, dict):
+            return {}
+        return data
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
 @app.get(
     "/api/maintenance/last-run",
     tags=["maintenance"],
@@ -855,7 +882,7 @@ async def get_last_run() -> dict[str, Any]:
                     "global_last_run": None,
                     "global_last_run_relative": "Never",
                     "status": "never",
-                    "operations": {},  # TODO: Phase 3 - Per-operation history
+                    "operations": _load_operation_history(),
                 }
             # Use log file mtime as fallback
             last_log = log_files[0]
@@ -883,7 +910,7 @@ async def get_last_run() -> dict[str, Any]:
                 "global_last_run": last_run_iso,
                 "global_last_run_relative": relative,
                 "status": "completed",
-                "operations": {},  # TODO: Phase 3 - Per-operation history
+                "operations": _load_operation_history(),
             }
 
         # Read actual completion timestamp from file
@@ -904,7 +931,7 @@ async def get_last_run() -> dict[str, Any]:
                     "global_last_run": None,
                     "global_last_run_relative": "Never",
                     "status": "never",
-                    "operations": {},  # TODO: Phase 3 - Per-operation history
+                    "operations": _load_operation_history(),
                 }
             last_log = log_files[0]
             mtime = last_log.stat().st_mtime
