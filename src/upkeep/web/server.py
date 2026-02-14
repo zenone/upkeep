@@ -288,7 +288,7 @@ async def get_system_info() -> dict[str, Any]:
             },
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error getting system info: {e}")
+        raise HTTPException(status_code=500, detail=f"Error getting system info: {e}") from e
 
 
 # System health score
@@ -342,7 +342,7 @@ async def get_system_health() -> dict[str, Any]:
             "issues": issues,
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error calculating health: {e}")
+        raise HTTPException(status_code=500, detail=f"Error calculating health: {e}") from e
 
 
 # Top resource consumers
@@ -401,7 +401,7 @@ async def get_top_processes(limit: int = 3) -> dict[str, Any]:
             ],
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error getting processes: {e}")
+        raise HTTPException(status_code=500, detail=f"Error getting processes: {e}") from e
 
 
 # Sparkline data (full history)
@@ -423,7 +423,7 @@ async def get_sparkline_data() -> dict[str, Any]:
             "count": len(system_history["cpu"]),
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error getting sparkline data: {e}")
+        raise HTTPException(status_code=500, detail=f"Error getting sparkline data: {e}") from e
 
 
 # Reload scripts (copy maintain.sh to system location)
@@ -471,7 +471,7 @@ async def reload_scripts() -> dict[str, Any]:
                     detail=f"Permission denied. Add sudoers rule: 'sudo tee /etc/sudoers.d/upkeep-reload <<< \"$(whoami) ALL=(ALL) NOPASSWD: /bin/cp {source_path} {dest_path}\"'",
                 )
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to copy: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to copy: {e}") from e
 
         # Verify succeeded
         result = type("obj", (object,), {"returncode": 0, "stderr": ""})()
@@ -491,10 +491,10 @@ async def reload_scripts() -> dict[str, Any]:
             "message": "Scripts reloaded successfully. Changes will take effect on next operation.",
         }
 
-    except subprocess.TimeoutExpired:
-        raise HTTPException(status_code=500, detail="Script reload timed out")
+    except subprocess.TimeoutExpired as e:
+        raise HTTPException(status_code=500, detail="Script reload timed out") from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error reloading scripts: {e}")
+        raise HTTPException(status_code=500, detail=f"Error reloading scripts: {e}") from e
 
 
 # Storage analysis
@@ -513,7 +513,7 @@ async def analyze_storage(path: str = str(Path.home())) -> dict[str, Any]:
             raise HTTPException(status_code=400, detail=result.error)
         return result.to_dict()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error analyzing storage: {e}")
+        raise HTTPException(status_code=500, detail=f"Error analyzing storage: {e}") from e
 
 
 # Delete file/directory
@@ -550,7 +550,7 @@ async def delete_path(path: str, mode: str = "trash") -> dict[str, Any]:
     except HTTPException:
         raise  # Re-raise HTTP exceptions
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error deleting path: {e}")
+        raise HTTPException(status_code=500, detail=f"Error deleting path: {e}") from e
 
 
 # Maintenance operations
@@ -569,7 +569,7 @@ async def get_operations() -> dict[str, Any]:
             "operations": operations,
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error getting operations: {e}")
+        raise HTTPException(status_code=500, detail=f"Error getting operations: {e}") from e
 
 
 @app.post(
@@ -645,7 +645,7 @@ async def skip_current_operation() -> dict[str, Any]:
 
         logger.error(f"Skip operation error: {e}")
         logger.error(f"Traceback: {traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=f"Error skipping operation: {e}")
+        raise HTTPException(status_code=500, detail=f"Error skipping operation: {e}") from e
 
 
 @app.post(
@@ -665,7 +665,7 @@ async def cancel_operations() -> dict[str, Any]:
             "message": "Cancellation initiated" if cancelled else "No operations running",
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error cancelling operations: {e}")
+        raise HTTPException(status_code=500, detail=f"Error cancelling operations: {e}") from e
 
 
 @app.get(
@@ -689,7 +689,7 @@ async def get_queue_status() -> dict[str, Any]:
     try:
         return maintenance_api.get_queue_status()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error getting queue status: {e}")
+        raise HTTPException(status_code=500, detail=f"Error getting queue status: {e}") from e
 
 
 @app.get(
@@ -1013,7 +1013,7 @@ async def get_last_run() -> dict[str, Any]:
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error getting last run: {e}")
+        raise HTTPException(status_code=500, detail=f"Error getting last run: {e}") from e
 
 
 # ===================================================================
@@ -1040,7 +1040,7 @@ async def list_schedules():
         return response.model_dump()
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error listing schedules: {e}")
+        raise HTTPException(status_code=500, detail=f"Error listing schedules: {e}") from e
 
 
 @app.get("/api/schedules/templates", tags=["schedules"])
@@ -1180,7 +1180,7 @@ async def get_schedule(schedule_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error getting schedule: {e}")
+        raise HTTPException(status_code=500, detail=f"Error getting schedule: {e}") from e
 
 
 def _configure_pmset_wake(schedule) -> None:
@@ -1279,7 +1279,7 @@ async def create_schedule(request: Request):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error creating schedule: {e}")
+        raise HTTPException(status_code=500, detail=f"Error creating schedule: {e}") from e
 
 
 @app.put("/api/schedules/{schedule_id}", tags=["schedules"])
@@ -1346,7 +1346,7 @@ async def update_schedule(schedule_id: str, request: Request):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error updating schedule: {e}")
+        raise HTTPException(status_code=500, detail=f"Error updating schedule: {e}") from e
 
 
 @app.delete("/api/schedules/{schedule_id}", tags=["schedules"])
@@ -1384,7 +1384,7 @@ async def delete_schedule(schedule_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error deleting schedule: {e}")
+        raise HTTPException(status_code=500, detail=f"Error deleting schedule: {e}") from e
 
 
 @app.patch("/api/schedules/{schedule_id}/enabled", tags=["schedules"])
@@ -1435,7 +1435,7 @@ async def toggle_schedule_enabled(schedule_id: str, request: Request):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error toggling schedule: {e}")
+        raise HTTPException(status_code=500, detail=f"Error toggling schedule: {e}") from e
 
 
 @app.post("/api/schedules/{schedule_id}/run-now", tags=["schedules"])
@@ -1481,7 +1481,7 @@ async def run_schedule_now(schedule_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error running schedule: {e}")
+        raise HTTPException(status_code=500, detail=f"Error running schedule: {e}") from e
 
 
 # Serve static files (web UI)
