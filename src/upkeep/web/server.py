@@ -29,6 +29,7 @@ from upkeep.core.disk_scanner import DiskScanner
 from upkeep.core.duplicate_reporter import DuplicateReporter
 from upkeep.core.duplicate_scanner import DuplicateScanner, ScanConfig, ScanResult
 from upkeep.core.launchd import LaunchdGenerator
+from upkeep.core.trend_recorder import TrendRecorder
 from upkeep.web.models import (
     DeleteResponse,
     LastRunResponse,
@@ -902,6 +903,131 @@ async def delete_duplicates(
         "deleted_count": len(deleted),
         "error_count": len(errors),
     }
+
+
+# ============================================================================
+# Historical Trends API
+# ============================================================================
+
+# Global trend recorder instance
+_trend_recorder: TrendRecorder | None = None
+
+
+def get_trend_recorder() -> TrendRecorder:
+    """Get or create the global TrendRecorder instance."""
+    global _trend_recorder
+    if _trend_recorder is None:
+        _trend_recorder = TrendRecorder()
+    return _trend_recorder
+
+
+@app.get(
+    "/api/trends",
+    tags=["trends"],
+    summary="Get historical trend data",
+    description="""
+Retrieve historical health and disk usage data for trend visualization.
+
+**Parameters:**
+- `days`: Number of days of history (default: 30)
+- `resolution`: Data resolution (all, daily, weekly, monthly)
+
+**Response:**
+- `points`: Array of trend data points
+- `stats`: Database statistics (row count, date range)
+    """,
+)
+async def get_trends(
+    days: int = 30,
+    resolution: str = "all",
+) -> dict[str, Any]:
+    """Get historical trend data.
+
+    Args:
+        days: Number of days to look back
+        resolution: Filter by resolution level
+
+    Returns:
+        Dict with points array and stats
+    """
+    recorder = get_trend_recorder()
+
+    # Get data points
+    from datetime import datetime, timedelta
+
+    if resolution not in ("all", "daily", "weekly", "monthly"):
+        raise HTTPException(status_code=400, detail=f"Invalid resolution: {resolution}")
+
+    end = datetime.utcnow()
+    start = end - timedelta(days=days)
+    points = recorder.get_range(start, end, resolution=resolution)  # type: ignore
+
+    # Get stats
+    stats = recorder.stats()
+
+    return {
+        "points": [p.to_dict() for p in points],
+        "stats": stats,
+    }
+
+
+@app.post(
+    "/api/trends/record",
+    tags=["trends"],
+    summary="Record a trend snapshot",
+    description="Manually trigger recording of current system state.",
+)
+async def record_trend_snapshot() -> dict[str, Any]:
+    """Record a trend snapshot.
+
+    Returns:
+        Dict with the recorded data point
+    """
+    recorder = get_trend_recorder()
+    point = recorder.record_snapshot()
+
+    return {
+        "point": point.to_dict(),
+        "message": "Recorded",
+    }
+
+
+@app.post(
+    "/api/trends/compact",
+    tags=["trends"],
+    summary="Run trend data compaction",
+    description="Remove old high-resolution data per retention policy.",
+)
+async def compact_trends() -> dict[str, Any]:
+    """Run trend data compaction.
+
+    Returns:
+        Dict with removed and remaining counts
+    """
+    recorder = get_trend_recorder()
+    removed = recorder.compact()
+    stats = recorder.stats()
+
+    return {
+        "removed": removed,
+        "remaining": stats["row_count"],
+    }
+
+
+@app.get(
+    "/api/trends/stats",
+    tags=["trends"],
+    summary="Get trend database statistics",
+    description="Return statistics about the trend database.",
+)
+async def get_trends_stats() -> dict[str, Any]:
+    """Get trend database statistics.
+
+    Returns:
+        Dict with row_count, oldest, newest, db_size_bytes
+    """
+    recorder = get_trend_recorder()
+    return recorder.stats()
 
 
 # Delete file/directory
