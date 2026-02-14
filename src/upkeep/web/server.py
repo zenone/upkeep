@@ -783,9 +783,11 @@ async def maintenance_doctor_fix(request: Request) -> dict[str, Any]:
 
     # Open Terminal for interactive installers (avoids hanging the web server)
     def open_terminal(command: str) -> None:
+        # Escape for AppleScript (Python 3.10 compatible)
+        escaped_command = command.replace("\\", "\\\\").replace('"', '\\"')
         script = f'''tell application "Terminal"
   activate
-  do script "{command.replace("\\", "\\\\").replace('"', '\\"')}"
+  do script "{escaped_command}"
 end tell'''
         subprocess.Popen(["osascript", "-e", script])
 

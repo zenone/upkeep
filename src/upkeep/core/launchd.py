@@ -549,11 +549,14 @@ async def run_scheduled_task_async(schedule_id: str, *, lock_wait_seconds: int =
             try:
                 import subprocess
 
+                # Escape quotes for AppleScript (Python 3.10 compatible)
+                escaped_message = message.replace('"', '\\"')
+                escaped_title = title.replace('"', '\\"')
                 subprocess.run(
                     [
                         "osascript",
                         "-e",
-                        f'display notification "{message.replace('"', '\\"')}" with title "{title.replace('"', '\\"')}"',
+                        f'display notification "{escaped_message}" with title "{escaped_title}"',
                     ],
                     check=False,
                     timeout=5,

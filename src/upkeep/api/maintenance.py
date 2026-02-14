@@ -10,16 +10,17 @@ import json
 import re
 import time
 import uuid
-from pathlib import Path
-from typing import Dict, List, Any, Optional, AsyncIterator
+from collections.abc import AsyncIterator
 from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+from upkeep.core.exceptions import (
+    DaemonNotAvailableError,
+    OperationNotFoundError,
+)
 
 from .base import BaseAPI
-from upkeep.core.exceptions import (
-    OperationNotFoundError,
-    DaemonNotAvailableError,
-    OperationFailedError
-)
 
 
 def clean_output_line(text: str) -> str:
@@ -377,7 +378,7 @@ class MaintenanceAPI(BaseAPI):
         self._cancel_requested = False
         self._skip_requested = False
 
-    def get_operations(self) -> List[Dict[str, Any]]:
+    def get_operations(self) -> list[dict[str, Any]]:
         """Get list of all available maintenance operations.
 
         Returns:
@@ -438,7 +439,7 @@ class MaintenanceAPI(BaseAPI):
         )
         return operations
 
-    def _guidance_to_details(self, guidance: Optional[str]) -> Optional[Dict[str, Any]]:
+    def _guidance_to_details(self, guidance: str | None) -> dict[str, Any] | None:
         """Convert legacy one-line guidance into the structured WHY/WHAT/WHEN format.
 
         Guidance strings follow the pattern:
@@ -452,7 +453,7 @@ class MaintenanceAPI(BaseAPI):
 
         text = " ".join(guidance.strip().split())
 
-        def _slice(label: str, next_labels: list[str]) -> Optional[str]:
+        def _slice(label: str, next_labels: list[str]) -> str | None:
             i = text.find(label)
             if i < 0:
                 return None
@@ -473,7 +474,7 @@ class MaintenanceAPI(BaseAPI):
         if not (why or when or after):
             return None
 
-        details: Dict[str, Any] = {
+        details: dict[str, Any] = {
             "why": {"context": why} if why else {},
             "when_to_run": [when] if when else [],
             "what": {},
@@ -492,7 +493,7 @@ class MaintenanceAPI(BaseAPI):
 
         return details
 
-    def _load_operation_details(self) -> Dict[str, Any]:
+    def _load_operation_details(self) -> dict[str, Any]:
         """Load operation details from operation_details.json.
 
         Returns:
@@ -539,7 +540,7 @@ class MaintenanceAPI(BaseAPI):
             self._log_error(f"Failed to load operation details: {type(e).__name__}: {e}")
             return {}
 
-    def get_operation(self, operation_id: str) -> Dict[str, Any]:
+    def get_operation(self, operation_id: str) -> dict[str, Any]:
         """Get a specific operation by ID.
 
         Args:
@@ -608,7 +609,7 @@ class MaintenanceAPI(BaseAPI):
         try:
             with open(job_file, "w") as f:
                 json.dump(job, f, indent=2)
-        except (PermissionError, OSError, IOError) as e:
+        except (PermissionError, OSError) as e:
             raise DaemonNotAvailableError(
                 f"Cannot access job queue (is daemon running?): {e}"
             )
@@ -617,7 +618,7 @@ class MaintenanceAPI(BaseAPI):
 
         return job_id
 
-    async def _wait_for_result(self, job_id: str, timeout: int = 1800) -> Dict[str, Any]:
+    async def _wait_for_result(self, job_id: str, timeout: int = 1800) -> dict[str, Any]:
         """Wait for job result file to appear.
 
         Args:
@@ -654,7 +655,7 @@ class MaintenanceAPI(BaseAPI):
             # Check if result exists
             if result_file.exists():
                 try:
-                    with open(result_file, "r", encoding='utf-8') as f:
+                    with open(result_file, encoding='utf-8') as f:
                         result = json.load(f)
 
                     # Clean up result file
@@ -677,7 +678,7 @@ class MaintenanceAPI(BaseAPI):
             # Wait before checking again
             await asyncio.sleep(0.5)
 
-    def execute_operation(self, operation_id: str, timeout: int = 1800) -> Dict[str, Any]:
+    def execute_operation(self, operation_id: str, timeout: int = 1800) -> dict[str, Any]:
         """Execute a single operation via the daemon queue and wait for the result.
 
         This is the synchronous entry point used by scheduled tasks.
@@ -715,8 +716,8 @@ class MaintenanceAPI(BaseAPI):
 
     async def run_operations(
         self,
-        operation_ids: List[str],
-    ) -> AsyncIterator[Dict[str, Any]]:
+        operation_ids: list[str],
+    ) -> AsyncIterator[dict[str, Any]]:
         """Run multiple maintenance operations sequentially and stream progress.
 
         Args:
@@ -989,7 +990,7 @@ class MaintenanceAPI(BaseAPI):
         self._cancel_requested = True
         return True
 
-    def get_queue_status(self) -> Dict[str, Any]:
+    def get_queue_status(self) -> dict[str, Any]:
         """Get current queue status and running operation info (Task #129).
 
         Business Logic:
@@ -1017,7 +1018,7 @@ class MaintenanceAPI(BaseAPI):
 
             if status_file.exists():
                 try:
-                    with open(status_file, "r") as f:
+                    with open(status_file) as f:
                         status_data = json.load(f)
 
                     # Calculate elapsed time

@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-02-13",
+  "last_updated": "2026-02-14",
   "operations": {
     "brew-update": {
       "category": "System Updates",
@@ -111,6 +111,65 @@
           {
             "description": "Browser caches growing to 5-20GB over months of heavy browsing",
             "symptom": "Low disk space"
+          }
+        ],
+        "title": "Problems This Solves"
+      }
+    },
+    "caches-cleanup": {
+      "category": "Cleanup",
+      "id": "caches-cleanup",
+      "name": "Clear User Caches",
+      "safety": "medium-risk",
+      "warning": "Clears ALL user caches. Apps will need to rebuild their caches, which may cause temporary slowdowns on first launch.",
+      "what": {
+        "outcomes": [
+          {
+            "description": "Space freed: Typically 2-20GB depending on how long since last cleanup",
+            "type": "positive"
+          },
+          {
+            "description": "Apps slower initially: First app launch may take longer as cache rebuilds",
+            "type": "temporary"
+          },
+          {
+            "description": "Fresh state: Clears potentially corrupted cache data causing app issues",
+            "type": "positive"
+          },
+          {
+            "description": "Automatic rebuild: Apps recreate caches automatically during normal use",
+            "type": "neutral"
+          }
+        ],
+        "side_effects": [
+          "All ~/Library/Caches contents deleted",
+          "App settings and data NOT affected (only caches)",
+          "Some apps may need to re-download content (thumbnails, previews)",
+          "Temporary increase in CPU/network as caches rebuild"
+        ],
+        "timeline": "Operation completes in 30-60 seconds. Caches rebuild gradually over hours/days of normal use.",
+        "title": "Expected Results"
+      },
+      "when_to_run": [
+        "Monthly for routine maintenance",
+        "When disk space is critically low",
+        "When apps are misbehaving due to corrupted caches",
+        "After major macOS updates"
+      ],
+      "why": {
+        "context": "Applications store temporary data in ~/Library/Caches to speed up operations. Over time, caches grow large and can become stale or corrupted, wasting space and causing issues.",
+        "problems": [
+          {
+            "description": "Caches consuming 5-20GB of disk space with old/unused data",
+            "symptom": "Low disk space"
+          },
+          {
+            "description": "Apps crashing or displaying incorrect content due to corrupted cache",
+            "symptom": "App misbehavior"
+          },
+          {
+            "description": "Stale thumbnails, previews, or cached content showing outdated information",
+            "symptom": "Outdated content"
           }
         ],
         "title": "Problems This Solves"
@@ -413,6 +472,171 @@
           {
             "description": "Problems after switching WiFi networks or changing DNS settings",
             "symptom": "Network changes"
+          }
+        ],
+        "title": "Problems This Solves"
+      }
+    },
+    "disk-triage": {
+      "category": "Reports",
+      "id": "disk-triage",
+      "name": "Quick Disk Triage",
+      "safety": "safe",
+      "what": {
+        "outcomes": [
+          {
+            "description": "Overview report: Shows disk usage breakdown for home, Library, Caches, and Application Support",
+            "type": "positive"
+          },
+          {
+            "description": "No changes made: Read-only analysis, no deletions",
+            "type": "neutral"
+          },
+          {
+            "description": "Top space consumers: Lists the 10-15 largest folders in each category",
+            "type": "positive"
+          },
+          {
+            "description": "Instant insights: Quickly identify what's eating disk space",
+            "type": "positive"
+          }
+        ],
+        "side_effects": [],
+        "timeline": "Scanning takes 30-90 seconds depending on number of files. Report generated immediately.",
+        "title": "Expected Results"
+      },
+      "when_to_run": [
+        "When you need a quick overview of disk usage",
+        "Before deciding which cleanup operations to run",
+        "When investigating sudden disk space loss",
+        "As a first step in disk maintenance"
+      ],
+      "why": {
+        "context": "A fast diagnostic tool that shows where disk space is being used across key macOS directories, helping you decide which cleanup operations to prioritize.",
+        "problems": [
+          {
+            "description": "Not knowing which folders to clean first",
+            "symptom": "Cleanup prioritization"
+          },
+          {
+            "description": "Disk full warnings but unclear what's consuming space",
+            "symptom": "Mystery disk usage"
+          },
+          {
+            "description": "Need quick visibility into ~/Library breakdown",
+            "symptom": "Hidden space consumers"
+          }
+        ],
+        "title": "Problems This Solves"
+      }
+    },
+    "downloads-cleanup": {
+      "category": "Cleanup",
+      "id": "downloads-cleanup",
+      "name": "Clean Old Downloads",
+      "safety": "medium-risk",
+      "warning": "Permanently deletes installer files (.dmg, .zip, .pkg, .iso) older than 30 days from Downloads. Review the list before confirming.",
+      "what": {
+        "outcomes": [
+          {
+            "description": "Space freed: Varies widely (1-50GB depending on download habits)",
+            "type": "positive"
+          },
+          {
+            "description": "Permanent deletion: Files cannot be recovered after deletion",
+            "type": "warning"
+          },
+          {
+            "description": "Only installers: Only targets .dmg, .zip, .pkg, .iso files older than 30 days",
+            "type": "neutral"
+          },
+          {
+            "description": "Confirmation required: Lists files before deletion, requires user approval",
+            "type": "neutral"
+          }
+        ],
+        "side_effects": [
+          "Only affects top-level Downloads folder (not subfolders)",
+          "Regular files (documents, images) NOT affected",
+          "Recent installers (<30 days) preserved",
+          "May need to re-download installers if needed later"
+        ],
+        "timeline": "Operation completes in seconds. Preview mode shows what would be deleted without removing files.",
+        "title": "Expected Results"
+      },
+      "when_to_run": [
+        "Monthly to prevent Downloads folder bloat",
+        "When low on disk space",
+        "After completing software installations",
+        "After Downloads Report shows significant old installer files"
+      ],
+      "why": {
+        "context": "Downloaded installers (.dmg, .zip, .pkg) often linger in Downloads after installation. These can consume significant space and are rarely needed again.",
+        "problems": [
+          {
+            "description": "Old installers from months-old software installations taking 10-50GB",
+            "symptom": "Downloads folder bloat"
+          },
+          {
+            "description": "Duplicate or outdated installer versions",
+            "symptom": "Installer clutter"
+          },
+          {
+            "description": "Downloads folder becomes overwhelming to navigate",
+            "symptom": "Organization issues"
+          }
+        ],
+        "title": "Problems This Solves"
+      }
+    },
+    "downloads-report": {
+      "category": "Reports",
+      "id": "downloads-report",
+      "name": "Downloads Report",
+      "safety": "safe",
+      "what": {
+        "outcomes": [
+          {
+            "description": "Size summary: Shows total size of Downloads folder",
+            "type": "positive"
+          },
+          {
+            "description": "Largest files: Lists top 20 largest files for review",
+            "type": "positive"
+          },
+          {
+            "description": "Old installers: Counts installer files older than 30 days that could be cleaned",
+            "type": "positive"
+          },
+          {
+            "description": "No changes made: Read-only report, no deletions",
+            "type": "neutral"
+          }
+        ],
+        "side_effects": [],
+        "timeline": "Report generates in 5-15 seconds depending on number of files.",
+        "title": "Expected Results"
+      },
+      "when_to_run": [
+        "Before running Downloads Cleanup to preview what will be removed",
+        "When investigating disk space issues",
+        "Monthly to monitor Downloads folder growth",
+        "To identify large files that can be moved or deleted"
+      ],
+      "why": {
+        "context": "Downloads is often a catch-all folder that grows unchecked. This report shows what's consuming space and identifies cleanup candidates.",
+        "problems": [
+          {
+            "description": "Downloads folder consuming unexpectedly large disk space",
+            "symptom": "Mystery space usage"
+          },
+          {
+            "description": "Need visibility before running cleanup",
+            "symptom": "Pre-cleanup review"
+          },
+          {
+            "description": "Forgotten large files or old installers",
+            "symptom": "Hidden space consumers"
           }
         ],
         "title": "Problems This Solves"
@@ -1126,6 +1350,186 @@
           {
             "description": "Logs from long-resolved issues filling ~/Library/Logs",
             "symptom": "Clutter"
+          }
+        ],
+        "title": "Problems This Solves"
+      }
+    },
+    "logs-cleanup": {
+      "category": "Cleanup",
+      "id": "logs-cleanup",
+      "name": "Clean Old Logs",
+      "safety": "low-risk",
+      "what": {
+        "outcomes": [
+          {
+            "description": "Space freed: Typically 100MB-2GB depending on logging activity",
+            "type": "positive"
+          },
+          {
+            "description": "Recent logs preserved: Only removes logs older than 30 days",
+            "type": "positive"
+          },
+          {
+            "description": "Troubleshooting intact: Recent logs for debugging remain available",
+            "type": "positive"
+          },
+          {
+            "description": "Permanent deletion: Old logs cannot be recovered",
+            "type": "warning"
+          }
+        ],
+        "side_effects": [
+          "Only affects ~/Library/Logs (user logs)",
+          "System logs in /var/log NOT affected",
+          "Diagnostic data from >30 days ago will be lost",
+          "No impact on app functionality"
+        ],
+        "timeline": "Operation completes in 10-30 seconds.",
+        "title": "Expected Results"
+      },
+      "when_to_run": [
+        "Monthly for routine cleanup",
+        "When low on disk space",
+        "After resolving app issues (old debug logs no longer useful)",
+        "For privacy (remove old diagnostic information)"
+      ],
+      "why": {
+        "context": "Applications write diagnostic logs to ~/Library/Logs. Old logs (>30 days) are rarely needed and consume space while potentially containing sensitive information.",
+        "problems": [
+          {
+            "description": "Log files accumulating to 500MB-2GB over time",
+            "symptom": "Wasted disk space"
+          },
+          {
+            "description": "Old logs containing crash reports and debug info",
+            "symptom": "Privacy concerns"
+          },
+          {
+            "description": "~/Library/Logs cluttered with logs from resolved issues",
+            "symptom": "Log clutter"
+          }
+        ],
+        "title": "Problems This Solves"
+      }
+    },
+    "trash-empty": {
+      "category": "Cleanup",
+      "id": "trash-empty",
+      "name": "Empty Trash",
+      "safety": "high-risk",
+      "warning": "This PERMANENTLY deletes all items in Trash. This action cannot be undone. Review Trash contents before confirming.",
+      "what": {
+        "outcomes": [
+          {
+            "description": "Space freed: Varies widely (could be MB to hundreds of GB)",
+            "type": "positive"
+          },
+          {
+            "description": "Permanent deletion: Items cannot be recovered after emptying",
+            "type": "warning"
+          },
+          {
+            "description": "Item count shown: Displays number of items and total size before deletion",
+            "type": "neutral"
+          },
+          {
+            "description": "Confirmation required: Must confirm before deletion proceeds",
+            "type": "neutral"
+          }
+        ],
+        "side_effects": [
+          "All Trash contents permanently destroyed",
+          "No recovery possible without backup",
+          "Only affects your user's Trash (not other users on shared Mac)"
+        ],
+        "timeline": "Operation completes in seconds to minutes depending on number/size of items.",
+        "title": "Expected Results"
+      },
+      "when_to_run": [
+        "When you've reviewed Trash contents and confirmed nothing is needed",
+        "When disk space is critically low",
+        "After cleanup operations have moved items to Trash",
+        "Monthly after verifying no important files were accidentally trashed"
+      ],
+      "why": {
+        "context": "Trash holds deleted files until manually emptied, consuming disk space. Items can accumulate for months without being permanently deleted.",
+        "problems": [
+          {
+            "description": "Trash containing GB of files from old cleanups",
+            "symptom": "Hidden space consumption"
+          },
+          {
+            "description": "Deleted files still occupying disk space",
+            "symptom": "Low disk space despite deleting files"
+          },
+          {
+            "description": "Forgotten Trash contents from weeks/months ago",
+            "symptom": "Trash accumulation"
+          }
+        ],
+        "title": "Problems This Solves"
+      }
+    },
+    "xcode-cleanup": {
+      "category": "Cleanup",
+      "id": "xcode-cleanup",
+      "name": "Clear Xcode DerivedData",
+      "safety": "low-risk",
+      "what": {
+        "outcomes": [
+          {
+            "description": "Space freed: Typically 5-50GB depending on project count and complexity",
+            "type": "positive"
+          },
+          {
+            "description": "Full rebuild required: Next Xcode build will take longer (full rebuild)",
+            "type": "temporary"
+          },
+          {
+            "description": "Build issues resolved: Clears potentially corrupted build cache",
+            "type": "positive"
+          },
+          {
+            "description": "No project impact: Source code and project settings NOT affected",
+            "type": "positive"
+          }
+        ],
+        "side_effects": [
+          "DerivedData completely cleared",
+          "Next build for each project will be a full rebuild",
+          "Build times return to normal after first rebuild",
+          "Index will rebuild in background (5-10 minutes)",
+          "Simulators NOT affected (this is not simulator cleanup)"
+        ],
+        "timeline": "Operation completes in 5-30 seconds. First build after: 5-30 minutes depending on project size.",
+        "title": "Expected Results"
+      },
+      "when_to_run": [
+        "When Xcode builds fail with mysterious errors",
+        "When autocomplete stops working or shows stale suggestions",
+        "When disk space is low and you're an iOS/macOS developer",
+        "Monthly for active Xcode users",
+        "After major Xcode updates"
+      ],
+      "why": {
+        "context": "Xcode stores compiled code, indexes, and build artifacts in DerivedData. This grows rapidly with each project and can cause build failures when cache becomes stale or corrupted.",
+        "problems": [
+          {
+            "description": "Build failures with 'Command failed' or cryptic errors despite clean code",
+            "symptom": "Mysterious build failures"
+          },
+          {
+            "description": "DerivedData growing to 20-50GB consuming significant disk space",
+            "symptom": "Disk space crisis"
+          },
+          {
+            "description": "Code completion frozen, showing wrong suggestions, or not working",
+            "symptom": "Broken autocomplete"
+          },
+          {
+            "description": "Stale build artifacts causing runtime issues",
+            "symptom": "Unexpected app behavior"
           }
         ],
         "title": "Problems This Solves"
