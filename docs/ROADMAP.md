@@ -214,7 +214,7 @@ For each new operation, ensure:
 
 ## Schedule Bundles (Implemented)
 
-Default schedules with Tier 1/2 operations integrated:
+8 pre-configured schedules with Tier 1/2/3 operations:
 
 | Schedule | Frequency | Operations |
 |----------|-----------|------------|
@@ -223,6 +223,9 @@ Default schedules with Tier 1/2 operations integrated:
 | Deep Monthly | Monthly 1st 4am | `disk-verify`, `smart-check`, `trim-caches`, `browser-cache`, `mail-optimize`, `caches-cleanup`, `logs-cleanup`, `trash-empty` |
 | Developer Cleanup | Monthly 15th 3am | `trim-caches`, `browser-cache`, `dev-cache`, `xcode-cleanup`, `xcode-device-support`, `docker-prune` |
 | Software Updates | Weekly Sat 10am | `macos-check`, `brew-update`, `mas-update` |
+| **Storage Recovery** | Manual | `disk-triage`, `downloads-cleanup`, `caches-cleanup`, `logs-cleanup`, `trash-empty`, `xcode-cleanup` |
+| **Pre-Update Cleanup** | Manual | `disk-triage`, `trash-empty`, `caches-cleanup`, `downloads-cleanup` |
+| **Developer Deep Clean** | Manual | `disk-triage`, `xcode-cleanup`, `xcode-device-support`, `docker-prune`, `dev-artifacts-report`, `caches-cleanup`, `trash-empty` |
 
 Schedules stored in: `~/.upkeep/schedules.json`
 
