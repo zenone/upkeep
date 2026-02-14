@@ -22,6 +22,7 @@ from fastapi.staticfiles import StaticFiles
 from upkeep import __version__
 from upkeep.api import MaintenanceAPI, ScheduleAPI, StorageAPI
 from upkeep.core import system as system_utils
+from upkeep.core.disk_scanner import DiskScanner
 from upkeep.core.launchd import LaunchdGenerator
 from upkeep.web.models import (
     DeleteResponse,
@@ -516,6 +517,87 @@ async def analyze_storage(path: str = str(Path.home())) -> dict[str, Any]:
         return result.to_dict()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error analyzing storage: {e}") from e
+
+
+# Disk usage visualization data
+@app.get(
+    "/api/disk/usage",
+    tags=["storage"],
+    summary="Get disk usage for visualization",
+    description="""
+Returns hierarchical disk usage data in D3.js-compatible format for treemap/sunburst visualizations.
+
+**Parameters:**
+- `path`: Directory to scan (defaults to user's home)
+- `depth`: Maximum depth to traverse (1-5, default 3)
+- `min_size_mb`: Minimum size in MB to include (default 1)
+
+**Response Format:**
+```json
+{
+  "name": "folder_name",
+  "value": 1234567,  // size in KB
+  "children": [...],
+  "percentage": 50.5,
+  "sizeFormatted": "1.2 GB"
+}
+```
+    """,
+)
+async def get_disk_usage(
+    path: str = str(Path.home()),
+    depth: int = 3,
+    min_size_mb: int = 1,
+) -> dict[str, Any]:
+    """Get hierarchical disk usage data for visualization.
+
+    Args:
+        path: Directory path to scan
+        depth: Maximum depth to traverse (1-5)
+        min_size_mb: Minimum size in MB to include in results
+
+    Returns:
+        Hierarchical dict with name, value (size), children, metadata
+    """
+    try:
+        # Validate depth
+        if depth < 1 or depth > 5:
+            raise HTTPException(
+                status_code=400,
+                detail="Depth must be between 1 and 5",
+            )
+
+        # Validate path exists
+        scan_path = Path(path).expanduser()
+        if not scan_path.exists():
+            raise HTTPException(
+                status_code=404,
+                detail=f"Path does not exist: {path}",
+            )
+
+        if not scan_path.is_dir():
+            raise HTTPException(
+                status_code=400,
+                detail=f"Path is not a directory: {path}",
+            )
+
+        # Convert MB to KB for scanner
+        min_size_kb = min_size_mb * 1024
+
+        scanner = DiskScanner(max_depth=depth, min_size_kb=min_size_kb)
+        result = scanner.scan(str(scan_path))
+
+        if "error" in result and result.get("value", 0) == 0:
+            raise HTTPException(
+                status_code=500,
+                detail=result.get("error", "Unknown error scanning disk"),
+            )
+
+        return result
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error scanning disk: {e}") from e
 
 
 # Delete file/directory
@@ -1082,7 +1164,9 @@ async def export_maintenance_log():
         content = latest_log.read_text(encoding="utf-8", errors="replace")
 
         # Generate filename with timestamp from log
-        filename = f"upkeep-{latest_log.stem.split('-', 1)[1] if '-' in latest_log.stem else 'latest'}.txt"
+        filename = (
+            f"upkeep-{latest_log.stem.split('-', 1)[1] if '-' in latest_log.stem else 'latest'}.txt"
+        )
 
         return PlainTextResponse(
             content=content,
@@ -1113,12 +1197,16 @@ async def list_maintenance_logs():
         logs = []
         for log_file in log_files[:20]:  # Limit to 20 most recent
             stat = log_file.stat()
-            logs.append({
-                "filename": log_file.name,
-                "size_bytes": stat.st_size,
-                "size_display": f"{stat.st_size / 1024:.1f} KB" if stat.st_size > 1024 else f"{stat.st_size} B",
-                "modified": time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(stat.st_mtime)),
-            })
+            logs.append(
+                {
+                    "filename": log_file.name,
+                    "size_bytes": stat.st_size,
+                    "size_display": f"{stat.st_size / 1024:.1f} KB"
+                    if stat.st_size > 1024
+                    else f"{stat.st_size} B",
+                    "modified": time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(stat.st_mtime)),
+                }
+            )
 
         return {"success": True, "logs": logs, "total": len(log_files)}
 
@@ -1612,24 +1700,22 @@ async def list_apps(limit: int = 50) -> dict[str, Any]:
         # Format for API response
         app_list = []
         for app in apps:
-            app_list.append({
-                "name": app.name,
-                "path": str(app.path),
-                "bundle_id": app.bundle_id,
-                "version": app.version,
-                "size_bytes": app.size_bytes,
-                "size_display": app.size_display,
-                "icon": app.icon_path,  # Path to icon if extracted
-            })
+            app_list.append(
+                {
+                    "name": app.name,
+                    "path": str(app.path),
+                    "bundle_id": app.bundle_id,
+                    "version": app.version,
+                    "size_bytes": app.size_bytes,
+                    "size_display": app.size_display,
+                    "icon": app.icon_path,  # Path to icon if extracted
+                }
+            )
 
         # Sort by size descending
         app_list.sort(key=lambda x: x["size_bytes"], reverse=True)
 
-        return {
-            "success": True,
-            "apps": app_list[:limit],
-            "total": len(app_list)
-        }
+        return {"success": True, "apps": app_list[:limit], "total": len(app_list)}
     except Exception as e:
         logger.error(f"Error listing apps: {e}")
         raise HTTPException(status_code=500, detail=f"Error listing apps: {e}") from e
@@ -1665,7 +1751,7 @@ async def inspect_app(name: str) -> dict[str, Any]:
                 "version": app.version,
                 "size_bytes": app.size_bytes,
             },
-            "report": report.to_dict()  # Assuming Report has to_dict()
+            "report": report.to_dict(),  # Assuming Report has to_dict()
         }
     except HTTPException:
         raise
@@ -1700,7 +1786,7 @@ async def uninstall_app(name: str, dry_run: bool = True) -> dict[str, Any]:
             "app": name,
             "dry_run": dry_run,
             "deleted_paths": [str(p) for p in result.deleted_paths],
-            "bytes_recovered": result.bytes_recovered
+            "bytes_recovered": result.bytes_recovered,
         }
     except HTTPException:
         raise

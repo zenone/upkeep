@@ -1,8 +1,8 @@
 # Current State - Upkeep
 
-**Last Updated:** 2026-02-13 23:40 PST
+**Last Updated:** 2026-02-14 12:20 PST
 **Branch:** main
-**Status:** ✅ Wave 4 complete — README updated to v3.1.0, 53 operations documented
+**Status:** ✅ Wave 4 complete — Disk Viz backend implemented with tests
 
 ---
 
@@ -34,6 +34,7 @@ Upkeep v3.1.0 — macOS maintenance toolkit with **49 operations**.
 | 19 | App Uninstaller Backend (scan, find, uninstall) | ✅ `6f05192` |
 | 20 | App Uninstaller API & UI (new tab, search, actions) | ✅ |
 | 21 | Disk Visualization Design (Docs/Architecture) & Lint Fixes | ✅ |
+| 22 | Disk Visualization Backend (DiskScanner + API) | ✅ |
 
 ---
 
@@ -116,6 +117,21 @@ Added `.shellcheckrc` to suppress intentional patterns:
 - SC2038: find | xargs pattern (we validate filenames)
 - All tests now pass cleanly
 
+### Disk Visualization Backend ✅ (NEW)
+D3.js-ready disk usage scanner:
+- **DiskScanner class**: `src/upkeep/core/disk_scanner.py`
+  - Runs `du -k -d <depth>` to gather usage data
+  - Builds hierarchical JSON tree (D3-compatible "Flare" format)
+  - Configurable max_depth (1-5) and min_size_kb filtering
+  - Calculates percentages relative to parent
+  - Human-readable size formatting
+  - Permission warnings captured (non-blocking)
+- **API endpoint**: `GET /api/disk/usage?path=<path>&depth=3&min_size_mb=1`
+  - Returns hierarchical JSON for treemap/sunburst viz
+  - Input validation (depth range, path exists/is_dir)
+  - 2-minute timeout for large scans
+- **Tests**: 10 unit tests covering parsing, filtering, error handling, size formatting
+
 ---
 
 ## Quality Metrics
@@ -125,7 +141,7 @@ Added `.shellcheckrc` to suppress intentional patterns:
 | Operations | 53 |
 | Python Lint Errors | 0 |
 | TS Type Errors | 0 |
-| Python Tests | 42 pass |
+| Python Tests | 46 pass |
 | TS Tests | 46 pass |
 | ShellCheck | ✅ (with exclusions) |
 

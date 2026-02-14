@@ -9,16 +9,19 @@ from upkeep.core.app_finder import AppFinder, AppScanResult
 @dataclass
 class UninstallResult:
     """Result of an uninstall operation."""
+
     success: bool
     deleted_paths: list[Path]
     bytes_recovered: int
     errors: list[str]
+
 
 class AppUninstaller:
     """
     Handles finding and removing application files.
     Defaults to dry_run=True for safety.
     """
+
     def __init__(self, dry_run: bool = True):
         self.dry_run = dry_run
         self.finder = AppFinder()
@@ -35,19 +38,21 @@ class AppUninstaller:
             k = a.kind
             if k not in artifacts_by_kind:
                 artifacts_by_kind[k] = []
-            artifacts_by_kind[k].append({
-                "path": str(a.path),
-                "size_bytes": a.size_bytes,
-                "reason": a.reason
-            })
+            artifacts_by_kind[k].append(
+                {"path": str(a.path), "size_bytes": a.size_bytes, "reason": a.reason}
+            )
 
-        return type("Report", (), {
-            "to_dict": lambda: {
-                "app_info": app.app_info,
-                "total_size": app.total_size_bytes,
-                "artifacts": artifacts_by_kind
-            }
-        })()
+        return type(
+            "Report",
+            (),
+            {
+                "to_dict": lambda: {
+                    "app_info": app.app_info,
+                    "total_size": app.total_size_bytes,
+                    "artifacts": artifacts_by_kind,
+                }
+            },
+        )()
 
     def uninstall(self, app: AppScanResult) -> UninstallResult:
         """
@@ -90,6 +95,7 @@ class AppUninstaller:
                         if dest.exists():
                             # timestamp it
                             import time
+
                             dest = trash_dir / f"{p.name}.{int(time.time())}"
 
                         shutil.move(str(p), str(dest))
@@ -101,6 +107,7 @@ class AppUninstaller:
                         dest = trash_dir / p.name
                         if dest.exists():
                             import time
+
                             dest = trash_dir / f"{p.name}.{int(time.time())}"
                         shutil.move(str(p), str(dest))
                         deleted.append(p)
@@ -113,6 +120,5 @@ class AppUninstaller:
             success=len(errors) == 0,
             deleted_paths=deleted,
             bytes_recovered=recovered,
-            errors=errors
+            errors=errors,
         )
-
