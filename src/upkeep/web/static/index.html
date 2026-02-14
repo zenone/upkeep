@@ -2187,6 +2187,7 @@
                 <button onclick="showTab('storage')" role="tab" aria-selected="false" aria-controls="storage" id="tab-storage">Storage</button>
                 <button onclick="showTab('maintenance')" role="tab" aria-selected="false" aria-controls="maintenance" id="tab-maintenance">Maintenance</button>
                 <button onclick="showTab('uninstaller')" role="tab" aria-selected="false" aria-controls="uninstaller" id="tab-uninstaller">Uninstaller</button>
+                <button onclick="showTab('diskviz')" role="tab" aria-selected="false" aria-controls="diskviz" id="tab-diskviz">Disk Viz</button>
                 <button onclick="showTab('schedule')" role="tab" aria-selected="false" aria-controls="schedule" id="tab-schedule">Schedule</button>
             </div>
             <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme (Light → Dark → System)" aria-label="Toggle color theme">
@@ -2451,6 +2452,17 @@
                     Find and remove applications and their associated data (caches, preferences, etc.).
                 </p>
                 <div id="app-uninstaller-container"></div>
+            </div>
+        </div>
+
+        <!-- Disk Visualization Tab -->
+        <div id="diskviz" class="tab-content">
+            <div class="card">
+                <h2>📊 Disk Usage Visualization</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                    Interactive treemap visualization of disk usage. Click on folders to drill down and explore what's using your storage.
+                </p>
+                <div id="disk-viz-container"></div>
             </div>
         </div>
 

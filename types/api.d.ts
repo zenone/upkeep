@@ -408,7 +408,7 @@ export type APIResponse<T = any> =
 /**
  * Tab names in the application
  */
-export type TabName = 'dashboard' | 'storage' | 'maintenance' | 'schedule' | 'about';
+export type TabName = 'dashboard' | 'storage' | 'maintenance' | 'uninstaller' | 'diskviz' | 'schedule' | 'settings' | 'about';
 
 /**
  * Toast notification types

@@ -9,6 +9,7 @@ import { loadOperations, runDoctor, fixDoctorIssue, runSelectedOperations, cance
 import { analyzeStorage, setPath, getUsername } from './modules/storage';
 import { onScheduleTabShow, openScheduleModal, closeScheduleModal, loadSchedules, saveSchedule, deleteSchedule, toggleScheduleEnabled, runScheduleNow, applyScheduleTemplate } from './modules/schedule';
 import { AppUninstaller } from './modules/app_uninstaller';
+import { DiskVisualizer } from './modules/disk_viz';
 import type { TabName } from './types';
 
 console.log('╔════════════════════════════════════════════════╗');
@@ -169,6 +170,14 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('✓ App Uninstaller initialized');
   } catch (e) {
     console.warn('App Uninstaller init failed (container missing?):', e);
+  }
+
+  // Initialize Disk Visualizer
+  try {
+    new DiskVisualizer('disk-viz-container');
+    console.log('✓ Disk Visualizer initialized');
+  } catch (e) {
+    console.warn('Disk Visualizer init failed (container missing?):', e);
   }
 
   // Note: Auto-refresh intervals are now managed by initSettings()
