@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-01-29",
+  "last_updated": "2026-02-13",
   "operations": {
     "brew-update": {
       "category": "System Updates",
@@ -1172,6 +1172,382 @@
         ],
         "title": "Problems This Solves"
       }
+    },
+    "disk-triage": {
+      "id": "disk-triage",
+      "name": "Disk Triage",
+      "category": "Reports & Analysis",
+      "safety": "none",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "'What's using my disk?' is the first question when space is low. This provides a quick, comprehensive answer without needing to run multiple commands.",
+        "problems": [
+          {
+            "symptom": "Low disk space",
+            "description": "Need to identify which folders are consuming the most space"
+          },
+          {
+            "symptom": "Unfamiliar bloat",
+            "description": "Don't know where to start looking for space hogs"
+          },
+          {
+            "symptom": "Planning cleanup",
+            "description": "Need to prioritize which cleanup operations to run first"
+          }
+        ]
+      },
+      "when_to_run": [
+        "Before any cleanup operation (to identify targets)",
+        "Weekly as part of health check",
+        "After 'disk full' alerts",
+        "When investigating unexpected space usage"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "30-60 seconds depending on disk size",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Complete overview: Shows disk usage breakdown for Home, Library, Caches, and other key directories"
+          },
+          {
+            "type": "neutral",
+            "description": "Read-only: No files are modified or deleted"
+          },
+          {
+            "type": "positive",
+            "description": "Actionable: Results help you decide which cleanup operations to run"
+          }
+        ],
+        "side_effects": []
+      },
+      "note": "This is a read-only operation. It scans directories using 'du' and 'df' commands and presents a ranked summary. No confirmation needed."
+    },
+    "downloads-report": {
+      "id": "downloads-report",
+      "name": "Downloads Report",
+      "category": "Reports & Analysis",
+      "safety": "none",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "The Downloads folder accumulates installers, archives, and forgotten files over time. This report helps identify what's taking space.",
+        "problems": [
+          {
+            "symptom": "Forgotten downloads",
+            "description": "Old DMGs, ZIPs, and installers sitting unused"
+          },
+          {
+            "symptom": "Space mystery",
+            "description": "Downloads folder is large but don't know what's in it"
+          },
+          {
+            "symptom": "Cleanup planning",
+            "description": "Need to know what's safe to delete before cleaning"
+          }
+        ]
+      },
+      "when_to_run": [
+        "Monthly as part of maintenance",
+        "After installing many applications",
+        "When disk space is low",
+        "Before running downloads-cleanup"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "5-15 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Size overview: Shows total Downloads folder size"
+          },
+          {
+            "type": "positive",
+            "description": "Largest files: Lists top 20 files by size"
+          },
+          {
+            "type": "positive",
+            "description": "Old installers: Shows DMG/ZIP/PKG files older than 30 days"
+          },
+          {
+            "type": "neutral",
+            "description": "Read-only: No files are deleted"
+          }
+        ],
+        "side_effects": []
+      },
+      "note": "This is a read-only operation. Use downloads-cleanup to actually remove old installers."
+    },
+    "downloads-cleanup": {
+      "id": "downloads-cleanup",
+      "name": "Clean Downloads",
+      "category": "Cleanup Operations",
+      "safety": "medium-risk",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Old installers (.dmg, .zip, .pkg, .iso) in Downloads waste space and are rarely needed after installation.",
+        "problems": [
+          {
+            "symptom": "Wasted space",
+            "description": "Old installers taking up 1-20GB"
+          },
+          {
+            "symptom": "Clutter",
+            "description": "Downloads folder full of old files"
+          },
+          {
+            "symptom": "Re-downloading",
+            "description": "Most installers can be re-downloaded if needed"
+          }
+        ]
+      },
+      "when_to_run": [
+        "Monthly maintenance",
+        "When disk space is low",
+        "After installing multiple applications",
+        "When downloads-report shows significant old files"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "10-30 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Space freed: Removes old installers (typically 1-20GB)"
+          },
+          {
+            "type": "neutral",
+            "description": "Only old files: Only removes files older than 30 days"
+          },
+          {
+            "type": "neutral",
+            "description": "Only installers: Only targets .dmg, .zip, .pkg, .iso files"
+          }
+        ],
+        "side_effects": [
+          "Other file types are NOT touched",
+          "Recent files (< 30 days) are preserved",
+          "Can re-download installers from vendor websites if needed"
+        ]
+      },
+      "note": "Requires confirmation before deleting. Use --preview to see what would be deleted without actually deleting."
+    },
+    "xcode-cleanup": {
+      "id": "xcode-cleanup",
+      "name": "Xcode Cleanup",
+      "category": "Cleanup Operations",
+      "safety": "low-risk",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Xcode stores compiled code, indexes, and build artifacts in DerivedData. This can grow to 50GB+ for active iOS developers.",
+        "problems": [
+          {
+            "symptom": "Massive disk usage",
+            "description": "DerivedData folder consuming 5-50GB"
+          },
+          {
+            "symptom": "Build failures",
+            "description": "Corrupted build cache causing mysterious build errors"
+          },
+          {
+            "symptom": "Stale indexes",
+            "description": "Xcode autocomplete or indexing not working properly"
+          }
+        ]
+      },
+      "when_to_run": [
+        "Monthly for active developers",
+        "When disk space is low",
+        "When Xcode builds fail mysteriously",
+        "When autocomplete stops working",
+        "After major Xcode updates"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "5-15 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Space freed: Removes build cache (typically 5-50GB)"
+          },
+          {
+            "type": "temporary",
+            "description": "Slower first build: Next build will be a full rebuild"
+          },
+          {
+            "type": "positive",
+            "description": "Clean state: Fixes build cache corruption issues"
+          }
+        ],
+        "side_effects": [
+          "Source code is NOT affected",
+          "Project files are NOT affected",
+          "Only build cache (DerivedData) is removed",
+          "Autocomplete and indexes will rebuild automatically"
+        ]
+      },
+      "note": "Safe to run anytime. Xcode automatically rebuilds DerivedData on next build. This is equivalent to 'Product > Clean Build Folder' for all projects."
+    },
+    "caches-cleanup": {
+      "id": "caches-cleanup",
+      "name": "Clear User Caches",
+      "category": "Cleanup Operations",
+      "safety": "low-risk",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "~/Library/Caches is designed to be purgeable by the OS. It contains temporary data that apps can rebuild.",
+        "problems": [
+          {
+            "symptom": "Disk space",
+            "description": "Caches folder consuming 2-10GB"
+          },
+          {
+            "symptom": "App issues",
+            "description": "Corrupted cache causing app misbehavior"
+          },
+          {
+            "symptom": "Old data",
+            "description": "Stale cache data from uninstalled apps"
+          }
+        ]
+      },
+      "when_to_run": [
+        "Monthly maintenance",
+        "When disk space is low",
+        "When apps behave strangely",
+        "After uninstalling applications"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "10-30 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Space freed: Removes user caches (typically 2-10GB)"
+          },
+          {
+            "type": "temporary",
+            "description": "Slightly slower apps: First app launch may be slower as cache rebuilds"
+          },
+          {
+            "type": "positive",
+            "description": "Fresh state: Clears potentially corrupted cache data"
+          }
+        ],
+        "side_effects": [
+          "Apps rebuild caches automatically on next launch",
+          "Preferences and settings are NOT affected",
+          "Documents and data are NOT affected",
+          "Some apps may need to re-download assets"
+        ]
+      },
+      "note": "Requires confirmation. This is different from trim-caches which only removes OLD cache files. This removes ALL user caches."
+    },
+    "logs-cleanup": {
+      "id": "logs-cleanup",
+      "name": "Clean Old Logs",
+      "category": "Cleanup Operations",
+      "safety": "low-risk",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Log files accumulate indefinitely in ~/Library/Logs. Old logs are rarely needed for troubleshooting.",
+        "problems": [
+          {
+            "symptom": "Disk space",
+            "description": "Log files consuming 0.5-5GB"
+          },
+          {
+            "symptom": "Clutter",
+            "description": "Thousands of old log files"
+          },
+          {
+            "symptom": "Privacy",
+            "description": "Old logs may contain sensitive information"
+          }
+        ]
+      },
+      "when_to_run": [
+        "Monthly maintenance",
+        "When disk space is low",
+        "After resolving application issues (old diagnostic logs no longer needed)"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "10-30 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Space freed: Removes old logs (typically 0.5-5GB)"
+          },
+          {
+            "type": "neutral",
+            "description": "Recent preserved: Logs < 30 days are kept for troubleshooting"
+          },
+          {
+            "type": "positive",
+            "description": "Privacy: Removes potentially sensitive log data"
+          }
+        ],
+        "side_effects": [
+          "Recent logs (< 30 days) are preserved",
+          "System logs (in /var/log) are NOT affected",
+          "No impact on app functionality"
+        ]
+      },
+      "note": "Only removes log files older than 30 days. Recent logs are preserved in case they're needed for troubleshooting."
+    },
+    "trash-empty": {
+      "id": "trash-empty",
+      "name": "Empty Trash",
+      "category": "Cleanup Operations",
+      "safety": "medium-risk",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "The Trash can hold GBs of 'deleted' files that still consume disk space until the Trash is emptied.",
+        "problems": [
+          {
+            "symptom": "Hidden space usage",
+            "description": "Deleted files still using disk space"
+          },
+          {
+            "symptom": "False sense of cleanup",
+            "description": "Thinking files are deleted when they're just in Trash"
+          },
+          {
+            "symptom": "Sensitive data",
+            "description": "Deleted files still recoverable from Trash"
+          }
+        ]
+      },
+      "when_to_run": [
+        "Weekly as part of maintenance",
+        "When disk space is low",
+        "After deleting large files",
+        "When you're sure you don't need to recover any deleted files"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "1-60 seconds depending on Trash size",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Space freed: Permanently deletes all Trash contents"
+          },
+          {
+            "type": "warning",
+            "description": "Cannot be undone: Files are permanently deleted"
+          },
+          {
+            "type": "neutral",
+            "description": "Immediate: Space is freed instantly"
+          }
+        ],
+        "side_effects": [
+          "Files CANNOT be recovered after emptying",
+          "This is equivalent to Finder > Empty Trash",
+          "All users' Trash is affected on multi-user systems"
+        ]
+      },
+      "note": "Requires confirmation. This permanently deletes all files in the Trash. Make sure you don't need to recover anything before running."
     }
   },
   "version": "1.0"
