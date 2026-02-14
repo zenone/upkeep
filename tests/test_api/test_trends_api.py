@@ -7,15 +7,13 @@ Tests the REST API for historical trend tracking:
 - GET /api/trends/stats
 """
 
-from datetime import datetime, timedelta, UTC
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator
-from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
 
-from upkeep.core.trend_recorder import TrendDataPoint, TrendRecorder
+from upkeep.core.trend_recorder import TrendRecorder
 
 
 @pytest.fixture
