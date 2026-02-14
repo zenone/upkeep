@@ -3167,6 +3167,89 @@ dev_artifacts_report() {
   success "Dev artifacts report complete."
 }
 
+mail_size_report() {
+  section "Mail Size Report"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local mail_dir="${user_home}/Library/Mail"
+
+  if [[ ! -d "$mail_dir" ]]; then
+    info "No Mail folder found at: $mail_dir"
+    info "Mail.app may not be configured on this Mac."
+    return 0
+  fi
+
+  # Get total size
+  local total_size
+  total_size=$(du -sh "$mail_dir" 2>/dev/null | awk '{print $1}' || echo "unknown")
+  info "Total Mail Size: ${total_size}"
+  echo ""
+
+  # Show V10 (current Mail format) breakdown if it exists
+  local v10_dir="${mail_dir}/V10"
+  if [[ -d "$v10_dir" ]]; then
+    info "Mail data breakdown:"
+    du -sh "$v10_dir"/*/ 2>/dev/null | sort -hr | head -10 | while read -r size folder; do
+      local folder_name
+      folder_name=$(basename "$folder")
+      printf "  %8s  %s\n" "$size" "$folder_name"
+    done
+  fi
+
+  echo ""
+  info "To manage Mail storage:"
+  info "  - Mail → Mailbox → Erase Deleted Items"
+  info "  - Mail → Mailbox → Erase Junk Mail"
+  info "  - Review and delete large attachments"
+  info "  - Consider removing old mailboxes"
+
+  success "Mail size report complete."
+}
+
+messages_attachments_report() {
+  section "Messages Attachments Report"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local messages_dir="${user_home}/Library/Messages"
+  local attachments_dir="${messages_dir}/Attachments"
+
+  if [[ ! -d "$messages_dir" ]]; then
+    info "No Messages folder found at: $messages_dir"
+    return 0
+  fi
+
+  # Get total Messages size
+  local total_size
+  total_size=$(du -sh "$messages_dir" 2>/dev/null | awk '{print $1}' || echo "unknown")
+  info "Total Messages Size: ${total_size}"
+
+  # Get attachments size specifically
+  if [[ -d "$attachments_dir" ]]; then
+    local attachments_size
+    attachments_size=$(du -sh "$attachments_dir" 2>/dev/null | awk '{print $1}' || echo "unknown")
+    info "Attachments Size: ${attachments_size}"
+
+    # Count files by type
+    local image_count video_count other_count
+    image_count=$(find "$attachments_dir" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.gif" -o -name "*.heic" \) 2>/dev/null | wc -l | tr -d ' ')
+    video_count=$(find "$attachments_dir" -type f \( -name "*.mov" -o -name "*.mp4" -o -name "*.m4v" \) 2>/dev/null | wc -l | tr -d ' ')
+
+    echo ""
+    info "Attachment counts: ~${image_count} images, ~${video_count} videos"
+  else
+    info "No Attachments folder found."
+  fi
+
+  echo ""
+  warning "⚠️  Messages attachments contain personal data."
+  info "To manage: Messages app → Preferences → Keep Messages → select retention period"
+  info "Or manually delete conversations with large attachments."
+
+  success "Messages attachments report complete."
+}
+
 downloads_report() {
   section "Downloads Report"
 
@@ -3593,6 +3676,8 @@ DO_DISK_TRIAGE=0
 DO_IOS_BACKUPS_REPORT=0
 DO_APP_SUPPORT_REPORT=0
 DO_DEV_ARTIFACTS_REPORT=0
+DO_MAIL_SIZE_REPORT=0
+DO_MESSAGES_ATTACHMENTS_REPORT=0
 DO_DOWNLOADS_REPORT=0
 DO_DOWNLOADS_CLEANUP=0
 DO_XCODE_CLEANUP=0
@@ -3675,6 +3760,8 @@ Tier 1 Operations (v3.1):
   --ios-backups-report       Report size and details of iPhone/iPad backups
   --app-support-report       Report top space consumers in Application Support
   --dev-artifacts-report     Find node_modules, .venv, build directories
+  --mail-size-report         Report size of Mail.app data
+  --messages-attachments     Report size of iMessage attachments
   --downloads-report         Report size and age of Downloads files
   --downloads-cleanup        Remove old installers/archives from Downloads
   --xcode-cleanup            Clear Xcode DerivedData (not simulators)
@@ -3741,6 +3828,8 @@ while [[ $# -gt 0 ]]; do
     --ios-backups-report) DO_IOS_BACKUPS_REPORT=1; shift ;;
     --app-support-report) DO_APP_SUPPORT_REPORT=1; shift ;;
     --dev-artifacts-report) DO_DEV_ARTIFACTS_REPORT=1; shift ;;
+    --mail-size-report) DO_MAIL_SIZE_REPORT=1; shift ;;
+    --messages-attachments) DO_MESSAGES_ATTACHMENTS_REPORT=1; shift ;;
     --downloads-report) DO_DOWNLOADS_REPORT=1; shift ;;
     --downloads-cleanup) DO_DOWNLOADS_CLEANUP=1; shift ;;
     --xcode-cleanup) DO_XCODE_CLEANUP=1; shift ;;
@@ -3878,6 +3967,8 @@ else
   (( DO_IOS_BACKUPS_REPORT )) && ios_backups_report
   (( DO_APP_SUPPORT_REPORT )) && application_support_report
   (( DO_DEV_ARTIFACTS_REPORT )) && dev_artifacts_report
+  (( DO_MAIL_SIZE_REPORT )) && mail_size_report
+  (( DO_MESSAGES_ATTACHMENTS_REPORT )) && messages_attachments_report
   (( DO_DOWNLOADS_REPORT )) && downloads_report
   (( DO_DOWNLOADS_CLEANUP )) && downloads_cleanup
   (( DO_XCODE_CLEANUP )) && xcode_cleanup

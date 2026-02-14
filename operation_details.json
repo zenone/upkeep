@@ -696,6 +696,103 @@
       },
       "note": "Before deleting any artifacts, verify the project is not active. Use 'rm -rf <path>' to clean up. Consider keeping node_modules for projects you're actively working on."
     },
+    "mail-size-report": {
+      "id": "mail-size-report",
+      "name": "Mail Size Report",
+      "category": "Reports",
+      "safety": "safe",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Mail.app stores all messages and attachments locally, which can grow to 10-50GB over years of email.",
+        "problems": [
+          {
+            "symptom": "Large Mail folder",
+            "description": "~/Library/Mail consuming 10-50GB"
+          },
+          {
+            "symptom": "Cached attachments",
+            "description": "Downloaded attachments stored permanently"
+          },
+          {
+            "symptom": "Old messages",
+            "description": "Years of archived messages taking space"
+          }
+        ]
+      },
+      "when_to_run": [
+        "Quarterly exploration",
+        "When disk space is low",
+        "When Mail feels slow"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "10-30 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Total size: Shows Mail folder size"
+          },
+          {
+            "type": "positive",
+            "description": "Breakdown: Shows mailbox sizes"
+          },
+          {
+            "type": "neutral",
+            "description": "No changes made: Read-only"
+          }
+        ],
+        "side_effects": []
+      },
+      "note": "To clean: Mail → Mailbox → Erase Deleted Items/Junk. Delete old emails or move to archive."
+    },
+    "messages-attachments-report": {
+      "id": "messages-attachments-report",
+      "name": "Messages Attachments Report",
+      "category": "Reports",
+      "safety": "safe",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "iMessage/SMS attachments (photos, videos, files) accumulate over years and can consume 5-50GB+.",
+        "problems": [
+          {
+            "symptom": "Hidden storage",
+            "description": "Attachments folder consuming 5-50GB+"
+          },
+          {
+            "symptom": "Video files",
+            "description": "Received videos taking most space"
+          },
+          {
+            "symptom": "Years of photos",
+            "description": "Thousands of images from conversations"
+          }
+        ]
+      },
+      "when_to_run": [
+        "Quarterly exploration",
+        "When disk space is low"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "5-15 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Total size: Shows Messages and Attachments sizes"
+          },
+          {
+            "type": "positive",
+            "description": "File counts: Approximate image and video counts"
+          },
+          {
+            "type": "neutral",
+            "description": "No changes made: Read-only"
+          }
+        ],
+        "side_effects": []
+      },
+      "note": "⚠️ Contains personal data. To manage: Messages → Preferences → Keep Messages → set retention period."
+    },
     "downloads-cleanup": {
       "category": "Cleanup",
       "id": "downloads-cleanup",

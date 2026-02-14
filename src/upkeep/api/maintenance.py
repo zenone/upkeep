@@ -411,6 +411,24 @@ class MaintenanceAPI(BaseAPI):
             "safe": True,
             "recommended": False,
         },
+        "mail-size-report": {
+            "id": "mail-size-report",
+            "name": "Mail Size Report",
+            "description": "Report size of Mail.app data",
+            "guidance": "Why: Mail data can grow to 10-50GB with attachments and cached messages. When: Quarterly or when disk is low. What: Shows total Mail folder size and major subfolders. To clean: Use Mail.app to manage mailboxes, delete old messages, or remove large attachments.",
+            "category": "Reports",
+            "safe": True,
+            "recommended": False,
+        },
+        "messages-attachments-report": {
+            "id": "messages-attachments-report",
+            "name": "Messages Attachments Report",
+            "description": "Report size of iMessage/SMS attachments",
+            "guidance": "Why: Messages attachments (photos, videos, files) can grow to 5-50GB. When: Quarterly or when disk is low. What: Shows total attachments size. Note: Contains sensitive personal data - report only, no auto-cleanup.",
+            "category": "Reports",
+            "safe": True,
+            "recommended": False,
+        },
     }
 
     def __init__(self):
