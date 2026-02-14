@@ -388,6 +388,15 @@ class MaintenanceAPI(BaseAPI):
             "safe": True,
             "recommended": False,
         },
+        "ios-backups-report": {
+            "id": "ios-backups-report",
+            "name": "iOS Backups Report",
+            "description": "Report size and details of iPhone/iPad backups",
+            "guidance": "Why: iPhone and iPad backups can consume 10-100GB of disk space, often unnoticed. When: Quarterly or when disk space is low. What: Shows total backup size, lists each device backup with name, size, and date. To clean up: Use Finder → iPhone → Manage Backups (not CLI deletion) for safety.",
+            "category": "Reports",
+            "safe": True,
+            "recommended": False,
+        },
     }
 
     def __init__(self):

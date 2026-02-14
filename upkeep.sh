@@ -2993,6 +2993,70 @@ disk_triage() {
   success "Disk triage complete. Use this to identify cleanup targets."
 }
 
+ios_backups_report() {
+  section "iOS Backups Report"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local backups_dir="${user_home}/Library/Application Support/MobileSync/Backup"
+
+  if [[ ! -d "$backups_dir" ]]; then
+    info "No iOS backups found at: $backups_dir"
+    info "This is normal if you haven't backed up any iOS devices to this Mac."
+    return 0
+  fi
+
+  # Get total size
+  local total_size
+  total_size=$(du -sh "$backups_dir" 2>/dev/null | awk '{print $1}' || echo "unknown")
+  info "Total iOS Backup Size: ${total_size}"
+  echo ""
+
+  # Count number of backups (each subdirectory is a backup)
+  local backup_count
+  backup_count=$(find "$backups_dir" -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+  backup_count=$((backup_count - 1))  # Subtract the parent directory
+
+  if [[ "$backup_count" -eq 0 ]]; then
+    info "No device backups found."
+    return 0
+  fi
+
+  info "Found ${backup_count} device backup(s):"
+  echo ""
+
+  # List each backup with details
+  for backup_path in "$backups_dir"/*/; do
+    [[ -d "$backup_path" ]] || continue
+
+    local backup_name
+    backup_name=$(basename "$backup_path")
+
+    local backup_size
+    backup_size=$(du -sh "$backup_path" 2>/dev/null | awk '{print $1}' || echo "?")
+
+    # Try to get device name from Info.plist
+    local device_name="Unknown Device"
+    local info_plist="${backup_path}Info.plist"
+    if [[ -f "$info_plist" ]]; then
+      # Extract device name using plutil (built into macOS)
+      device_name=$(plutil -extract "Device Name" raw "$info_plist" 2>/dev/null || echo "Unknown Device")
+    fi
+
+    # Get last modified date
+    local last_modified
+    last_modified=$(stat -f "%Sm" -t "%Y-%m-%d" "$backup_path" 2>/dev/null || echo "unknown")
+
+    printf "  %-30s %8s  (modified: %s)\n" "$device_name" "$backup_size" "$last_modified"
+  done
+
+  echo ""
+  info "To manage backups: Finder → iPhone → Manage Backups..."
+  info "Or: System Settings → General → iPhone & iPad"
+
+  success "iOS backups report complete."
+}
+
 downloads_report() {
   section "Downloads Report"
 
@@ -3416,6 +3480,7 @@ DO_WALLPAPER_AERIALS=0
 
 # Tier 1 Operations (v3.1)
 DO_DISK_TRIAGE=0
+DO_IOS_BACKUPS_REPORT=0
 DO_DOWNLOADS_REPORT=0
 DO_DOWNLOADS_CLEANUP=0
 DO_XCODE_CLEANUP=0
@@ -3495,6 +3560,7 @@ Cleanup:
 
 Tier 1 Operations (v3.1):
   --disk-triage              Quick overview of disk usage across key directories
+  --ios-backups-report       Report size and details of iPhone/iPad backups
   --downloads-report         Report size and age of Downloads files
   --downloads-cleanup        Remove old installers/archives from Downloads
   --xcode-cleanup            Clear Xcode DerivedData (not simulators)
@@ -3558,6 +3624,7 @@ while [[ $# -gt 0 ]]; do
 
     # Tier 1 Operations (v3.1)
     --disk-triage) DO_DISK_TRIAGE=1; shift ;;
+    --ios-backups-report) DO_IOS_BACKUPS_REPORT=1; shift ;;
     --downloads-report) DO_DOWNLOADS_REPORT=1; shift ;;
     --downloads-cleanup) DO_DOWNLOADS_CLEANUP=1; shift ;;
     --xcode-cleanup) DO_XCODE_CLEANUP=1; shift ;;
@@ -3692,6 +3759,7 @@ else
 
   # Tier 1 Operations (v3.1)
   (( DO_DISK_TRIAGE )) && disk_triage
+  (( DO_IOS_BACKUPS_REPORT )) && ios_backups_report
   (( DO_DOWNLOADS_REPORT )) && downloads_report
   (( DO_DOWNLOADS_CLEANUP )) && downloads_cleanup
   (( DO_XCODE_CLEANUP )) && xcode_cleanup

@@ -530,6 +530,60 @@
         "title": "Problems This Solves"
       }
     },
+    "ios-backups-report": {
+      "id": "ios-backups-report",
+      "name": "iOS Backups Report",
+      "category": "Reports",
+      "safety": "safe",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "iPhone and iPad backups stored locally can consume 10-100GB of disk space. They're stored in a hidden location and are easy to forget about, especially if you've switched to iCloud backups.",
+        "problems": [
+          {
+            "symptom": "Hidden disk usage",
+            "description": "iOS backups stored in ~/Library/Application Support/MobileSync/Backup using significant space"
+          },
+          {
+            "symptom": "Old device backups",
+            "description": "Backups from devices you no longer own still taking up space"
+          },
+          {
+            "symptom": "Duplicate backups",
+            "description": "Multiple backups of the same device from different dates"
+          }
+        ]
+      },
+      "when_to_run": [
+        "Quarterly to check backup sizes",
+        "When disk space is low",
+        "After switching to iCloud backups",
+        "When selling or trading in old devices"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "5-15 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Total size: Shows combined size of all iOS backups"
+          },
+          {
+            "type": "positive",
+            "description": "Per-device breakdown: Lists each device with name, size, and last modified date"
+          },
+          {
+            "type": "neutral",
+            "description": "No changes made: Read-only report, no deletions"
+          }
+        ],
+        "side_effects": [
+          "This is a read-only report - nothing is deleted",
+          "Shows actual device names extracted from backup metadata",
+          "Provides instructions for safe cleanup via Finder"
+        ]
+      },
+      "note": "To delete old backups safely, use Finder → iPhone → Manage Backups, or System Settings → General → iPhone & iPad. Do NOT manually delete backup folders."
+    },
     "downloads-cleanup": {
       "category": "Cleanup",
       "id": "downloads-cleanup",
