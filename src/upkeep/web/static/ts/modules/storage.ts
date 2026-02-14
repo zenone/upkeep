@@ -78,7 +78,7 @@ export async function analyzeStorage(): Promise<void> {
         </div>
       </div>
       <h3 style="margin-top: 2rem;">Largest Items</h3>
-      <p style="color: #6e6e73; margin-top: 0.5rem;">Select items to delete</p>
+      <p style="color: var(--text-secondary); margin-top: 0.5rem;">Select items to delete</p>
       <div class="file-list">
         ${data.largest_entries.map((entry, idx) => {
           const displayName = entry.path.split('/').pop();
@@ -87,11 +87,11 @@ export async function analyzeStorage(): Promise<void> {
             <input type="checkbox" id="file-${idx}" data-path="${entry.path.replace(/"/g, '&quot;').replace(/'/g, '&#39;')}">
             <div class="file-info">
               <strong>${displayName}</strong><br>
-              <small style="color: #6e6e73;">${entry.path}</small>
+              <small style="color: var(--text-secondary);">${entry.path}</small>
             </div>
             <div class="file-size">
               <strong>${entry.size_gb.toFixed(2)} GB</strong><br>
-              <small style="color: #6e6e73;">${entry.is_dir ? 'Directory' : 'File'}</small>
+              <small style="color: var(--text-secondary);">${entry.is_dir ? 'Directory' : 'File'}</small>
             </div>
           </div>
         `;
