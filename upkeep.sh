@@ -3331,6 +3331,236 @@ virtualbox_report() {
   success "VirtualBox report complete."
 }
 
+large_files_report() {
+  section "Large Files Report (>500MB)"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local min_size_mb=500
+  local min_size_bytes=$((min_size_mb * 1024 * 1024))
+
+  info "Scanning for files larger than ${min_size_mb}MB in ${user_home}..."
+  info "This may take a moment..."
+  echo ""
+
+  # Find large files, exclude system directories
+  local count=0
+  while IFS= read -r line; do
+    if [[ -n "$line" ]]; then
+      local size_bytes file_path size_human
+      size_bytes=$(echo "$line" | awk '{print $1}')
+      file_path=$(echo "$line" | cut -d' ' -f2-)
+      
+      # Convert to human readable
+      if [[ $size_bytes -gt 1073741824 ]]; then
+        size_human="$(echo "scale=1; $size_bytes / 1073741824" | bc)G"
+      else
+        size_human="$(echo "scale=0; $size_bytes / 1048576" | bc)M"
+      fi
+      
+      printf "  %8s  %s\n" "$size_human" "$file_path"
+      ((count++))
+    fi
+  done < <(find "$user_home" -type f -size +${min_size_mb}M \
+    -not -path "*/Library/CloudStorage/*" \
+    -not -path "*/.Trash/*" \
+    -not -path "*/VirtualBox VMs/*" \
+    -not -path "*/.git/*" \
+    2>/dev/null | xargs -I {} stat -f "%z %N" {} 2>/dev/null | sort -rn | head -20)
+
+  echo ""
+  if [[ $count -eq 0 ]]; then
+    info "No files larger than ${min_size_mb}MB found (excluding cloud storage, trash, VMs)"
+  else
+    info "Found ${count} large files (showing top 20)"
+    echo ""
+    info "Common large file types:"
+    info "  • .dmg, .iso - Disk images (safe to delete after use)"
+    info "  • .zip, .tar.gz - Archives (extract and delete)"
+    info "  • .mov, .mp4 - Videos (move to external storage)"
+  fi
+
+  success "Large files report complete."
+}
+
+screenshot_folder_report() {
+  section "Screenshot Folder Report"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local desktop="${user_home}/Desktop"
+  local screenshots_dir="${user_home}/Desktop/Screenshots"
+
+  # Check for dedicated Screenshots folder first
+  if [[ -d "$screenshots_dir" ]]; then
+    local ss_count ss_size
+    ss_count=$(find "$screenshots_dir" -type f \( -name "*.png" -o -name "*.jpg" -o -name "Screenshot*" \) 2>/dev/null | wc -l | tr -d ' ')
+    ss_size=$(du -sh "$screenshots_dir" 2>/dev/null | awk '{print $1}' || echo "0")
+    info "Screenshots folder: ${screenshots_dir}"
+    info "  Count: ${ss_count} files"
+    info "  Size: ${ss_size}"
+    echo ""
+  fi
+
+  # Check Desktop for loose screenshots
+  local desktop_ss_count=0
+  local desktop_ss_list=""
+  
+  while IFS= read -r file; do
+    [[ -n "$file" ]] && ((desktop_ss_count++))
+  done < <(find "$desktop" -maxdepth 1 -type f \( -name "Screenshot*" -o -name "Screen Shot*" \) 2>/dev/null)
+
+  if [[ $desktop_ss_count -gt 0 ]]; then
+    info "Screenshots on Desktop: ${desktop_ss_count} files"
+    echo ""
+    info "Oldest screenshots on Desktop:"
+    find "$desktop" -maxdepth 1 -type f \( -name "Screenshot*" -o -name "Screen Shot*" \) \
+      -exec stat -f "%Sm %N" -t "%Y-%m-%d" {} \; 2>/dev/null | sort | head -5 | while read -r line; do
+      printf "  %s\n" "$line"
+    done
+    echo ""
+    info "💡 Tip: Create a Screenshots folder to organize"
+    info "   System Settings → General → Screenshots → Save to"
+  else
+    info "No loose screenshots found on Desktop"
+  fi
+
+  success "Screenshot folder report complete."
+}
+
+electron_apps_cache_report() {
+  section "Electron Apps Cache Report"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local app_support="${user_home}/Library/Application Support"
+  local caches="${user_home}/Library/Caches"
+
+  local total_size=0
+  local found_any=false
+
+  info "Checking Electron app caches..."
+  echo ""
+
+  # Check each app manually (bash 3.2 compatible)
+  check_electron_app() {
+    local app_name="$1"
+    shift
+    local app_total=0
+    local app_found=false
+
+    for path in "$@"; do
+      if [[ -d "$path" ]]; then
+        local size_kb
+        size_kb=$(du -sk "$path" 2>/dev/null | awk '{print $1}' || echo "0")
+        app_total=$((app_total + size_kb))
+        app_found=true
+        found_any=true
+      fi
+    done
+
+    if [[ "$app_found" == "true" ]]; then
+      local size_human
+      if [[ $app_total -gt 1048576 ]]; then
+        size_human="$(awk "BEGIN {printf \"%.1fG\", $app_total / 1048576}")"
+      elif [[ $app_total -gt 1024 ]]; then
+        size_human="$((app_total / 1024))M"
+      else
+        size_human="${app_total}K"
+      fi
+      printf "  %8s  %s\n" "$size_human" "$app_name"
+      total_size=$((total_size + app_total))
+    fi
+  }
+
+  check_electron_app "Slack" "${app_support}/Slack/Cache" "${app_support}/Slack/Service Worker"
+  check_electron_app "Discord" "${app_support}/discord/Cache" "${app_support}/discord/Code Cache"
+  check_electron_app "Microsoft Teams" "${app_support}/Microsoft/Teams"
+  check_electron_app "Visual Studio Code" "${app_support}/Code/Cache" "${app_support}/Code/CachedData"
+  check_electron_app "Notion" "${app_support}/Notion/Cache"
+  check_electron_app "Figma" "${app_support}/Figma/Cache"
+  check_electron_app "Spotify" "${caches}/com.spotify.client"
+
+  echo ""
+  if [[ "$found_any" == "true" ]]; then
+    local total_human
+    if [[ $total_size -gt 1048576 ]]; then
+      total_human="$(awk "BEGIN {printf \"%.1fG\", $total_size / 1048576}")"
+    else
+      total_human="$((total_size / 1024))M"
+    fi
+    info "Total Electron app cache: ${total_human}"
+    echo ""
+    info "To clear caches:"
+    info "  • Slack: Preferences → Advanced → Reset Cache"
+    info "  • Discord: Settings → Advanced → Clear Cache"
+    info "  • VS Code: Command Palette → Clear Editor History"
+    info "  • Teams: Settings → Storage → Clear Cache"
+  else
+    info "No Electron app caches found"
+  fi
+
+  success "Electron apps cache report complete."
+}
+
+battery_health_report() {
+  section "Battery Health Report"
+
+  # Check if this is a laptop
+  if ! system_profiler SPPowerDataType 2>/dev/null | grep -q "Battery"; then
+    info "No battery detected - this appears to be a desktop Mac"
+    return 0
+  fi
+
+  local battery_info
+  battery_info=$(system_profiler SPPowerDataType 2>/dev/null)
+
+  # Extract key metrics
+  local cycle_count condition max_capacity
+  cycle_count=$(echo "$battery_info" | grep "Cycle Count" | awk '{print $3}')
+  condition=$(echo "$battery_info" | grep "Condition" | awk '{print $2}')
+  max_capacity=$(echo "$battery_info" | grep "Maximum Capacity" | awk '{print $3}')
+
+  info "Battery Status:"
+  echo ""
+  printf "  %-20s %s\n" "Condition:" "${condition:-Unknown}"
+  printf "  %-20s %s\n" "Cycle Count:" "${cycle_count:-Unknown}"
+  printf "  %-20s %s\n" "Maximum Capacity:" "${max_capacity:-Unknown}"
+  echo ""
+
+  # Provide guidance based on condition
+  case "$condition" in
+    Normal)
+      info "✅ Battery is healthy"
+      ;;
+    "Replace Soon")
+      warning "⚠️  Battery capacity reduced - consider replacement soon"
+      ;;
+    "Replace Now")
+      warning "🔴 Battery needs replacement"
+      ;;
+    "Service Battery")
+      warning "🔴 Battery requires service - contact Apple Support"
+      ;;
+    *)
+      info "Battery condition: ${condition:-Unknown}"
+      ;;
+  esac
+
+  # Cycle count guidance
+  if [[ -n "$cycle_count" && "$cycle_count" =~ ^[0-9]+$ ]]; then
+    if [[ $cycle_count -gt 1000 ]]; then
+      warning "⚠️  High cycle count (${cycle_count}). Apple rates batteries for ~1000 cycles."
+    elif [[ $cycle_count -gt 800 ]]; then
+      info "ℹ️  Moderate cycle count (${cycle_count}). Battery aging normally."
+    else
+      info "✅ Low cycle count (${cycle_count}). Battery is relatively new."
+    fi
+  fi
+
+  success "Battery health report complete."
+}
+
 downloads_report() {
   section "Downloads Report"
 
@@ -3761,6 +3991,10 @@ DO_MAIL_SIZE_REPORT=0
 DO_MESSAGES_ATTACHMENTS_REPORT=0
 DO_CLOUDSTORAGE_REPORT=0
 DO_VIRTUALBOX_REPORT=0
+DO_LARGE_FILES_REPORT=0
+DO_SCREENSHOT_FOLDER_REPORT=0
+DO_ELECTRON_APPS_CACHE_REPORT=0
+DO_BATTERY_HEALTH_REPORT=0
 DO_DOWNLOADS_REPORT=0
 DO_DOWNLOADS_CLEANUP=0
 DO_XCODE_CLEANUP=0
@@ -3847,6 +4081,10 @@ Tier 1 Operations (v3.1):
   --messages-attachments     Report size of iMessage attachments
   --cloudstorage-report      Report size of cloud storage local caches
   --virtualbox-report        Report size of VirtualBox VMs
+  --large-files-report       Find files larger than 500MB
+  --screenshot-folder-report Report screenshots on Desktop
+  --electron-apps-cache      Report Slack/Discord/Teams/VS Code caches
+  --battery-health-report    Report battery health (laptops)
   --downloads-report         Report size and age of Downloads files
   --downloads-cleanup        Remove old installers/archives from Downloads
   --xcode-cleanup            Clear Xcode DerivedData (not simulators)
@@ -3917,6 +4155,10 @@ while [[ $# -gt 0 ]]; do
     --messages-attachments) DO_MESSAGES_ATTACHMENTS_REPORT=1; shift ;;
     --cloudstorage-report) DO_CLOUDSTORAGE_REPORT=1; shift ;;
     --virtualbox-report) DO_VIRTUALBOX_REPORT=1; shift ;;
+    --large-files-report) DO_LARGE_FILES_REPORT=1; shift ;;
+    --screenshot-folder-report) DO_SCREENSHOT_FOLDER_REPORT=1; shift ;;
+    --electron-apps-cache) DO_ELECTRON_APPS_CACHE_REPORT=1; shift ;;
+    --battery-health-report) DO_BATTERY_HEALTH_REPORT=1; shift ;;
     --downloads-report) DO_DOWNLOADS_REPORT=1; shift ;;
     --downloads-cleanup) DO_DOWNLOADS_CLEANUP=1; shift ;;
     --xcode-cleanup) DO_XCODE_CLEANUP=1; shift ;;
@@ -4058,6 +4300,10 @@ else
   (( DO_MESSAGES_ATTACHMENTS_REPORT )) && messages_attachments_report
   (( DO_CLOUDSTORAGE_REPORT )) && cloudstorage_report
   (( DO_VIRTUALBOX_REPORT )) && virtualbox_report
+  (( DO_LARGE_FILES_REPORT )) && large_files_report
+  (( DO_SCREENSHOT_FOLDER_REPORT )) && screenshot_folder_report
+  (( DO_ELECTRON_APPS_CACHE_REPORT )) && electron_apps_cache_report
+  (( DO_BATTERY_HEALTH_REPORT )) && battery_health_report
   (( DO_DOWNLOADS_REPORT )) && downloads_report
   (( DO_DOWNLOADS_CLEANUP )) && downloads_cleanup
   (( DO_XCODE_CLEANUP )) && xcode_cleanup

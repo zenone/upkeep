@@ -77,11 +77,26 @@ class TestMaintenanceAPI:
         for op_id in tier3_ops:
             assert op_id in op_ids, f"Tier 3 operation missing: {op_id}"
 
+    def test_blue_ocean_operations_exist(self, api):
+        """Test that Blue Ocean unique operations are present."""
+        operations = api.get_operations()
+        op_ids = {op["id"] for op in operations}
+
+        blue_ocean_ops = [
+            "large-files-report",
+            "screenshot-folder-report",
+            "electron-apps-cache-report",
+            "battery-health-report",
+        ]
+
+        for op_id in blue_ocean_ops:
+            assert op_id in op_ids, f"Blue Ocean operation missing: {op_id}"
+
     def test_total_operation_count(self, api):
         """Test that we have the expected number of operations."""
         operations = api.get_operations()
-        # 38 operations as of current implementation
-        assert len(operations) >= 38, f"Expected at least 38 operations, got {len(operations)}"
+        # 42 operations as of current implementation
+        assert len(operations) >= 42, f"Expected at least 42 operations, got {len(operations)}"
 
     def test_report_operations_are_safe(self, api):
         """Test that all report operations are marked as safe."""

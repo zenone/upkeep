@@ -881,6 +881,185 @@
       },
       "note": "⚠️ Do NOT manually delete VM folders. Use VirtualBox → Right-click VM → Remove → Delete all files."
     },
+    "large-files-report": {
+      "id": "large-files-report",
+      "name": "Large Files Report",
+      "category": "Reports",
+      "safety": "safe",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Large files (videos, disk images, archives) accumulate and are often forgotten. A single forgotten download can consume gigabytes.",
+        "problems": [
+          {
+            "symptom": "Disk space mysteriously low",
+            "description": "Large files hiding in unexpected locations"
+          },
+          {
+            "symptom": "Old downloads lingering",
+            "description": "DMG files, ISO images, large archives never cleaned up"
+          }
+        ]
+      },
+      "when_to_run": [
+        "When disk space is running low",
+        "Before a major macOS update",
+        "Quarterly as part of cleanup routine"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "30-90 seconds depending on disk size",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Lists top 20 files over 500MB sorted by size"
+          },
+          {
+            "type": "neutral",
+            "description": "Excludes cloud storage, trash, and VMs"
+          },
+          {
+            "type": "neutral",
+            "description": "Read-only: no files modified or deleted"
+          }
+        ],
+        "side_effects": []
+      },
+      "note": "Review each file before deleting. Some large files (like VM disk images) may be intentional."
+    },
+    "screenshot-folder-report": {
+      "id": "screenshot-folder-report",
+      "name": "Screenshot Folder Report",
+      "category": "Reports",
+      "safety": "safe",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Screenshots pile up on Desktop over time, creating clutter and consuming space.",
+        "problems": [
+          {
+            "symptom": "Cluttered Desktop",
+            "description": "Dozens of screenshots making it hard to find files"
+          },
+          {
+            "symptom": "Old screenshots",
+            "description": "Screenshots from months or years ago still lingering"
+          }
+        ]
+      },
+      "when_to_run": [
+        "When Desktop feels cluttered",
+        "Monthly organization routine"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "5-10 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Shows count and size of screenshots"
+          },
+          {
+            "type": "positive",
+            "description": "Lists oldest screenshots for review"
+          },
+          {
+            "type": "neutral",
+            "description": "Read-only: no files modified"
+          }
+        ],
+        "side_effects": []
+      },
+      "note": "Consider changing screenshot location in System Settings → General → Screenshots"
+    },
+    "electron-apps-cache-report": {
+      "id": "electron-apps-cache-report",
+      "name": "Electron Apps Cache Report",
+      "category": "Reports",
+      "safety": "safe",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Electron apps (Slack, Discord, VS Code, Teams) aggressively cache data, often consuming 1-10GB each.",
+        "problems": [
+          {
+            "symptom": "Large Application Support folder",
+            "description": "Electron apps storing gigabytes of cache data"
+          },
+          {
+            "symptom": "Disk space consumed by 'invisible' apps",
+            "description": "Cache not visible in normal Finder browsing"
+          }
+        ]
+      },
+      "when_to_run": [
+        "When disk space is low",
+        "After using Slack/Discord heavily",
+        "Quarterly cleanup"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "5-15 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Shows cache size for Slack, Discord, Teams, VS Code, Notion, Figma, Spotify"
+          },
+          {
+            "type": "positive",
+            "description": "Provides instructions to clear each app's cache"
+          },
+          {
+            "type": "neutral",
+            "description": "Read-only: no caches cleared automatically"
+          }
+        ],
+        "side_effects": []
+      },
+      "note": "Clear caches from within each app's settings for safest results."
+    },
+    "battery-health-report": {
+      "id": "battery-health-report",
+      "name": "Battery Health Report",
+      "category": "Reports",
+      "safety": "safe",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "MacBook batteries degrade over time. Knowing health status helps plan for replacement.",
+        "problems": [
+          {
+            "symptom": "Battery life seems shorter",
+            "description": "Degraded capacity causing reduced runtime"
+          },
+          {
+            "symptom": "Unknown battery condition",
+            "description": "No easy way to check cycle count and health"
+          }
+        ]
+      },
+      "when_to_run": [
+        "When battery life seems reduced",
+        "Before selling or buying a used MacBook",
+        "Quarterly health check"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "2-3 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Shows battery condition (Normal, Replace Soon, etc.)"
+          },
+          {
+            "type": "positive",
+            "description": "Shows cycle count and maximum capacity"
+          },
+          {
+            "type": "neutral",
+            "description": "Desktop Macs will show 'no battery detected'"
+          }
+        ],
+        "side_effects": []
+      },
+      "note": "Apple rates MacBook batteries for approximately 1000 charge cycles."
+    },
     "downloads-cleanup": {
       "category": "Cleanup",
       "id": "downloads-cleanup",

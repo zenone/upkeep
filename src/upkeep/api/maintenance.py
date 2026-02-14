@@ -447,6 +447,42 @@ class MaintenanceAPI(BaseAPI):
             "safe": True,
             "recommended": False,
         },
+        "large-files-report": {
+            "id": "large-files-report",
+            "name": "Large Files Report",
+            "description": "Find files larger than 500MB across your home directory",
+            "guidance": "Why: Large files (videos, disk images, archives) often forgotten. When: Disk space low. What: Lists files >500MB sorted by size. Safe: Read-only report.",
+            "category": "Reports",
+            "safe": True,
+            "recommended": False,
+        },
+        "screenshot-folder-report": {
+            "id": "screenshot-folder-report",
+            "name": "Screenshot Folder Report",
+            "description": "Report size and count of screenshots on Desktop",
+            "guidance": "Why: Screenshots accumulate on Desktop. When: Desktop cluttered. What: Counts and sizes screenshots. Tip: Consider organizing into folders.",
+            "category": "Reports",
+            "safe": True,
+            "recommended": False,
+        },
+        "electron-apps-cache-report": {
+            "id": "electron-apps-cache-report",
+            "name": "Electron Apps Cache Report",
+            "description": "Report cache sizes for Slack, Discord, Teams, VS Code",
+            "guidance": "Why: Electron apps cache heavily (often 1-10GB each). When: Disk space low. What: Shows cache size per app. To clean: Clear from within each app's settings.",
+            "category": "Reports",
+            "safe": True,
+            "recommended": False,
+        },
+        "battery-health-report": {
+            "id": "battery-health-report",
+            "name": "Battery Health Report",
+            "description": "Report battery health and cycle count (laptops only)",
+            "guidance": "Why: Battery degrades over time. When: Battery life seems short. What: Shows cycle count, condition, capacity. Laptops only.",
+            "category": "Reports",
+            "safe": True,
+            "recommended": False,
+        },
     }
 
     def __init__(self):
