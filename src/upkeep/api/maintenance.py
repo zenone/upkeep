@@ -1095,9 +1095,8 @@ class MaintenanceAPI(BaseAPI):
         self._log_call("get_queue_status")
 
         try:
-            # Check if daemon is running (simple check - just assume it is)
-            # Could enhance this later with PID file check
-            daemon_running = True
+            # Check if daemon is running using launchctl
+            daemon_running = self._check_daemon_running()
 
             # Read current operation status from daemon's status file
             status_file = self.QUEUE_DIR / "daemon-status.json"
@@ -1140,6 +1139,55 @@ class MaintenanceAPI(BaseAPI):
                 "queued_count": 0,
                 "error": str(e),
             }
+
+    def _check_daemon_running(self) -> bool:
+        """Check if the upkeep daemon is running via launchctl.
+        
+        Returns:
+            True if daemon is loaded and running, False otherwise.
+        """
+        import subprocess
+        
+        try:
+            # Check launchctl for daemon status
+            result = subprocess.run(
+                ["launchctl", "list", "com.upkeep.daemon"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            
+            # If exit code is 0 and we have output, daemon is loaded
+            if result.returncode == 0 and result.stdout.strip():
+                # Check if PID is present (running) vs just loaded
+                # Output format: "PID\tStatus\tLabel"
+                lines = result.stdout.strip().split('\n')
+                if lines:
+                    parts = lines[0].split('\t')
+                    if len(parts) >= 1:
+                        pid = parts[0]
+                        # If PID is a number, daemon is running
+                        if pid.isdigit() and int(pid) > 0:
+                            return True
+                        # PID of "-" means loaded but not running
+                        return pid != "-"
+            
+            # Also check for PID file as fallback
+            pid_file = self.QUEUE_DIR / "daemon.pid"
+            if pid_file.exists():
+                try:
+                    pid = int(pid_file.read_text().strip())
+                    # Check if process exists
+                    import os
+                    os.kill(pid, 0)  # Doesn't actually kill, just checks
+                    return True
+                except (ValueError, ProcessLookupError, PermissionError):
+                    pass
+            
+            return False
+            
+        except (subprocess.TimeoutExpired, subprocess.SubprocessError, FileNotFoundError):
+            return False
 
     def _get_operation_name(self, operation_id: str) -> str:
         """Get human-readable name for operation ID."""
