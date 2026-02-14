@@ -2948,6 +2948,266 @@ remove_aerial_wallpaper_videos() {
 }
 
 ########################################
+# Tier 1 Operations (v3.1)
+########################################
+
+disk_triage() {
+  section "Disk Triage"
+  info "Quick overview of disk usage across key directories..."
+
+  local user_home
+  user_home=$(get_actual_user_home)
+
+  # Overall disk usage
+  info "=== Disk Overview ==="
+  df -h / 2>/dev/null || true
+  echo ""
+
+  # Top-level home directory breakdown
+  info "=== Home Directory (Top 15) ==="
+  if [[ -d "$user_home" ]]; then
+    du -xhd 1 "$user_home" 2>/dev/null | sort -hr | head -15 || true
+  fi
+  echo ""
+
+  # Library breakdown (usually the biggest)
+  info "=== Library (Top 15) ==="
+  if [[ -d "$user_home/Library" ]]; then
+    du -xhd 1 "$user_home/Library" 2>/dev/null | sort -hr | head -15 || true
+  fi
+  echo ""
+
+  # Application Support breakdown
+  info "=== Application Support (Top 10) ==="
+  if [[ -d "$user_home/Library/Application Support" ]]; then
+    du -xhd 1 "$user_home/Library/Application Support" 2>/dev/null | sort -hr | head -10 || true
+  fi
+  echo ""
+
+  # Caches breakdown
+  info "=== Caches (Top 10) ==="
+  if [[ -d "$user_home/Library/Caches" ]]; then
+    du -xhd 1 "$user_home/Library/Caches" 2>/dev/null | sort -hr | head -10 || true
+  fi
+
+  success "Disk triage complete. Use this to identify cleanup targets."
+}
+
+downloads_report() {
+  section "Downloads Report"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local downloads_dir="${user_home}/Downloads"
+
+  [[ -d "$downloads_dir" ]] || { info "No Downloads folder found: $downloads_dir"; return 0; }
+
+  local total_size
+  total_size=$(du -sh "$downloads_dir" 2>/dev/null | awk '{print $1}' || echo "unknown")
+  info "Total Downloads size: ${total_size}"
+  echo ""
+
+  # Show largest files
+  info "=== Largest Files (Top 20) ==="
+  find "$downloads_dir" -maxdepth 2 -type f -exec du -h {} + 2>/dev/null | sort -hr | head -20 || true
+  echo ""
+
+  # Show old installers that could be cleaned
+  info "=== Old Installers (>30 days) ==="
+  local old_count
+  old_count=$(find "$downloads_dir" -maxdepth 1 -type f \( -name "*.dmg" -o -name "*.zip" -o -name "*.pkg" -o -name "*.iso" \) -mtime +30 2>/dev/null | wc -l | tr -d ' ')
+  info "Found ${old_count} installer files older than 30 days"
+
+  if [[ "$old_count" -gt 0 ]]; then
+    find "$downloads_dir" -maxdepth 1 -type f \( -name "*.dmg" -o -name "*.zip" -o -name "*.pkg" -o -name "*.iso" \) -mtime +30 -exec ls -lh {} \; 2>/dev/null | head -20 || true
+  fi
+
+  success "Downloads report complete."
+}
+
+downloads_cleanup() {
+  section "Clean Downloads"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local downloads_dir="${user_home}/Downloads"
+
+  [[ -d "$downloads_dir" ]] || { info "No Downloads folder found: $downloads_dir"; return 0; }
+
+  # Find old installer files
+  local files_to_delete
+  files_to_delete=$(find "$downloads_dir" -maxdepth 1 -type f \( -name "*.dmg" -o -name "*.zip" -o -name "*.pkg" -o -name "*.iso" \) -mtime +30 2>/dev/null)
+
+  if [[ -z "$files_to_delete" ]]; then
+    info "No old installer files to clean (older than 30 days)."
+    return 0
+  fi
+
+  local count
+  count=$(echo "$files_to_delete" | wc -l | tr -d ' ')
+  local total_size
+  total_size=$(echo "$files_to_delete" | xargs du -ch 2>/dev/null | tail -1 | awk '{print $1}' || echo "unknown")
+
+  info "Found ${count} installer files (${total_size}) older than 30 days."
+
+  if [[ "${PREVIEW:-0}" -eq 1 ]]; then
+    info "PREVIEW: Would delete these files:"
+    echo "$files_to_delete" | head -20
+    return 0
+  fi
+
+  [[ "${DRY_RUN:-0}" -eq 1 ]] && { warning "DRY-RUN: would delete ${count} files"; return 0; }
+
+  warning "This will permanently delete ${count} old installer files (${total_size})."
+  if ! confirm "Proceed with cleanup?"; then
+    warning "Skipped Downloads cleanup."
+    return 0
+  fi
+
+  echo "$files_to_delete" | while read -r file; do
+    rm -f "$file" 2>/dev/null && info "Deleted: $(basename "$file")" || warning "Failed to delete: $file"
+  done
+
+  success "Downloads cleanup complete."
+}
+
+xcode_cleanup() {
+  section "Xcode Cleanup"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local derived_data="${user_home}/Library/Developer/Xcode/DerivedData"
+
+  [[ -d "$derived_data" ]] || { info "No Xcode DerivedData found: $derived_data"; return 0; }
+
+  local size
+  size=$(du -sh "$derived_data" 2>/dev/null | awk '{print $1}' || echo "unknown")
+  info "DerivedData size: ${size}"
+
+  if [[ "${PREVIEW:-0}" -eq 1 ]]; then
+    info "PREVIEW: Would delete: $derived_data/*"
+    return 0
+  fi
+
+  [[ "${DRY_RUN:-0}" -eq 1 ]] && { warning "DRY-RUN: would clear DerivedData"; return 0; }
+
+  info "Clearing Xcode DerivedData (build cache)..."
+  rm -rf "${derived_data:?}"/* 2>/dev/null || true
+
+  success "Xcode DerivedData cleared. Next build will be a full rebuild."
+}
+
+caches_cleanup() {
+  section "Clear User Caches"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local caches_dir="${user_home}/Library/Caches"
+
+  [[ -d "$caches_dir" ]] || { info "No Caches folder found: $caches_dir"; return 0; }
+
+  local size
+  size=$(du -sh "$caches_dir" 2>/dev/null | awk '{print $1}' || echo "unknown")
+  info "Caches size: ${size}"
+
+  if [[ "${PREVIEW:-0}" -eq 1 ]]; then
+    info "PREVIEW: Would delete contents of: $caches_dir"
+    return 0
+  fi
+
+  [[ "${DRY_RUN:-0}" -eq 1 ]] && { warning "DRY-RUN: would clear caches"; return 0; }
+
+  warning "This will clear all user caches. Apps will rebuild caches as needed."
+  if ! confirm "Proceed with cache cleanup?"; then
+    warning "Skipped cache cleanup."
+    return 0
+  fi
+
+  rm -rf "${caches_dir:?}"/* 2>/dev/null || true
+
+  success "User caches cleared."
+}
+
+logs_cleanup() {
+  section "Clean Old Logs"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local logs_dir="${user_home}/Library/Logs"
+
+  [[ -d "$logs_dir" ]] || { info "No Logs folder found: $logs_dir"; return 0; }
+
+  # Count and size old logs
+  local old_logs
+  old_logs=$(find "$logs_dir" -type f -mtime +30 2>/dev/null)
+
+  if [[ -z "$old_logs" ]]; then
+    info "No logs older than 30 days found."
+    return 0
+  fi
+
+  local count
+  count=$(echo "$old_logs" | wc -l | tr -d ' ')
+  local total_size
+  total_size=$(echo "$old_logs" | xargs du -ch 2>/dev/null | tail -1 | awk '{print $1}' || echo "unknown")
+
+  info "Found ${count} log files (${total_size}) older than 30 days."
+
+  if [[ "${PREVIEW:-0}" -eq 1 ]]; then
+    info "PREVIEW: Would delete ${count} old log files"
+    return 0
+  fi
+
+  [[ "${DRY_RUN:-0}" -eq 1 ]] && { warning "DRY-RUN: would delete ${count} old logs"; return 0; }
+
+  # Delete old logs
+  find "$logs_dir" -type f -mtime +30 -delete 2>/dev/null || true
+
+  success "Old logs cleaned. Recent logs (< 30 days) preserved."
+}
+
+trash_empty() {
+  section "Empty Trash"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local trash_dir="${user_home}/.Trash"
+
+  [[ -d "$trash_dir" ]] || { info "Trash folder not found or empty."; return 0; }
+
+  # Check if trash has contents
+  local item_count
+  item_count=$(find "$trash_dir" -mindepth 1 -maxdepth 1 2>/dev/null | wc -l | tr -d ' ')
+
+  if [[ "$item_count" -eq 0 ]]; then
+    info "Trash is already empty."
+    return 0
+  fi
+
+  local size
+  size=$(du -sh "$trash_dir" 2>/dev/null | awk '{print $1}' || echo "unknown")
+  info "Trash contains ${item_count} items (${size})"
+
+  if [[ "${PREVIEW:-0}" -eq 1 ]]; then
+    info "PREVIEW: Would empty Trash (${item_count} items, ${size})"
+    return 0
+  fi
+
+  [[ "${DRY_RUN:-0}" -eq 1 ]] && { warning "DRY-RUN: would empty Trash"; return 0; }
+
+  warning "This will PERMANENTLY delete all ${item_count} items in Trash. This cannot be undone."
+  if ! confirm "Proceed with emptying Trash?"; then
+    warning "Skipped Trash emptying."
+    return 0
+  fi
+
+  rm -rf "${trash_dir:?}"/* 2>/dev/null || true
+  rm -rf "${trash_dir:?}"/.[!.]* 2>/dev/null || true  # Hidden files too
+
+  success "Trash emptied."
+}
+
+########################################
 # Orchestrators
 ########################################
 run_all_safe() {
@@ -3020,6 +3280,15 @@ DO_TRIM_CACHES=0
 DO_MESSAGES_CACHE=0
 DO_WALLPAPER_AERIALS=0
 
+# Tier 1 Operations (v3.1)
+DO_DISK_TRIAGE=0
+DO_DOWNLOADS_REPORT=0
+DO_DOWNLOADS_CLEANUP=0
+DO_XCODE_CLEANUP=0
+DO_CACHES_CLEANUP=0
+DO_LOGS_CLEANUP=0
+DO_TRASH_EMPTY=0
+
 SPACE_THRESHOLD=85
 TM_THIN_THRESHOLD=88
 TM_THIN_BYTES=20000000000  # ~20GB request
@@ -3086,6 +3355,15 @@ Cleanup:
   --dev-tools-cache          Clear npm, pip, Go, Cargo, Composer caches
   --mail-optimize            Rebuild Mail.app envelope index
 
+Tier 1 Operations (v3.1):
+  --disk-triage              Quick overview of disk usage across key directories
+  --downloads-report         Report size and age of Downloads files
+  --downloads-cleanup        Remove old installers/archives from Downloads
+  --xcode-cleanup            Clear Xcode DerivedData (not simulators)
+  --caches-cleanup           Clear all user caches (~~/Library/Caches)
+  --logs-cleanup             Remove log files older than 30 days
+  --trash-empty              Empty the Trash (permanent delete)
+
 Tuning:
   --space-threshold PCT
   --tm-thin-threshold PCT
@@ -3135,6 +3413,15 @@ while [[ $# -gt 0 ]]; do
     --mail-optimize) DO_MAIL_OPTIMIZE=1; shift ;;
     --messages-cache) DO_MESSAGES_CACHE=1; shift ;;
     --wallpaper-aerials) DO_WALLPAPER_AERIALS=1; shift ;;
+
+    # Tier 1 Operations (v3.1)
+    --disk-triage) DO_DISK_TRIAGE=1; shift ;;
+    --downloads-report) DO_DOWNLOADS_REPORT=1; shift ;;
+    --downloads-cleanup) DO_DOWNLOADS_CLEANUP=1; shift ;;
+    --xcode-cleanup) DO_XCODE_CLEANUP=1; shift ;;
+    --caches-cleanup) DO_CACHES_CLEANUP=1; shift ;;
+    --logs-cleanup) DO_LOGS_CLEANUP=1; shift ;;
+    --trash-empty) DO_TRASH_EMPTY=1; shift ;;
 
     --trim-logs)
       DO_TRIM_LOGS=1
@@ -3256,6 +3543,15 @@ else
   (( DO_TRIM_CACHES )) && trim_user_caches
   (( DO_MESSAGES_CACHE )) && clear_messages_caches
   (( DO_WALLPAPER_AERIALS )) && remove_aerial_wallpaper_videos
+
+  # Tier 1 Operations (v3.1)
+  (( DO_DISK_TRIAGE )) && disk_triage
+  (( DO_DOWNLOADS_REPORT )) && downloads_report
+  (( DO_DOWNLOADS_CLEANUP )) && downloads_cleanup
+  (( DO_XCODE_CLEANUP )) && xcode_cleanup
+  (( DO_CACHES_CLEANUP )) && caches_cleanup
+  (( DO_LOGS_CLEANUP )) && logs_cleanup
+  (( DO_TRASH_EMPTY )) && trash_empty
 fi
 
 END_TIME=$(date +%s)
