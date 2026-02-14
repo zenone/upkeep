@@ -1,9 +1,9 @@
 {
-  "lastUpdated": "2026-02-14T20:55:00Z",
-  "phase": "duplicate_finder",
+  "lastUpdated": "2026-02-14T21:15:00Z",
+  "phase": "trends",
   "totalUnits": 45,
-  "completedUnits": 43,
-  "currentUnit": "trends_design",
+  "completedUnits": 44,
+  "currentUnit": "trends_backend",
   "completed": [
     "tier1_all", "tier2_all", "tier3_all",
     "lint_errors", "shellcheck", "schedule_bundles",
@@ -27,10 +27,14 @@
     "duplicate_finder_scanner",
     "duplicate_finder_reporter",
     "duplicate_finder_api",
-    "duplicate_finder_ui"
+    "duplicate_finder_ui",
+    "trends_design"
   ],
   "priority": [
-    "trends_design",
+    "trends_backend",
+    "trends_compaction",
+    "trends_api",
+    "trends_ui",
     "menu_bar_research"
   ],
   "metrics": {
@@ -52,5 +56,5 @@
     "wave3": "complete",
     "wave4": "complete"
   },
-  "notes": "Completed Duplicate Finder feature: Scanner (multi-stage pipeline), Reporter (JSON/text/CSV), REST API (async scan with progress), and full Web UI with selection helpers and safe deletion."
+  "notes": "Created Historical Trends design doc with data model, retention policy, API contract, and implementation plan."
 }

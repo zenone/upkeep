@@ -59,14 +59,13 @@ class TestDuplicateScanEndToEnd:
         (tmp_path / "unique.txt").write_bytes(b"unique content")
 
         # Start scan
-        response = client.post(
-            f"/api/duplicates/scan?paths={tmp_path}&min_size_mb=0.00001"
-        )
+        response = client.post(f"/api/duplicates/scan?paths={tmp_path}&min_size_mb=0.00001")
         assert response.status_code == 200
         scan_id = response.json()["scan_id"]
 
         # Poll status until complete (with timeout)
         import time
+
         max_wait = 10
         start = time.time()
         while time.time() - start < max_wait:
@@ -95,18 +94,15 @@ class TestDuplicateScanEndToEnd:
         (tmp_path / "b.txt").write_bytes(content)
 
         # Start and wait for scan
-        response = client.post(
-            f"/api/duplicates/scan?paths={tmp_path}&min_size_mb=0.00001"
-        )
+        response = client.post(f"/api/duplicates/scan?paths={tmp_path}&min_size_mb=0.00001")
         scan_id = response.json()["scan_id"]
 
         import time
+
         time.sleep(1)  # Wait for scan
 
         # Get text results
-        results_response = client.get(
-            f"/api/duplicates/results/{scan_id}?format=text"
-        )
+        results_response = client.get(f"/api/duplicates/results/{scan_id}?format=text")
         # Could be 200 or 202 (still running)
         if results_response.status_code == 200:
             assert "DUPLICATE FILE REPORT" in results_response.text
@@ -119,18 +115,15 @@ class TestDuplicateScanEndToEnd:
         (tmp_path / "y.txt").write_bytes(content)
 
         # Start scan
-        response = client.post(
-            f"/api/duplicates/scan?paths={tmp_path}&min_size_mb=0.00001"
-        )
+        response = client.post(f"/api/duplicates/scan?paths={tmp_path}&min_size_mb=0.00001")
         scan_id = response.json()["scan_id"]
 
         import time
+
         time.sleep(1)  # Wait for scan
 
         # Get CSV results
-        results_response = client.get(
-            f"/api/duplicates/results/{scan_id}?format=csv"
-        )
+        results_response = client.get(f"/api/duplicates/results/{scan_id}?format=csv")
         if results_response.status_code == 200:
             assert "Group" in results_response.text  # CSV header
 

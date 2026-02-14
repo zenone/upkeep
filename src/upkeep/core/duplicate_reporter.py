@@ -52,9 +52,7 @@ class DuplicateReporter:
                 "scan_duration_seconds": round(result.scan_duration_seconds, 2),
                 "errors_count": len(result.errors),
             },
-            "duplicate_groups": [
-                self._group_to_dict(group) for group in result.duplicate_groups
-            ],
+            "duplicate_groups": [self._group_to_dict(group) for group in result.duplicate_groups],
             "errors": result.errors,
         }
 
@@ -75,9 +73,7 @@ class DuplicateReporter:
             "files": [
                 {
                     "path": str(f.path),
-                    "mtime": datetime.fromtimestamp(f.mtime).isoformat()
-                    if f.mtime
-                    else None,
+                    "mtime": datetime.fromtimestamp(f.mtime).isoformat() if f.mtime else None,
                 }
                 for f in group.files
             ],
@@ -122,8 +118,9 @@ class DuplicateReporter:
         lines.append("")
 
         for i, group in enumerate(result.duplicate_groups, 1):
-            lines.append(f"Group {i}: {len(group.files)} files, "
-                        f"{format_bytes(group.size_bytes)} each")
+            lines.append(
+                f"Group {i}: {len(group.files)} files, {format_bytes(group.size_bytes)} each"
+            )
             lines.append(f"  Potential savings: {format_bytes(group.potential_savings)}")
             lines.append(f"  Hash: {group.hash[:16]}...")
             lines.append("  Files:")
@@ -167,36 +164,40 @@ class DuplicateReporter:
         writer = csv.writer(output)
 
         # Header
-        writer.writerow([
-            "Group",
-            "Hash",
-            "Size (bytes)",
-            "Size",
-            "File Path",
-            "Modified",
-            "Potential Savings",
-        ])
+        writer.writerow(
+            [
+                "Group",
+                "Hash",
+                "Size (bytes)",
+                "Size",
+                "File Path",
+                "Modified",
+                "Potential Savings",
+            ]
+        )
 
         # Data rows
         for i, group in enumerate(result.duplicate_groups, 1):
             for j, file_info in enumerate(group.files):
                 # Only show potential savings on first row of group
                 savings = format_bytes(group.potential_savings) if j == 0 else ""
-                
+
                 mtime_str = ""
                 if file_info.mtime:
                     mtime = datetime.fromtimestamp(file_info.mtime)
                     mtime_str = mtime.strftime("%Y-%m-%d %H:%M:%S")
 
-                writer.writerow([
-                    i,
-                    group.hash[:16],
-                    group.size_bytes,
-                    format_bytes(group.size_bytes),
-                    str(file_info.path),
-                    mtime_str,
-                    savings,
-                ])
+                writer.writerow(
+                    [
+                        i,
+                        group.hash[:16],
+                        group.size_bytes,
+                        format_bytes(group.size_bytes),
+                        str(file_info.path),
+                        mtime_str,
+                        savings,
+                    ]
+                )
 
         return output.getvalue()
 

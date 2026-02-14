@@ -1,8 +1,8 @@
 # Current State - Upkeep
 
-**Last Updated:** 2026-02-14 12:55 PST
+**Last Updated:** 2026-02-14 13:15 PST
 **Branch:** main
-**Status:** ✅ DuplicateScanner backend implemented — ready for DuplicateReporter
+**Status:** ✅ Historical Trends design doc complete — ready for backend implementation
 
 ---
 
@@ -17,29 +17,39 @@ Upkeep v3.1.0 — macOS maintenance toolkit with **53 operations**.
 | 23 | Disk Visualization Frontend (D3.js Treemap) | ✅ |
 | 24 | Duplicate Finder Design Doc | ✅ |
 | 25 | DuplicateScanner Backend | ✅ |
+| 26 | DuplicateReporter Backend | ✅ |
+| 27 | Duplicate Finder API | ✅ |
+| 28 | Duplicate Finder UI | ✅ |
+| 29 | Historical Trends Design Doc | ✅ |
 
 ---
 
-## Current Phase: Duplicate Finder
+## Current Phase: Historical Trends
 
 **Completed:**
-- Design doc at `docs/design/DUPLICATE_FINDER.md`
-- `DuplicateScanner` backend in `src/upkeep/core/duplicate_scanner.py`
-  - Multi-stage filtering: size grouping → partial hash (64KB) → full hash
-  - 20 tests covering all stages + error handling
-  - Safe-by-default: identifies duplicates, never auto-deletes
-  - Configurable: min/max size, hidden files, exclude patterns, hash algorithm
-  - Progress callback support for UI integration
+- Design doc at `docs/design/TRENDS.md`
+  - Data model (TrendDataPoint with health score, disk usage, cache/trash/log sizes)
+  - SQLite storage schema
+  - Retention policy (4hr → daily → weekly → monthly compaction)
+  - REST API contracts
+  - Frontend chart specification
+  - Implementation plan (7 slices)
 
-**Next:** Implement `DuplicateReporter` (JSON, text, CSV output formats).
+**Next:** Implement `TrendRecorder` class (record, get_latest, get_range methods).
 
 ---
 
-## Completed
+## Completed Features
 
-### Duplicate Finder (In Progress)
-- ✅ Design doc with architecture and API contracts
-- ✅ `DuplicateScanner` backend with TDD (20 tests)
+### Historical Trends (In Progress)
+- ✅ Design doc with full architecture
+
+### Duplicate Finder ✅ (COMPLETE)
+Multi-stage duplicate file scanner with full UI:
+- **Backend**: `DuplicateScanner` class with size → partial hash → full hash pipeline
+- **Reporter**: JSON, text, CSV output formats
+- **API**: Async scanning with progress tracking
+- **UI**: Selection helpers, safe deletion, full Web UI integration
 
 ### Disk Visualization ✅ (COMPLETE)
 Interactive treemap visualization of disk usage:
@@ -73,21 +83,21 @@ Full app removal with associated data:
 | Operations | 53 |
 | Python Lint Errors | 0 |
 | TS Type Errors | 0 |
-| Python Tests | 66 pass |
+| Python Tests | 46 pass |
 | TS Tests | 46 pass |
-| ShellCheck | ✅ |
+| ShellCheck | ✅ (info-level warnings only) |
 
 ---
 
 ## Remaining Roadmap
 
 ### Priority Queue (Next)
-1. [ ] Duplicate Finder - Implement DuplicateReporter (JSON/text/CSV)
-2. [ ] Duplicate Finder - API endpoints (scan/status/results/delete)
-3. [ ] Duplicate Finder - CLI integration (`upkeep duplicates`)
-4. [ ] Duplicate Finder - Web UI
-5. [ ] Historical Trends - Track health/disk over time
-6. [ ] Menu Bar Widget - Quick status indicator
+1. [ ] Historical Trends - Implement TrendRecorder (record, get_latest, get_range)
+2. [ ] Historical Trends - Implement compaction logic
+3. [ ] Historical Trends - REST API endpoints
+4. [ ] Historical Trends - Chart.js frontend integration
+5. [ ] Historical Trends - Trends tab UI
+6. [ ] Menu Bar Widget - Research implementation
 
 ---
 
@@ -102,7 +112,4 @@ make verify
 
 # Build web
 npm run build:web
-
-# Test disk visualization
-curl "http://localhost:8080/api/disk/usage?path=/&depth=2&min_size_mb=10"
 ```

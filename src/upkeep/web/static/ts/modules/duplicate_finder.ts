@@ -51,12 +51,12 @@ interface ScanStatus {
 
 export class DuplicateFinder {
     private container: HTMLElement;
-    private pathInput: HTMLInputElement;
-    private minSizeSelect: HTMLSelectElement;
-    private includeHiddenCheckbox: HTMLInputElement;
-    private scanButton: HTMLButtonElement;
-    private progressContainer: HTMLElement;
-    private resultsContainer: HTMLElement;
+    private pathInput!: HTMLInputElement;
+    private minSizeSelect!: HTMLSelectElement;
+    private includeHiddenCheckbox!: HTMLInputElement;
+    private scanButton!: HTMLButtonElement;
+    private progressContainer!: HTMLElement;
+    private resultsContainer!: HTMLElement;
     
     private currentScanId: string | null = null;
     private scanResult: ScanResult | null = null;
@@ -402,7 +402,7 @@ export class DuplicateFinder {
             .filter(f => f.file.mtime)
             .sort((a, b) => new Date(b.file.mtime!).getTime() - new Date(a.file.mtime!).getTime());
 
-        const newestIndex = filesWithMtime.length > 0 ? filesWithMtime[0].index : 0;
+        const newestIndex = filesWithMtime.length > 0 ? filesWithMtime[0]!.index : 0;
         
         el.querySelectorAll(".file-checkbox").forEach((checkbox, i) => {
             const input = checkbox as HTMLInputElement;
@@ -426,7 +426,7 @@ export class DuplicateFinder {
             .filter(f => f.file.mtime)
             .sort((a, b) => new Date(a.file.mtime!).getTime() - new Date(b.file.mtime!).getTime());
 
-        const oldestIndex = filesWithMtime.length > 0 ? filesWithMtime[0].index : 0;
+        const oldestIndex = filesWithMtime.length > 0 ? filesWithMtime[0]!.index : 0;
         
         el.querySelectorAll(".file-checkbox").forEach((checkbox, i) => {
             const input = checkbox as HTMLInputElement;
