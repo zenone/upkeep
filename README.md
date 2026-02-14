@@ -697,20 +697,28 @@ MIT License – see [LICENSE](LICENSE) file for details.
 
 **Current Version:** 3.0.0
 
-**What's New in 3.0:**
+**What's New in 3.1:**
+- 📥 **Export Logs** – Download maintenance logs for troubleshooting or audit
+- 🖥️ **Login Items Report** – See all startup items and their status
+- 📱 **App Report** – List installed apps with sizes
+- 🔋 **Battery Health** – Check battery condition and cycle count (laptops)
+- 💬 **Electron App Cache** – Clean Slack, Discord, VS Code caches
+- 📸 **Screenshot Folder Report** – Find forgotten screenshots
+- 📁 **Large Files Report** – Locate space hogs over 500MB
+- 🎯 **Category Filtering** – Filter operations by category
+- 📊 **Before/After Comparison** – See space recovered after operations
+- ⌨️ **Keyboard Shortcuts** – Navigate faster with hotkeys
+
+**What's in 3.0:**
 - 🌐 **Web Dashboard** – Modern browser-based interface with live progress tracking
 - ✨ **Quick Start Wizard** – 6 presets for different maintenance scenarios (Developer, Security, etc.)
 - ⏱️ **Smart Scheduling** – 7 schedule templates with launchd integration
-- 💻 **Developer Tools Cache** – Clear npm, pip, Go, Cargo, Composer caches (new operation)
+- 💻 **Developer Tools Cache** – Clear npm, pip, Go, Cargo, Composer caches
 - 📊 **Operation History** – Track what ran, when, and how long it took
 - 🩺 **Doctor/Preflight** – Checks dependencies before running operations
 - ⏳ **ETA & Progress** – Know how long operations will take based on your history
 - 🔄 **Live Output** – Watch what's happening in real-time
-- ✅ 47 automated test suites across 20 operations
-
-**Coming Soon:**
-- 📊 Historical trend tracking
-- 📱 Menu bar status widget
+- ✅ 95+ automated tests across 17 test suites
 
 ---
 
