@@ -584,6 +584,60 @@
       },
       "note": "To delete old backups safely, use Finder → iPhone → Manage Backups, or System Settings → General → iPhone & iPad. Do NOT manually delete backup folders."
     },
+    "application-support-report": {
+      "id": "application-support-report",
+      "name": "Application Support Report",
+      "category": "Reports",
+      "safety": "safe",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Application Support is one of the largest folders in ~/Library, often growing to 50-200GB. It contains app databases, caches, project files, and settings that many users don't realize exist.",
+        "problems": [
+          {
+            "symptom": "Massive hidden disk usage",
+            "description": "Application Support consuming 50-200GB without awareness"
+          },
+          {
+            "symptom": "Unknown space consumers",
+            "description": "Apps storing large files invisibly (DAW samples, game data, cloud caches)"
+          },
+          {
+            "symptom": "Orphaned app data",
+            "description": "Data from uninstalled apps still taking up space"
+          }
+        ]
+      },
+      "when_to_run": [
+        "Quarterly exploration",
+        "When disk space is low",
+        "After uninstalling large applications",
+        "When investigating where disk space went"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "10-30 seconds depending on folder count",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Total size: Shows combined size of Application Support"
+          },
+          {
+            "type": "positive",
+            "description": "Top 20 folders: Lists largest apps by data size"
+          },
+          {
+            "type": "neutral",
+            "description": "No changes made: Read-only report"
+          }
+        ],
+        "side_effects": [
+          "This is a read-only report - nothing is modified or deleted",
+          "Scanning large folders may take 10-30 seconds",
+          "Results help identify cleanup opportunities"
+        ]
+      },
+      "note": "⚠️ DO NOT auto-delete Application Support folders. Many contain irreplaceable data like DAW projects, databases, game saves. To clean up: uninstall apps properly or manually review contents."
+    },
     "downloads-cleanup": {
       "category": "Cleanup",
       "id": "downloads-cleanup",

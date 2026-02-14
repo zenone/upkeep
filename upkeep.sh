@@ -3054,6 +3054,42 @@ ios_backups_report() {
   success "iOS backups report complete."
 }
 
+application_support_report() {
+  section "Application Support Report"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local app_support="${user_home}/Library/Application Support"
+
+  if [[ ! -d "$app_support" ]]; then
+    info "No Application Support folder found at: $app_support"
+    return 0
+  fi
+
+  # Get total size
+  local total_size
+  total_size=$(du -sh "$app_support" 2>/dev/null | awk '{print $1}' || echo "unknown")
+  info "Total Application Support Size: ${total_size}"
+  echo ""
+
+  info "Top 20 folders by size:"
+  echo ""
+
+  # List top 20 folders sorted by size
+  du -sh "$app_support"/*/ 2>/dev/null | sort -hr | head -20 | while read -r size folder; do
+    local folder_name
+    folder_name=$(basename "$folder")
+    printf "  %8s  %s\n" "$size" "$folder_name"
+  done
+
+  echo ""
+  warning "⚠️  DO NOT auto-delete Application Support folders!"
+  info "Many contain irreplaceable data: DAW projects, app databases, game saves, etc."
+  info "To clean up: Uninstall apps properly or manually review folder contents."
+
+  success "Application Support report complete."
+}
+
 downloads_report() {
   section "Downloads Report"
 
@@ -3478,6 +3514,7 @@ DO_WALLPAPER_AERIALS=0
 # Tier 1 Operations (v3.1)
 DO_DISK_TRIAGE=0
 DO_IOS_BACKUPS_REPORT=0
+DO_APP_SUPPORT_REPORT=0
 DO_DOWNLOADS_REPORT=0
 DO_DOWNLOADS_CLEANUP=0
 DO_XCODE_CLEANUP=0
@@ -3558,6 +3595,7 @@ Cleanup:
 Tier 1 Operations (v3.1):
   --disk-triage              Quick overview of disk usage across key directories
   --ios-backups-report       Report size and details of iPhone/iPad backups
+  --app-support-report       Report top space consumers in Application Support
   --downloads-report         Report size and age of Downloads files
   --downloads-cleanup        Remove old installers/archives from Downloads
   --xcode-cleanup            Clear Xcode DerivedData (not simulators)
@@ -3622,6 +3660,7 @@ while [[ $# -gt 0 ]]; do
     # Tier 1 Operations (v3.1)
     --disk-triage) DO_DISK_TRIAGE=1; shift ;;
     --ios-backups-report) DO_IOS_BACKUPS_REPORT=1; shift ;;
+    --app-support-report) DO_APP_SUPPORT_REPORT=1; shift ;;
     --downloads-report) DO_DOWNLOADS_REPORT=1; shift ;;
     --downloads-cleanup) DO_DOWNLOADS_CLEANUP=1; shift ;;
     --xcode-cleanup) DO_XCODE_CLEANUP=1; shift ;;
@@ -3757,6 +3796,7 @@ else
   # Tier 1 Operations (v3.1)
   (( DO_DISK_TRIAGE )) && disk_triage
   (( DO_IOS_BACKUPS_REPORT )) && ios_backups_report
+  (( DO_APP_SUPPORT_REPORT )) && application_support_report
   (( DO_DOWNLOADS_REPORT )) && downloads_report
   (( DO_DOWNLOADS_CLEANUP )) && downloads_cleanup
   (( DO_XCODE_CLEANUP )) && xcode_cleanup
