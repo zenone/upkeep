@@ -837,6 +837,50 @@
       },
       "note": "⚠️ NEVER delete from ~/Library/CloudStorage directly. Use provider apps to make folders online-only or optimize storage."
     },
+    "virtualbox-report": {
+      "id": "virtualbox-report",
+      "name": "VirtualBox Report",
+      "category": "Reports",
+      "safety": "safe",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "VirtualBox VMs store entire operating systems locally, typically 5-100GB each.",
+        "problems": [
+          {
+            "symptom": "Large VM folder",
+            "description": "~/VirtualBox VMs consuming tens of GBs"
+          },
+          {
+            "symptom": "Forgotten VMs",
+            "description": "Old VMs from past projects still taking space"
+          }
+        ]
+      },
+      "when_to_run": [
+        "When exploring large directories",
+        "When disk space is low"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "5-10 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Total size: Shows combined VM storage"
+          },
+          {
+            "type": "positive",
+            "description": "Per-VM breakdown: Size of each virtual machine"
+          },
+          {
+            "type": "neutral",
+            "description": "No changes made: Read-only"
+          }
+        ],
+        "side_effects": []
+      },
+      "note": "⚠️ Do NOT manually delete VM folders. Use VirtualBox → Right-click VM → Remove → Delete all files."
+    },
     "downloads-cleanup": {
       "category": "Cleanup",
       "id": "downloads-cleanup",

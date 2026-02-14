@@ -3287,6 +3287,50 @@ cloudstorage_report() {
   success "Cloud storage report complete."
 }
 
+virtualbox_report() {
+  section "VirtualBox Report"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local vbox_dir="${user_home}/VirtualBox VMs"
+
+  if [[ ! -d "$vbox_dir" ]]; then
+    info "No VirtualBox VMs folder found at: $vbox_dir"
+    info "VirtualBox may not be installed or no VMs created."
+    return 0
+  fi
+
+  # Get total size
+  local total_size
+  total_size=$(du -sh "$vbox_dir" 2>/dev/null | awk '{print $1}' || echo "unknown")
+  info "Total VirtualBox VMs Size: ${total_size}"
+  echo ""
+
+  # List each VM
+  local vm_count=0
+  info "Virtual Machines:"
+  for vm_path in "$vbox_dir"/*/; do
+    [[ -d "$vm_path" ]] || continue
+    local vm_name
+    vm_name=$(basename "$vm_path")
+    local vm_size
+    vm_size=$(du -sh "$vm_path" 2>/dev/null | awk '{print $1}' || echo "?")
+    printf "  %8s  %s\n" "$vm_size" "$vm_name"
+    ((vm_count++))
+  done
+
+  if [[ $vm_count -eq 0 ]]; then
+    info "  (no VMs found)"
+  fi
+
+  echo ""
+  info "To manage VMs: Use VirtualBox application"
+  info "To remove: VirtualBox → Right-click VM → Remove → Delete all files"
+  warning "⚠️  Do NOT manually delete VM folders - use VirtualBox UI"
+
+  success "VirtualBox report complete."
+}
+
 downloads_report() {
   section "Downloads Report"
 
@@ -3716,6 +3760,7 @@ DO_DEV_ARTIFACTS_REPORT=0
 DO_MAIL_SIZE_REPORT=0
 DO_MESSAGES_ATTACHMENTS_REPORT=0
 DO_CLOUDSTORAGE_REPORT=0
+DO_VIRTUALBOX_REPORT=0
 DO_DOWNLOADS_REPORT=0
 DO_DOWNLOADS_CLEANUP=0
 DO_XCODE_CLEANUP=0
@@ -3801,6 +3846,7 @@ Tier 1 Operations (v3.1):
   --mail-size-report         Report size of Mail.app data
   --messages-attachments     Report size of iMessage attachments
   --cloudstorage-report      Report size of cloud storage local caches
+  --virtualbox-report        Report size of VirtualBox VMs
   --downloads-report         Report size and age of Downloads files
   --downloads-cleanup        Remove old installers/archives from Downloads
   --xcode-cleanup            Clear Xcode DerivedData (not simulators)
@@ -3870,6 +3916,7 @@ while [[ $# -gt 0 ]]; do
     --mail-size-report) DO_MAIL_SIZE_REPORT=1; shift ;;
     --messages-attachments) DO_MESSAGES_ATTACHMENTS_REPORT=1; shift ;;
     --cloudstorage-report) DO_CLOUDSTORAGE_REPORT=1; shift ;;
+    --virtualbox-report) DO_VIRTUALBOX_REPORT=1; shift ;;
     --downloads-report) DO_DOWNLOADS_REPORT=1; shift ;;
     --downloads-cleanup) DO_DOWNLOADS_CLEANUP=1; shift ;;
     --xcode-cleanup) DO_XCODE_CLEANUP=1; shift ;;
@@ -4010,6 +4057,7 @@ else
   (( DO_MAIL_SIZE_REPORT )) && mail_size_report
   (( DO_MESSAGES_ATTACHMENTS_REPORT )) && messages_attachments_report
   (( DO_CLOUDSTORAGE_REPORT )) && cloudstorage_report
+  (( DO_VIRTUALBOX_REPORT )) && virtualbox_report
   (( DO_DOWNLOADS_REPORT )) && downloads_report
   (( DO_DOWNLOADS_CLEANUP )) && downloads_cleanup
   (( DO_XCODE_CLEANUP )) && xcode_cleanup

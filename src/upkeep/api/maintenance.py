@@ -438,6 +438,15 @@ class MaintenanceAPI(BaseAPI):
             "safe": True,
             "recommended": False,
         },
+        "virtualbox-report": {
+            "id": "virtualbox-report",
+            "name": "VirtualBox Report",
+            "description": "Report size of VirtualBox virtual machines",
+            "guidance": "Why: VirtualBox VMs can be 5-100GB each. When: Exploring large directories. What: Lists VMs with sizes. To clean: Use VirtualBox UI to remove VMs properly (not manual deletion).",
+            "category": "Reports",
+            "safe": True,
+            "recommended": False,
+        },
     }
 
     def __init__(self):
