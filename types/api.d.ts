@@ -92,6 +92,18 @@ export type OperationEventType =
   | 'cancelled';
 
 /**
+ * Disk stats for before/after comparison
+ */
+export interface DiskStats {
+  total_bytes: number;
+  used_bytes: number;
+  free_bytes: number;
+  total_gb: number;
+  used_gb: number;
+  free_gb: number;
+}
+
+/**
  * Operation Event (SSE)
  */
 export interface OperationEvent {
@@ -107,6 +119,12 @@ export interface OperationEvent {
   total?: number;
   successful?: number;
   failed?: number;
+  // Disk stats for before/after comparison (available in 'start' and 'summary' events)
+  disk_before?: DiskStats;
+  disk_after?: DiskStats;
+  space_recovered_bytes?: number;
+  space_recovered_gb?: number;
+  space_recovered_display?: string;
   timestamp: string;
 }
 

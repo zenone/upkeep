@@ -879,6 +879,23 @@ export function handleOperationEvent(event: OperationEvent): void {
       progressText.textContent += `  Total operations: ${event.total}\n`;
       progressText.textContent += `  Successful: ${event.successful}\n`;
       progressText.textContent += `  Failed: ${event.failed}\n`;
+
+      // Display disk space comparison if available
+      if (event.disk_before && event.disk_after && event.space_recovered_display) {
+        progressText.textContent += `\n📊 Disk Space:\n`;
+        progressText.textContent += `  Before: ${event.disk_before.free_gb} GB free\n`;
+        progressText.textContent += `  After:  ${event.disk_after.free_gb} GB free\n`;
+
+        // Highlight space recovered with emoji
+        const spaceRecovered = event.space_recovered_bytes || 0;
+        if (spaceRecovered > 0) {
+          progressText.textContent += `  ✨ Space recovered: ${event.space_recovered_display}\n`;
+        } else if (spaceRecovered < 0) {
+          progressText.textContent += `  📥 Space used: ${event.space_recovered_display}\n`;
+        } else {
+          progressText.textContent += `  ➖ No change in disk space\n`;
+        }
+      }
       break;
 
     case 'complete':

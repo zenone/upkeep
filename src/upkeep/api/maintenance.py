@@ -8,6 +8,7 @@ Used by Web GUI, CLI, and Web.
 import asyncio
 import json
 import re
+import shutil
 import time
 import uuid
 from collections.abc import AsyncIterator
@@ -83,6 +84,42 @@ def clean_output_line(text: str) -> str:
     text = control_chars.sub("", text)
 
     return text
+
+
+def get_disk_stats(path: str = "/") -> dict[str, Any]:
+    """Get disk usage statistics for a given path.
+
+    Args:
+        path: Path to check disk usage for (default: root filesystem)
+
+    Returns:
+        Dictionary with disk stats:
+        - total_bytes: Total disk space in bytes
+        - used_bytes: Used disk space in bytes
+        - free_bytes: Free disk space in bytes
+        - total_gb: Total disk space in GB (2 decimal places)
+        - used_gb: Used disk space in GB (2 decimal places)
+        - free_gb: Free disk space in GB (2 decimal places)
+    """
+    try:
+        usage = shutil.disk_usage(path)
+        return {
+            "total_bytes": usage.total,
+            "used_bytes": usage.used,
+            "free_bytes": usage.free,
+            "total_gb": round(usage.total / (1024**3), 2),
+            "used_gb": round(usage.used / (1024**3), 2),
+            "free_gb": round(usage.free / (1024**3), 2),
+        }
+    except (OSError, PermissionError):
+        return {
+            "total_bytes": 0,
+            "used_bytes": 0,
+            "free_bytes": 0,
+            "total_gb": 0.0,
+            "used_gb": 0.0,
+            "free_gb": 0.0,
+        }
 
 
 class MaintenanceAPI(BaseAPI):
@@ -854,10 +891,14 @@ class MaintenanceAPI(BaseAPI):
         total = len(operation_ids)
         results = []
 
+        # Capture disk stats before operations (for before/after comparison)
+        disk_stats_before = get_disk_stats("/")
+
         yield {
             "type": "start",
             "message": f"Starting {total} maintenance operation(s)...",
             "total": total,
+            "disk_before": disk_stats_before,
             "timestamp": datetime.now().isoformat(),
         }
 
@@ -1051,9 +1092,35 @@ class MaintenanceAPI(BaseAPI):
                     }
                 )
 
-        # Send summary
+        # Send summary with before/after disk comparison
         successful = sum(1 for r in results if r.get("success"))
         failed = len(results) - successful
+
+        # Capture disk stats after operations
+        disk_stats_after = get_disk_stats("/")
+
+        # Calculate space recovered (positive = space freed)
+        space_recovered_bytes = disk_stats_after["free_bytes"] - disk_stats_before["free_bytes"]
+        space_recovered_gb = round(space_recovered_bytes / (1024**3), 2)
+
+        # Format the space change for display
+        if space_recovered_bytes > 0:
+            if space_recovered_bytes >= 1024**3:
+                space_recovered_display = f"+{space_recovered_gb:.2f} GB"
+            elif space_recovered_bytes >= 1024**2:
+                space_recovered_display = f"+{space_recovered_bytes / (1024**2):.1f} MB"
+            else:
+                space_recovered_display = f"+{space_recovered_bytes / 1024:.0f} KB"
+        elif space_recovered_bytes < 0:
+            used_bytes = abs(space_recovered_bytes)
+            if used_bytes >= 1024**3:
+                space_recovered_display = f"-{used_bytes / (1024**3):.2f} GB"
+            elif used_bytes >= 1024**2:
+                space_recovered_display = f"-{used_bytes / (1024**2):.1f} MB"
+            else:
+                space_recovered_display = f"-{used_bytes / 1024:.0f} KB"
+        else:
+            space_recovered_display = "No change"
 
         yield {
             "type": "summary",
@@ -1061,6 +1128,11 @@ class MaintenanceAPI(BaseAPI):
             "successful": successful,
             "failed": failed,
             "results": results,
+            "disk_before": disk_stats_before,
+            "disk_after": disk_stats_after,
+            "space_recovered_bytes": space_recovered_bytes,
+            "space_recovered_gb": space_recovered_gb,
+            "space_recovered_display": space_recovered_display,
             "timestamp": datetime.now().isoformat(),
         }
 
