@@ -1,8 +1,8 @@
 # Current State - Upkeep
 
-**Last Updated:** 2026-02-14 12:35 PST
+**Last Updated:** 2026-02-14 12:55 PST
 **Branch:** main
-**Status:** ✅ Duplicate Finder design complete — ready for implementation
+**Status:** ✅ DuplicateScanner backend implemented — ready for DuplicateReporter
 
 ---
 
@@ -16,20 +16,22 @@ Upkeep v3.1.0 — macOS maintenance toolkit with **53 operations**.
 | 22 | Disk Visualization Backend (DiskScanner + API) | ✅ |
 | 23 | Disk Visualization Frontend (D3.js Treemap) | ✅ |
 | 24 | Duplicate Finder Design Doc | ✅ |
+| 25 | DuplicateScanner Backend | ✅ |
 
 ---
 
 ## Current Phase: Duplicate Finder
 
-Design doc complete at `docs/design/DUPLICATE_FINDER.md`:
-- Multi-stage filtering pipeline (size → partial hash → full hash)
-- Safe-by-default approach (never auto-delete)
-- API contracts for `DuplicateScanner` and `DuplicateReporter`
-- REST API endpoints defined
-- CLI interface planned
-- Web UI mockup with expandable groups
+**Completed:**
+- Design doc at `docs/design/DUPLICATE_FINDER.md`
+- `DuplicateScanner` backend in `src/upkeep/core/duplicate_scanner.py`
+  - Multi-stage filtering: size grouping → partial hash (64KB) → full hash
+  - 20 tests covering all stages + error handling
+  - Safe-by-default: identifies duplicates, never auto-deletes
+  - Configurable: min/max size, hidden files, exclude patterns, hash algorithm
+  - Progress callback support for UI integration
 
-**Next:** Implement `DuplicateScanner` backend with TDD approach.
+**Next:** Implement `DuplicateReporter` (JSON, text, CSV output formats).
 
 ---
 
@@ -37,23 +39,13 @@ Design doc complete at `docs/design/DUPLICATE_FINDER.md`:
 
 ### Duplicate Finder (In Progress)
 - ✅ Design doc with architecture and API contracts
+- ✅ `DuplicateScanner` backend with TDD (20 tests)
 
 ### Disk Visualization ✅ (COMPLETE)
 Interactive treemap visualization of disk usage:
 - **Backend**: `DiskScanner` class with `du` integration
 - **API**: `GET /api/disk/usage?path=<path>&depth=3&min_size_mb=1`
-- **Frontend**: D3.js treemap with:
-  - Interactive drill-down navigation (click to zoom)
-  - Breadcrumb navigation
-  - Quick path buttons (/, /Users, /Applications, /Library)
-  - Back/Home navigation
-  - Configurable depth (2-5 levels)
-  - Configurable minimum size filter
-  - Color-coded categories
-  - Hover tooltips with path, size, percentage
-  - Responsive design
-  - Light/dark theme support
-- **New Tab**: "Disk Viz" in navigation bar
+- **Frontend**: D3.js treemap with drill-down, breadcrumbs, theming
 
 ### App Uninstaller ✅ (COMPLETE)
 Full app removal with associated data:
@@ -81,7 +73,7 @@ Full app removal with associated data:
 | Operations | 53 |
 | Python Lint Errors | 0 |
 | TS Type Errors | 0 |
-| Python Tests | 46 pass |
+| Python Tests | 66 pass |
 | TS Tests | 46 pass |
 | ShellCheck | ✅ |
 
@@ -90,13 +82,12 @@ Full app removal with associated data:
 ## Remaining Roadmap
 
 ### Priority Queue (Next)
-1. [ ] Duplicate Finder - Implement DuplicateScanner backend
-2. [ ] Duplicate Finder - Implement DuplicateReporter
-3. [ ] Duplicate Finder - API endpoints
-4. [ ] Duplicate Finder - CLI integration
-5. [ ] Duplicate Finder - Web UI
-6. [ ] Historical Trends - Track health/disk over time
-7. [ ] Menu Bar Widget - Quick status indicator
+1. [ ] Duplicate Finder - Implement DuplicateReporter (JSON/text/CSV)
+2. [ ] Duplicate Finder - API endpoints (scan/status/results/delete)
+3. [ ] Duplicate Finder - CLI integration (`upkeep duplicates`)
+4. [ ] Duplicate Finder - Web UI
+5. [ ] Historical Trends - Track health/disk over time
+6. [ ] Menu Bar Widget - Quick status indicator
 
 ---
 
