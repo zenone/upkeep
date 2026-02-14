@@ -429,6 +429,15 @@ class MaintenanceAPI(BaseAPI):
             "safe": True,
             "recommended": False,
         },
+        "cloudstorage-report": {
+            "id": "cloudstorage-report",
+            "name": "Cloud Storage Report",
+            "description": "Report size of Dropbox, iCloud, Google Drive local caches",
+            "guidance": "Why: Cloud storage providers cache files locally in ~/Library/CloudStorage, often 50-500GB. When: Informational. Warning: NEVER delete directly from CloudStorage - use provider apps to make folders online-only.",
+            "category": "Reports",
+            "safe": True,
+            "recommended": False,
+        },
     }
 
     def __init__(self):

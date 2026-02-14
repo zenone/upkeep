@@ -3250,6 +3250,43 @@ messages_attachments_report() {
   success "Messages attachments report complete."
 }
 
+cloudstorage_report() {
+  section "Cloud Storage Report"
+
+  local user_home
+  user_home=$(get_actual_user_home)
+  local cloud_dir="${user_home}/Library/CloudStorage"
+
+  if [[ ! -d "$cloud_dir" ]]; then
+    info "No CloudStorage folder found at: $cloud_dir"
+    info "No cloud storage providers configured on this Mac."
+    return 0
+  fi
+
+  # Get total size
+  local total_size
+  total_size=$(du -sh "$cloud_dir" 2>/dev/null | awk '{print $1}' || echo "unknown")
+  info "Total Cloud Storage Size: ${total_size}"
+  echo ""
+
+  info "Storage by provider:"
+  du -sh "$cloud_dir"/*/ 2>/dev/null | sort -hr | while read -r size folder; do
+    local folder_name
+    folder_name=$(basename "$folder")
+    # Clean up provider name (e.g., "Dropbox" from "Dropbox-Personal")
+    printf "  %8s  %s\n" "$size" "$folder_name"
+  done
+
+  echo ""
+  warning "⚠️  NEVER delete from ~/Library/CloudStorage directly!"
+  info "To free space:"
+  info "  - Dropbox: Right-click folder → Make Online Only"
+  info "  - iCloud: System Settings → Apple ID → iCloud → Optimize Storage"
+  info "  - Google Drive: Drive app → Preferences → Offline access"
+
+  success "Cloud storage report complete."
+}
+
 downloads_report() {
   section "Downloads Report"
 
@@ -3678,6 +3715,7 @@ DO_APP_SUPPORT_REPORT=0
 DO_DEV_ARTIFACTS_REPORT=0
 DO_MAIL_SIZE_REPORT=0
 DO_MESSAGES_ATTACHMENTS_REPORT=0
+DO_CLOUDSTORAGE_REPORT=0
 DO_DOWNLOADS_REPORT=0
 DO_DOWNLOADS_CLEANUP=0
 DO_XCODE_CLEANUP=0
@@ -3762,6 +3800,7 @@ Tier 1 Operations (v3.1):
   --dev-artifacts-report     Find node_modules, .venv, build directories
   --mail-size-report         Report size of Mail.app data
   --messages-attachments     Report size of iMessage attachments
+  --cloudstorage-report      Report size of cloud storage local caches
   --downloads-report         Report size and age of Downloads files
   --downloads-cleanup        Remove old installers/archives from Downloads
   --xcode-cleanup            Clear Xcode DerivedData (not simulators)
@@ -3830,6 +3869,7 @@ while [[ $# -gt 0 ]]; do
     --dev-artifacts-report) DO_DEV_ARTIFACTS_REPORT=1; shift ;;
     --mail-size-report) DO_MAIL_SIZE_REPORT=1; shift ;;
     --messages-attachments) DO_MESSAGES_ATTACHMENTS_REPORT=1; shift ;;
+    --cloudstorage-report) DO_CLOUDSTORAGE_REPORT=1; shift ;;
     --downloads-report) DO_DOWNLOADS_REPORT=1; shift ;;
     --downloads-cleanup) DO_DOWNLOADS_CLEANUP=1; shift ;;
     --xcode-cleanup) DO_XCODE_CLEANUP=1; shift ;;
@@ -3969,6 +4009,7 @@ else
   (( DO_DEV_ARTIFACTS_REPORT )) && dev_artifacts_report
   (( DO_MAIL_SIZE_REPORT )) && mail_size_report
   (( DO_MESSAGES_ATTACHMENTS_REPORT )) && messages_attachments_report
+  (( DO_CLOUDSTORAGE_REPORT )) && cloudstorage_report
   (( DO_DOWNLOADS_REPORT )) && downloads_report
   (( DO_DOWNLOADS_CLEANUP )) && downloads_cleanup
   (( DO_XCODE_CLEANUP )) && xcode_cleanup

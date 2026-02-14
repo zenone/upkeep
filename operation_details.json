@@ -793,6 +793,50 @@
       },
       "note": "⚠️ Contains personal data. To manage: Messages → Preferences → Keep Messages → set retention period."
     },
+    "cloudstorage-report": {
+      "id": "cloudstorage-report",
+      "name": "Cloud Storage Report",
+      "category": "Reports",
+      "safety": "safe",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Cloud storage providers (Dropbox, iCloud, Google Drive) cache files locally in ~/Library/CloudStorage, which can consume 50-500GB.",
+        "problems": [
+          {
+            "symptom": "Large CloudStorage folder",
+            "description": "Local copies of cloud files consuming significant space"
+          },
+          {
+            "symptom": "Multiple providers",
+            "description": "Dropbox + iCloud + Google Drive all caching locally"
+          }
+        ]
+      },
+      "when_to_run": [
+        "Informational exploration",
+        "When disk space is low"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "5-30 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Total size: Shows combined cloud storage cache"
+          },
+          {
+            "type": "positive",
+            "description": "Per-provider breakdown: Size by Dropbox, iCloud, Google Drive"
+          },
+          {
+            "type": "neutral",
+            "description": "No changes made: Read-only"
+          }
+        ],
+        "side_effects": []
+      },
+      "note": "⚠️ NEVER delete from ~/Library/CloudStorage directly. Use provider apps to make folders online-only or optimize storage."
+    },
     "downloads-cleanup": {
       "category": "Cleanup",
       "id": "downloads-cleanup",
