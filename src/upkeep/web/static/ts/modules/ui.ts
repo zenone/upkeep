@@ -305,6 +305,256 @@ export async function reloadScripts(): Promise<void> {
 }
 
 // ============================================================================
+// Settings Management
+// ============================================================================
+
+// Dashboard refresh interval ID (for clearing/resetting)
+let dashboardRefreshInterval: ReturnType<typeof setInterval> | null = null;
+let processRefreshInterval: ReturnType<typeof setInterval> | null = null;
+
+/**
+ * Set theme explicitly (called from settings panel)
+ */
+export function setTheme(theme: string): void {
+  applyTheme(theme);
+  localStorage.setItem('theme', theme);
+  updateThemeSelector(theme);
+  showToast(`Theme set to ${theme}`, 'success', 2000);
+}
+
+/**
+ * Update theme selector UI to show active selection
+ */
+function updateThemeSelector(activeTheme: string): void {
+  const selector = document.getElementById('theme-selector');
+  if (!selector) return;
+
+  selector.querySelectorAll('.theme-option').forEach(btn => {
+    const btnTheme = btn.getAttribute('data-theme');
+    if (btnTheme === activeTheme) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+}
+
+/**
+ * Toggle auto-refresh on/off
+ */
+export function toggleAutoRefresh(enabled: boolean): void {
+  localStorage.setItem('autoRefresh', String(enabled));
+
+  if (enabled) {
+    const interval = parseInt(localStorage.getItem('refreshInterval') || '10', 10);
+    startAutoRefresh(interval);
+    showToast('Auto-refresh enabled', 'success', 2000);
+  } else {
+    stopAutoRefresh();
+    showToast('Auto-refresh disabled', 'info', 2000);
+  }
+}
+
+/**
+ * Set refresh interval (in seconds)
+ */
+export function setRefreshInterval(seconds: number): void {
+  localStorage.setItem('refreshInterval', String(seconds));
+
+  // Update UI
+  const selector = document.getElementById('interval-selector');
+  if (selector) {
+    selector.querySelectorAll('.interval-option').forEach(btn => {
+      const btnInterval = parseInt(btn.getAttribute('data-interval') || '0', 10);
+      if (btnInterval === seconds) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
+  // Restart auto-refresh if enabled
+  const autoRefresh = localStorage.getItem('autoRefresh') !== 'false';
+  if (autoRefresh) {
+    startAutoRefresh(seconds);
+  }
+
+  showToast(`Refresh interval set to ${seconds}s`, 'success', 2000);
+}
+
+/**
+ * Start auto-refresh with given interval
+ */
+function startAutoRefresh(seconds: number): void {
+  stopAutoRefresh(); // Clear existing intervals
+
+  const ms = seconds * 1000;
+
+  dashboardRefreshInterval = setInterval(() => {
+    const dashboardTab = document.getElementById('dashboard');
+    if (dashboardTab && dashboardTab.classList.contains('active')) {
+      const loadSystemInfo = (window as any).loadSystemInfo;
+      const loadHealthScore = (window as any).loadHealthScore;
+      if (loadSystemInfo) loadSystemInfo();
+      if (loadHealthScore) loadHealthScore();
+    }
+  }, ms);
+
+  // Processes refresh at 2x the interval (minimum 10s)
+  const processMs = Math.max(ms * 2, 10000);
+  processRefreshInterval = setInterval(() => {
+    const dashboardTab = document.getElementById('dashboard');
+    if (dashboardTab && dashboardTab.classList.contains('active')) {
+      const loadTopProcesses = (window as any).loadTopProcesses;
+      if (loadTopProcesses) loadTopProcesses();
+    }
+  }, processMs);
+}
+
+/**
+ * Stop auto-refresh
+ */
+function stopAutoRefresh(): void {
+  if (dashboardRefreshInterval) {
+    clearInterval(dashboardRefreshInterval);
+    dashboardRefreshInterval = null;
+  }
+  if (processRefreshInterval) {
+    clearInterval(processRefreshInterval);
+    processRefreshInterval = null;
+  }
+}
+
+/**
+ * Toggle default preview mode for maintenance
+ */
+export function togglePreviewMode(enabled: boolean): void {
+  localStorage.setItem('defaultPreviewMode', String(enabled));
+  showToast(enabled ? 'Preview mode enabled by default' : 'Preview mode disabled', 'info', 2000);
+}
+
+/**
+ * Toggle confirmation dialogs
+ */
+export function toggleConfirmations(enabled: boolean): void {
+  localStorage.setItem('requireConfirmation', String(enabled));
+  showToast(enabled ? 'Confirmations enabled' : 'Confirmations disabled', 'info', 2000);
+}
+
+/**
+ * Get whether preview mode is default
+ */
+export function isDefaultPreviewMode(): boolean {
+  return localStorage.getItem('defaultPreviewMode') === 'true';
+}
+
+/**
+ * Get whether confirmations are required
+ */
+export function requiresConfirmation(): boolean {
+  return localStorage.getItem('requireConfirmation') !== 'false';
+}
+
+/**
+ * Initialize settings panel with saved values
+ */
+export function initSettings(): void {
+  // Theme selector
+  const savedTheme = localStorage.getItem('theme') || 'system';
+  updateThemeSelector(savedTheme);
+
+  // Auto-refresh toggle
+  const autoRefresh = localStorage.getItem('autoRefresh') !== 'false';
+  const autoRefreshToggle = document.getElementById('auto-refresh-toggle') as HTMLInputElement;
+  if (autoRefreshToggle) {
+    autoRefreshToggle.checked = autoRefresh;
+  }
+
+  // Refresh interval selector
+  const interval = parseInt(localStorage.getItem('refreshInterval') || '10', 10);
+  const intervalSelector = document.getElementById('interval-selector');
+  if (intervalSelector) {
+    intervalSelector.querySelectorAll('.interval-option').forEach(btn => {
+      const btnInterval = parseInt(btn.getAttribute('data-interval') || '0', 10);
+      if (btnInterval === interval) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
+  // Preview mode toggle
+  const previewMode = localStorage.getItem('defaultPreviewMode') === 'true';
+  const previewToggle = document.getElementById('preview-mode-toggle') as HTMLInputElement;
+  if (previewToggle) {
+    previewToggle.checked = previewMode;
+  }
+
+  // Confirmations toggle
+  const confirmations = localStorage.getItem('requireConfirmation') !== 'false';
+  const confirmToggle = document.getElementById('confirm-toggle') as HTMLInputElement;
+  if (confirmToggle) {
+    confirmToggle.checked = confirmations;
+  }
+
+  // Load about info
+  loadAboutInfo();
+
+  // Start auto-refresh if enabled
+  if (autoRefresh) {
+    startAutoRefresh(interval);
+  }
+}
+
+/**
+ * Load about section info (version, counts)
+ */
+async function loadAboutInfo(): Promise<void> {
+  const versionEl = document.getElementById('app-version');
+  const opsCountEl = document.getElementById('ops-count');
+  const schedulesCountEl = document.getElementById('schedules-count');
+
+  // Get version from meta tag
+  const versionMeta = document.querySelector('meta[name="app-version"]');
+  if (versionEl && versionMeta) {
+    versionEl.textContent = versionMeta.getAttribute('content') || '--';
+  }
+
+  // Get operations count
+  try {
+    const opsResponse = await fetch('/api/maintenance/operations');
+    if (opsResponse.ok && opsCountEl) {
+      const data = await opsResponse.json();
+      opsCountEl.textContent = String(data.operations?.length || 0);
+    }
+  } catch {
+    // Ignore errors
+  }
+
+  // Get schedules count
+  try {
+    const schedResponse = await fetch('/api/schedules');
+    if (schedResponse.ok && schedulesCountEl) {
+      const data = await schedResponse.json();
+      schedulesCountEl.textContent = String(data.schedules?.length || 0);
+    }
+  } catch {
+    // Ignore errors
+  }
+}
+
+/**
+ * Show keyboard shortcuts modal
+ */
+export function showKeyboardShortcuts(): void {
+  // Trigger the existing shortcuts modal if available
+  const event = new KeyboardEvent('keydown', { key: '?' });
+  document.dispatchEvent(event);
+}
+
+// ============================================================================
 // Tab Switching
 // ============================================================================
 

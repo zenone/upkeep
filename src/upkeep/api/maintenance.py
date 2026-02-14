@@ -1161,9 +1161,9 @@ class MaintenanceAPI(BaseAPI):
             if result.returncode == 0 and result.stdout.strip():
                 # Check if PID is present (running) vs just loaded
                 # Output format: "PID\tStatus\tLabel"
-                lines = result.stdout.strip().split('\n')
+                lines = result.stdout.strip().split("\n")
                 if lines:
-                    parts = lines[0].split('\t')
+                    parts = lines[0].split("\t")
                     if len(parts) >= 1:
                         pid = parts[0]
                         # If PID is a number, daemon is running
@@ -1179,6 +1179,7 @@ class MaintenanceAPI(BaseAPI):
                     pid = int(pid_file.read_text().strip())
                     # Check if process exists
                     import os
+
                     os.kill(pid, 0)  # Doesn't actually kill, just checks
                     return True
                 except (ValueError, ProcessLookupError, PermissionError):

@@ -832,6 +832,7 @@ def _load_operation_history() -> dict[str, Any]:
 
     try:
         import json
+
         data = json.loads(history_file.read_text())
         if not isinstance(data, dict):
             return {}

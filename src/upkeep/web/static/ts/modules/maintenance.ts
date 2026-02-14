@@ -225,7 +225,7 @@ export async function loadOperations(): Promise<void> {
     
     // Build HTML with category headers
     html = filterButtonsHtml;
-    lastCategory = '';
+    let lastCategory = '';
     for (const op of allOperations) {
       if (op.category !== lastCategory) {
         const icon = categoryIcons[op.category] || '📋';

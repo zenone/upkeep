@@ -1699,6 +1699,275 @@
             color: var(--text-primary);
         }
 
+        /* Settings Tab Styles */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .settings-section {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .settings-section:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .settings-section h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .settings-hint {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .settings-status {
+            margin-top: 1rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Theme Selector */
+        .theme-selector {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .theme-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 80px;
+        }
+
+        .theme-option:hover {
+            border-color: var(--accent-color);
+            background: var(--bg-primary);
+        }
+
+        .theme-option.active {
+            border-color: var(--accent-color);
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .theme-option.active .theme-label {
+            color: white;
+        }
+
+        .theme-icon {
+            font-size: 1.5rem;
+        }
+
+        .theme-label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* Interval Selector */
+        .interval-selector {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .interval-option {
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .interval-option:hover {
+            border-color: var(--accent-color);
+        }
+
+        .interval-option.active {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            color: white;
+        }
+
+        /* Toggle Switch */
+        .toggle-setting {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border-color);
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: var(--accent-color);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        .toggle-label {
+            font-size: 0.95rem;
+            color: var(--text-primary);
+        }
+
+        /* About Grid */
+        .about-grid {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .about-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .about-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .about-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Quick Links */
+        .quick-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .quick-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: all 0.2s;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .quick-link:hover {
+            border-color: var(--accent-color);
+            background: var(--bg-primary);
+        }
+
+        .link-icon {
+            font-size: 1.1rem;
+        }
+
+        .link-text {
+            font-weight: 500;
+        }
+
+        /* Shortcuts Grid */
+        .shortcuts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .shortcut-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+        }
+
+        .shortcut-item kbd {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 28px;
+            height: 28px;
+            padding: 0 8px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-family: -apple-system, BlinkMacSystemFont, monospace;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            box-shadow: 0 1px 2px var(--shadow);
+        }
+
+        .shortcut-item span:last-child {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
     </style>
 </head>
 <body>
@@ -2188,20 +2457,187 @@
 
         <!-- Settings Tab -->
         <div id="settings" class="tab-content">
-            <div class="card">
-                <h2>System Configuration</h2>
-                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
-                    Configure system-level settings and perform administrative actions.
-                </p>
+            <div class="settings-grid">
+                <!-- Appearance Section -->
+                <div class="card">
+                    <h2>🎨 Appearance</h2>
+                    <p class="card-description">Customize the look and feel of Upkeep.</p>
 
-                <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Script Management</h3>
-                <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.9rem;">
-                    When maintenance scripts are updated, reload them without restarting the system.
-                </p>
-                <button class="primary" onclick="reloadScripts()" id="reload-scripts-btn">
-                    🔄 Reload Scripts
-                </button>
-                <div id="reload-scripts-status" style="margin-top: 1rem; color: var(--text-secondary);"></div>
+                    <div class="settings-section">
+                        <h3>Theme</h3>
+                        <p class="settings-hint">Choose your preferred color scheme.</p>
+                        <div class="theme-selector" id="theme-selector">
+                            <button class="theme-option" data-theme="light" onclick="setTheme('light')">
+                                <span class="theme-icon">☀️</span>
+                                <span class="theme-label">Light</span>
+                            </button>
+                            <button class="theme-option" data-theme="dark" onclick="setTheme('dark')">
+                                <span class="theme-icon">🌙</span>
+                                <span class="theme-label">Dark</span>
+                            </button>
+                            <button class="theme-option" data-theme="system" onclick="setTheme('system')">
+                                <span class="theme-icon">🖥️</span>
+                                <span class="theme-label">System</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Settings -->
+                <div class="card">
+                    <h2>📊 Dashboard</h2>
+                    <p class="card-description">Configure dashboard behavior and data refresh.</p>
+
+                    <div class="settings-section">
+                        <h3>Auto-Refresh</h3>
+                        <p class="settings-hint">Automatically update system metrics.</p>
+                        <div class="toggle-setting">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="auto-refresh-toggle" checked onchange="toggleAutoRefresh(this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="toggle-label">Enable auto-refresh</span>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Refresh Interval</h3>
+                        <p class="settings-hint">How often to update metrics (in seconds).</p>
+                        <div class="interval-selector" id="interval-selector">
+                            <button class="interval-option" data-interval="5" onclick="setRefreshInterval(5)">5s</button>
+                            <button class="interval-option active" data-interval="10" onclick="setRefreshInterval(10)">10s</button>
+                            <button class="interval-option" data-interval="30" onclick="setRefreshInterval(30)">30s</button>
+                            <button class="interval-option" data-interval="60" onclick="setRefreshInterval(60)">60s</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Maintenance Settings -->
+                <div class="card">
+                    <h2>🛠️ Maintenance</h2>
+                    <p class="card-description">Configure default maintenance behaviors.</p>
+
+                    <div class="settings-section">
+                        <h3>Preview Mode</h3>
+                        <p class="settings-hint">Run operations in preview mode by default (no changes made).</p>
+                        <div class="toggle-setting">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="preview-mode-toggle" onchange="togglePreviewMode(this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="toggle-label">Default to preview mode</span>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Confirmations</h3>
+                        <p class="settings-hint">Show confirmation dialog before running operations.</p>
+                        <div class="toggle-setting">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="confirm-toggle" checked onchange="toggleConfirmations(this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="toggle-label">Require confirmation</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Script Management -->
+                <div class="card">
+                    <h2>🔧 Script Management</h2>
+                    <p class="card-description">Manage maintenance scripts and system updates.</p>
+
+                    <div class="settings-section">
+                        <h3>Reload Scripts</h3>
+                        <p class="settings-hint">Update scripts without restarting the system.</p>
+                        <button class="primary" onclick="reloadScripts()" id="reload-scripts-btn">
+                            🔄 Reload Scripts
+                        </button>
+                        <div id="reload-scripts-status" class="settings-status"></div>
+                    </div>
+                </div>
+
+                <!-- System Information -->
+                <div class="card">
+                    <h2>ℹ️ About</h2>
+                    <p class="card-description">System information and helpful resources.</p>
+
+                    <div class="settings-section">
+                        <div class="about-grid">
+                            <div class="about-item">
+                                <span class="about-label">Version</span>
+                                <span class="about-value" id="app-version">--</span>
+                            </div>
+                            <div class="about-item">
+                                <span class="about-label">Operations</span>
+                                <span class="about-value" id="ops-count">--</span>
+                            </div>
+                            <div class="about-item">
+                                <span class="about-label">Schedules</span>
+                                <span class="about-value" id="schedules-count">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Quick Links</h3>
+                        <div class="quick-links">
+                            <a href="/docs" target="_blank" class="quick-link">
+                                <span class="link-icon">📚</span>
+                                <span class="link-text">API Documentation</span>
+                            </a>
+                            <a href="/redoc" target="_blank" class="quick-link">
+                                <span class="link-icon">📖</span>
+                                <span class="link-text">ReDoc API Reference</span>
+                            </a>
+                            <button class="quick-link" onclick="showKeyboardShortcuts()">
+                                <span class="link-icon">⌨️</span>
+                                <span class="link-text">Keyboard Shortcuts</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Keyboard Shortcuts Reference -->
+                <div class="card">
+                    <h2>⌨️ Keyboard Shortcuts</h2>
+                    <p class="card-description">Quick access keys for common actions.</p>
+
+                    <div class="shortcuts-grid">
+                        <div class="shortcut-item">
+                            <kbd>?</kbd>
+                            <span>Show shortcuts help</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>1</kbd>
+                            <span>Dashboard tab</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>2</kbd>
+                            <span>Maintenance tab</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>3</kbd>
+                            <span>Storage tab</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>4</kbd>
+                            <span>Schedule tab</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>T</kbd>
+                            <span>Toggle theme</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>R</kbd>
+                            <span>Refresh data</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Esc</kbd>
+                            <span>Close modal/cancel</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
