@@ -77,9 +77,7 @@ class OperationHistory(BaseModel):
     last_duration_seconds: float | None = Field(
         None, description="Duration of last run in seconds", ge=0
     )
-    typical_seconds: float | None = Field(
-        None, description="Median duration in seconds (for ETA)"
-    )
+    typical_seconds: float | None = Field(None, description="Median duration in seconds (for ETA)")
     typical_display: str | None = Field(
         None, description="Human-readable typical duration (e.g., '12s')"
     )
@@ -87,9 +85,7 @@ class OperationHistory(BaseModel):
         None, description="Number of successful runs used for typical calculation"
     )
     typical_runs_all: int | None = Field(None, description="Number of all runs recorded")
-    typical_basis: str | None = Field(
-        None, description="Which data was used: 'success' or 'all'"
-    )
+    typical_basis: str | None = Field(None, description="Which data was used: 'success' or 'all'")
 
 
 class LastRunResponse(BaseModel):

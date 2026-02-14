@@ -127,7 +127,6 @@ def main(
             result = analyzer.analyze()
 
         if output_json:
-
             data = {
                 "root_path": str(result.root_path),
                 "total_size": result.total_size,

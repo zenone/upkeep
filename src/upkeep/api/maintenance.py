@@ -53,10 +53,10 @@ def clean_output_line(text: str) -> str:
         return text
 
     # Remove carriage returns (they cause text to overwrite itself)
-    text = text.replace('\r', '')
+    text = text.replace("\r", "")
 
     # Remove backspaces (they delete previous characters in terminals)
-    text = text.replace('\b', '')
+    text = text.replace("\b", "")
 
     # Remove ALL ANSI escape sequences (not just colors)
     # This includes: colors, cursor movement, clear screen/line, etc.
@@ -64,23 +64,23 @@ def clean_output_line(text: str) -> str:
     #   \x1b\[ - ESC[ sequence start
     #   [0-9;?]* - zero or more digits, semicolons, or question marks (parameters)
     #   [a-zA-Z] - command letter (m=SGR/color, K=EL/erase line, H=CUP/cursor pos, etc.)
-    ansi_escape = re.compile(r'\x1b\[[0-9;?]*[a-zA-Z]')
-    text = ansi_escape.sub('', text)
+    ansi_escape = re.compile(r"\x1b\[[0-9;?]*[a-zA-Z]")
+    text = ansi_escape.sub("", text)
 
     # Pattern 2: OSC sequences (Operating System Command)
     #   \x1b\] - ESC] sequence start (used for window title, etc.)
     #   [^\x07\x1b]* - any chars except BEL or ESC
     #   (\x07|\x1b\\) - terminated by BEL or ESC\
-    osc_escape = re.compile(r'\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)')
-    text = osc_escape.sub('', text)
+    osc_escape = re.compile(r"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)")
+    text = osc_escape.sub("", text)
 
     # Remove other control characters (except newline \n and tab \t which we want to keep)
     # \x00-\x08: NULL through backspace
     # \x0B-\x0C: vertical tab, form feed
     # \x0E-\x1F: shift out through unit separator
     # \x7F: DEL
-    control_chars = re.compile(r'[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]')
-    text = control_chars.sub('', text)
+    control_chars = re.compile(r"[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]")
+    text = control_chars.sub("", text)
 
     return text
 
@@ -146,7 +146,6 @@ class MaintenanceAPI(BaseAPI):
             "safe": True,
             "recommended": True,
         },
-
         # Disk Operations
         "disk-verify": {
             "id": "disk-verify",
@@ -170,12 +169,11 @@ class MaintenanceAPI(BaseAPI):
             "id": "smart-check",
             "name": "Check SMART Status",
             "description": "Check disk SMART health status",
-            "guidance": "Why: SMART (Self-Monitoring, Analysis and Reporting Technology) monitors disk health and predicts failures before they happen. When: Run monthly for early warning, when disk makes unusual noises, feels slow, or shows strange behavior. After: Shows disk health status instantly. If \"Verified\" = healthy. If \"Failing\" = backup immediately and replace disk soon. No changes made (read-only check).",
+            "guidance": 'Why: SMART (Self-Monitoring, Analysis and Reporting Technology) monitors disk health and predicts failures before they happen. When: Run monthly for early warning, when disk makes unusual noises, feels slow, or shows strange behavior. After: Shows disk health status instantly. If "Verified" = healthy. If "Failing" = backup immediately and replace disk soon. No changes made (read-only check).',
             "category": "Disk / Filesystem",
             "safe": True,
             "recommended": False,
         },
-
         # Cleanup Operations
         "trim-logs": {
             "id": "trim-logs",
@@ -249,7 +247,6 @@ class MaintenanceAPI(BaseAPI):
             "safe": True,
             "recommended": False,
         },
-
         # System Operations
         "spotlight-status": {
             "id": "spotlight-status",
@@ -273,7 +270,7 @@ class MaintenanceAPI(BaseAPI):
             "id": "dns-flush",
             "name": "Flush DNS Cache",
             "description": "Clear DNS resolver cache",
-            "guidance": "Why: macOS caches DNS lookups (website names to IP addresses) to speed up connections. Stale cache causes connection failures. When: Run when websites won't load but internet works, getting \"server not found\" errors, after changing DNS settings/VPN, or after network changes. After: DNS cache is cleared immediately. Next website visit will query DNS servers (adds ~50ms delay first time), then cache rebuilds automatically.",
+            "guidance": 'Why: macOS caches DNS lookups (website names to IP addresses) to speed up connections. Stale cache causes connection failures. When: Run when websites won\'t load but internet works, getting "server not found" errors, after changing DNS settings/VPN, or after network changes. After: DNS cache is cleared immediately. Next website visit will query DNS servers (adds ~50ms delay first time), then cache rebuilds automatically.',
             "category": "System Operations",
             "safe": True,
             "recommended": False,
@@ -296,7 +293,6 @@ class MaintenanceAPI(BaseAPI):
             "safe": True,
             "recommended": False,
         },
-
         # Reports
         "space-report": {
             "id": "space-report",
@@ -434,12 +430,12 @@ class MaintenanceAPI(BaseAPI):
             op_dict = dict(op)  # Create a copy
 
             # Add WHY/WHAT details if available
-            if op['id'] in operation_details:
-                details = operation_details[op['id']]
-                op_dict['why'] = details.get('why', {})
-                op_dict['what'] = details.get('what', {})
-                op_dict['when_to_run'] = details.get('when_to_run', [])
-                op_dict['safety'] = details.get('safety', 'unknown')
+            if op["id"] in operation_details:
+                details = operation_details[op["id"]]
+                op_dict["why"] = details.get("why", {})
+                op_dict["what"] = details.get("what", {})
+                op_dict["when_to_run"] = details.get("when_to_run", [])
+                op_dict["safety"] = details.get("safety", "unknown")
                 merged_count += 1
                 self.logger.info(f"Merged WHY/WHAT for operation: {op['id']}")
             else:
@@ -454,10 +450,10 @@ class MaintenanceAPI(BaseAPI):
                     guidance_fallback_count += 1
                 else:
                     # Always provide keys so downstream consumers don't branch on missing fields
-                    op_dict['why'] = {}
-                    op_dict['what'] = {}
-                    op_dict['when_to_run'] = []
-                    op_dict['safety'] = None
+                    op_dict["why"] = {}
+                    op_dict["what"] = {}
+                    op_dict["when_to_run"] = []
+                    op_dict["safety"] = None
 
             operations.append(op_dict)
 
@@ -543,7 +539,9 @@ class MaintenanceAPI(BaseAPI):
                 # Fallback: try relative to working directory
                 details_file = Path("operation_details.json")
                 if not details_file.exists():
-                    self._log_error(f"operation_details.json not found. Tried: {project_root / 'operation_details.json'} and {Path('operation_details.json').absolute()}")
+                    self._log_error(
+                        f"operation_details.json not found. Tried: {project_root / 'operation_details.json'} and {Path('operation_details.json').absolute()}"
+                    )
                     return {}
 
             self.logger.info(f"Loading operation details from: {details_file}")
@@ -556,7 +554,7 @@ class MaintenanceAPI(BaseAPI):
             # Support both formats:
             # 1) {"operations": { ... }}
             # 2) { ... } (direct mapping)
-            operations = data.get('operations', data) if isinstance(data, dict) else {}
+            operations = data.get("operations", data) if isinstance(data, dict) else {}
             self.logger.info(f"Loaded WHY/WHAT data for {len(operations)} operations")
             return operations
 
@@ -682,7 +680,7 @@ class MaintenanceAPI(BaseAPI):
             # Check if result exists
             if result_file.exists():
                 try:
-                    with open(result_file, encoding='utf-8') as f:
+                    with open(result_file, encoding="utf-8") as f:
                         result = json.load(f)
 
                     # Clean up result file
@@ -833,12 +831,14 @@ class MaintenanceAPI(BaseAPI):
                         "message": result.get("error", "Operation skipped"),
                         "timestamp": datetime.now().isoformat(),
                     }
-                    results.append({
-                        "operation_id": op_id,
-                        "success": False,
-                        "returncode": -2,
-                        "skipped": True,
-                    })
+                    results.append(
+                        {
+                            "operation_id": op_id,
+                            "success": False,
+                            "returncode": -2,
+                            "skipped": True,
+                        }
+                    )
                     continue
 
                 # Stream stdout if available
@@ -898,7 +898,9 @@ class MaintenanceAPI(BaseAPI):
                         except json.JSONDecodeError:
                             history = {}
 
-                    op_hist = history.get(op_id, {}) if isinstance(history.get(op_id, {}), dict) else {}
+                    op_hist = (
+                        history.get(op_id, {}) if isinstance(history.get(op_id, {}), dict) else {}
+                    )
                     op_hist["last_run"] = datetime.now().isoformat()
                     op_hist["success"] = success
                     op_hist["last_duration_seconds"] = round(duration_seconds, 3)
@@ -929,11 +931,13 @@ class MaintenanceAPI(BaseAPI):
                 except Exception as e:
                     self.logger.warning(f"Failed to write operation history: {e}")
 
-                results.append({
-                    "operation_id": op_id,
-                    "success": success,
-                    "returncode": exit_code,
-                })
+                results.append(
+                    {
+                        "operation_id": op_id,
+                        "success": success,
+                        "returncode": exit_code,
+                    }
+                )
 
             except TimeoutError as e:
                 yield {
@@ -949,11 +953,13 @@ class MaintenanceAPI(BaseAPI):
                     "returncode": -1,
                     "timestamp": datetime.now().isoformat(),
                 }
-                results.append({
-                    "operation_id": op_id,
-                    "success": False,
-                    "returncode": -1,
-                })
+                results.append(
+                    {
+                        "operation_id": op_id,
+                        "success": False,
+                        "returncode": -1,
+                    }
+                )
 
         # Send summary
         successful = sum(1 for r in results if r.get("success"))
