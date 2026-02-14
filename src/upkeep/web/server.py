@@ -715,9 +715,9 @@ async def start_duplicate_scan(
     """
     _prune_old_scans()
 
-    # Parse paths
+    # Parse paths (expand ~ to user home)
     if paths:
-        scan_paths = [Path(p.strip()) for p in paths.split(",") if p.strip()]
+        scan_paths = [Path(p.strip()).expanduser() for p in paths.split(",") if p.strip()]
     else:
         scan_paths = [Path.home()]
 
