@@ -1110,6 +1110,120 @@
       },
       "note": "Disable unused startup items in System Settings > General > Login Items to speed up boot."
     },
+    "login-items-list": {
+      "id": "login-items-list",
+      "name": "List Login Items (Labels)",
+      "category": "Reports",
+      "safety": "safe",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Need machine-readable list of login item labels for scripting or automation.",
+        "problems": [
+          {
+            "symptom": "Need to automate login item management",
+            "description": "Scripts need exact labels to enable/disable services"
+          }
+        ]
+      },
+      "when_to_run": [
+        "When scripting login item management",
+        "When automating system configuration"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "1-2 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Outputs pipe-delimited list: label|status|plist_path"
+          }
+        ],
+        "side_effects": []
+      },
+      "note": "Use with --login-items-disable or --login-items-enable to manage items."
+    },
+    "login-items-disable": {
+      "id": "login-items-disable",
+      "name": "Disable Login Item",
+      "category": "System",
+      "safety": "medium-risk",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Some apps add startup items that slow down boot or drain battery unnecessarily.",
+        "problems": [
+          {
+            "symptom": "Unwanted app starting at login",
+            "description": "Disable apps you don't need running constantly"
+          },
+          {
+            "symptom": "Slow startup",
+            "description": "Too many startup items bog down login"
+          }
+        ]
+      },
+      "when_to_run": [
+        "When an app starts at login and you don't want it to",
+        "When optimizing boot time",
+        "When troubleshooting battery drain"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "1-2 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Service stops immediately if running"
+          },
+          {
+            "type": "positive",
+            "description": "Service will not start on next login"
+          }
+        ],
+        "side_effects": [
+          {
+            "type": "warning",
+            "description": "The app's background features may stop working (e.g., sync, notifications)"
+          }
+        ]
+      },
+      "note": "Only affects user LaunchAgents. Use --login-items-enable to re-enable later."
+    },
+    "login-items-enable": {
+      "id": "login-items-enable",
+      "name": "Enable Login Item",
+      "category": "System",
+      "safety": "safe",
+      "why": {
+        "title": "Problems This Solves",
+        "context": "Re-enable a previously disabled startup item.",
+        "problems": [
+          {
+            "symptom": "App features not working",
+            "description": "Background service needed for full functionality"
+          }
+        ]
+      },
+      "when_to_run": [
+        "When you need an app's background features again",
+        "When troubleshooting why an app isn't syncing/updating"
+      ],
+      "what": {
+        "title": "Expected Results",
+        "timeline": "1-2 seconds",
+        "outcomes": [
+          {
+            "type": "positive",
+            "description": "Service starts immediately"
+          },
+          {
+            "type": "positive",
+            "description": "Service will auto-start on next login"
+          }
+        ],
+        "side_effects": []
+      },
+      "note": "Only affects user LaunchAgents. Use --login-items-list to see available items."
+    },
     "downloads-cleanup": {
       "category": "Cleanup",
       "id": "downloads-cleanup",
