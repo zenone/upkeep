@@ -64,10 +64,14 @@ export async function loadScheduleTemplates(): Promise<void> {
  */
 export async function loadSchedules(): Promise<void> {
   try {
+    console.log('[Schedule] Loading schedules...');
     const response = await fetch('/api/schedules');
+    console.log('[Schedule] Schedules response status:', response.status);
     const data = await response.json();
+    console.log('[Schedule] Schedules data:', data);
 
     const container = document.getElementById('schedules-list');
+    console.log('[Schedule] Container found:', !!container);
     if (!container) return;
 
     if (!data.success || !data.schedules || data.schedules.length === 0) {
@@ -510,6 +514,7 @@ export function applyScheduleTemplate(template: any): void {
 let scheduleRefreshTimer: number | null = null;
 
 export function onScheduleTabShow(): void {
+  console.log('[Schedule] Tab shown, loading data...');
   loadScheduleTemplates();
   loadSchedules();
 

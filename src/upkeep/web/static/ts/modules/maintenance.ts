@@ -290,7 +290,58 @@ export async function loadOperations(): Promise<void> {
       
       let whyWhatHtml = '';
       if (op.why || op.what || (op.when_to_run && op.when_to_run.length > 0)) {
-        whyWhatHtml = `<details class="operation-details"><summary>ℹ️ Why run this & What to expect</summary><div class="operation-details-content">Details available</div></details>`;
+        let detailsContent = '';
+        
+        // WHY section - Problems this solves
+        if (op.why) {
+          detailsContent += `<div class="operation-why">`;
+          detailsContent += `<h5>🤔 Why run this?</h5>`;
+          if (op.why.context) {
+            detailsContent += `<div class="operation-context">${escapeHtml(op.why.context)}</div>`;
+          }
+          if (op.why.problems && op.why.problems.length > 0) {
+            detailsContent += `<ul>`;
+            for (const problem of op.why.problems) {
+              detailsContent += `<li><strong>${escapeHtml(problem.symptom)}</strong> ${escapeHtml(problem.description)}</li>`;
+            }
+            detailsContent += `</ul>`;
+          }
+          detailsContent += `</div>`;
+        }
+        
+        // WHAT section - Expected outcomes
+        if (op.what) {
+          detailsContent += `<div class="operation-what">`;
+          detailsContent += `<h5>📋 What to expect</h5>`;
+          if (op.what.outcomes && op.what.outcomes.length > 0) {
+            detailsContent += `<ul>`;
+            for (const outcome of op.what.outcomes) {
+              const icon = outcome.type === 'positive' ? '✅' : 
+                          outcome.type === 'warning' ? '⚠️' : 
+                          outcome.type === 'temporary' ? '⏳' : 
+                          outcome.type === 'neutral' ? '➖' : 'ℹ️';
+              detailsContent += `<li>${icon} ${escapeHtml(outcome.description)}</li>`;
+            }
+            detailsContent += `</ul>`;
+          }
+          if (op.what.timeline) {
+            detailsContent += `<div class="operation-timeline"><strong>⏱️ Timeline:</strong> ${escapeHtml(op.what.timeline)}</div>`;
+          }
+        }
+        
+        // WHEN section - When to run
+        if (op.when_to_run && op.when_to_run.length > 0) {
+          detailsContent += `<div class="operation-when">`;
+          detailsContent += `<h5>📅 When to run</h5>`;
+          detailsContent += `<ul>`;
+          for (const when of op.when_to_run) {
+            detailsContent += `<li>${escapeHtml(when)}</li>`;
+          }
+          detailsContent += `</ul>`;
+          detailsContent += `</div>`;
+        }
+        
+        whyWhatHtml = `<details class="operation-details"><summary>ℹ️ Why run this & What to expect</summary><div class="operation-details-content">${detailsContent}</div></details>`;
       }
       
       return `
