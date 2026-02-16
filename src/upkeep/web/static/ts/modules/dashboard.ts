@@ -624,9 +624,7 @@ export async function runQuickHealthCheck(): Promise<void> {
     showToast('Starting health check...', 'info');
     
     // Run the preflight/doctor check which scans the system
-    const response = await fetch('/api/maintenance/doctor', {
-      method: 'POST'
-    });
+    const response = await fetch('/api/maintenance/doctor');
     
     if (!response.ok) {
       throw new Error('Health check failed');
