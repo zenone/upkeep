@@ -3008,17 +3008,19 @@ ios_backups_report() {
 
   # Get total size
   local total_size
-  total_size=$(du -sh "$backups_dir" 2>/dev/null | awk '{print $1}' || echo "unknown")
+  total_size=$(du -sh "$backups_dir" 2>/dev/null | awk '{print $1}') || total_size="unknown"
+  [[ -z "$total_size" ]] && total_size="unknown"
   info "Total iOS Backup Size: ${total_size}"
   echo ""
 
   # Count number of backups (each subdirectory is a backup)
   local backup_count
-  backup_count=$(find "$backups_dir" -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+  backup_count=$(find "$backups_dir" -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ') || backup_count="1"
   backup_count=$((backup_count - 1))  # Subtract the parent directory
 
-  if [[ "$backup_count" -eq 0 ]]; then
+  if [[ "$backup_count" -le 0 ]]; then
     info "No device backups found."
+    success "iOS backups report complete."
     return 0
   fi
 
@@ -3030,28 +3032,30 @@ ios_backups_report() {
     [[ -d "$backup_path" ]] || continue
 
     local backup_size
-    backup_size=$(du -sh "$backup_path" 2>/dev/null | awk '{print $1}' || echo "?")
+    backup_size=$(du -sh "$backup_path" 2>/dev/null | awk '{print $1}') || backup_size="?"
+    [[ -z "$backup_size" ]] && backup_size="?"
 
     # Try to get device name from Info.plist
     local device_name="Unknown Device"
     local info_plist="${backup_path}Info.plist"
     if [[ -f "$info_plist" ]]; then
       # Extract device name using plutil (built into macOS)
-      device_name=$(plutil -extract "Device Name" raw "$info_plist" 2>/dev/null || echo "Unknown Device")
+      device_name=$(plutil -extract "Device Name" raw "$info_plist" 2>/dev/null) || device_name="Unknown Device"
     fi
 
     # Get last modified date
     local last_modified
-    last_modified=$(stat -f "%Sm" -t "%Y-%m-%d" "$backup_path" 2>/dev/null || echo "unknown")
+    last_modified=$(stat -f "%Sm" -t "%Y-%m-%d" "$backup_path" 2>/dev/null) || last_modified="unknown"
 
     printf "  %-30s %8s  (modified: %s)\n" "$device_name" "$backup_size" "$last_modified"
-  done
+  done || true
 
   echo ""
   info "To manage backups: Finder → iPhone → Manage Backups..."
   info "Or: System Settings → General → iPhone & iPad"
 
   success "iOS backups report complete."
+  return 0
 }
 
 application_support_report() {
@@ -3076,11 +3080,12 @@ application_support_report() {
   echo ""
 
   # List top 20 folders sorted by size
+  # Note: || true prevents pipefail from failing the function on permission errors
   du -sh "$app_support"/*/ 2>/dev/null | sort -hr | head -20 | while read -r size folder; do
     local folder_name
     folder_name=$(basename "$folder")
     printf "  %8s  %s\n" "$size" "$folder_name"
-  done
+  done || true
 
   echo ""
   warning "⚠️  DO NOT auto-delete Application Support folders!"
@@ -3088,6 +3093,7 @@ application_support_report() {
   info "To clean up: Uninstall apps properly or manually review folder contents."
 
   success "Application Support report complete."
+  return 0
 }
 
 dev_artifacts_report() {
@@ -3190,11 +3196,12 @@ mail_size_report() {
   local v10_dir="${mail_dir}/V10"
   if [[ -d "$v10_dir" ]]; then
     info "Mail data breakdown:"
+    # Note: || true prevents pipefail from failing the function on permission errors
     du -sh "$v10_dir"/*/ 2>/dev/null | sort -hr | head -10 | while read -r size folder; do
       local folder_name
       folder_name=$(basename "$folder")
       printf "  %8s  %s\n" "$size" "$folder_name"
-    done
+    done || true
   fi
 
   echo ""
@@ -3205,6 +3212,7 @@ mail_size_report() {
   info "  - Consider removing old mailboxes"
 
   success "Mail size report complete."
+  return 0
 }
 
 messages_attachments_report() {
@@ -3220,21 +3228,23 @@ messages_attachments_report() {
     return 0
   fi
 
-  # Get total Messages size
+  # Get total Messages size (with defensive error handling)
   local total_size
-  total_size=$(du -sh "$messages_dir" 2>/dev/null | awk '{print $1}' || echo "unknown")
+  total_size=$(du -sh "$messages_dir" 2>/dev/null | awk '{print $1}') || total_size="unknown"
+  [[ -z "$total_size" ]] && total_size="unknown"
   info "Total Messages Size: ${total_size}"
 
   # Get attachments size specifically
   if [[ -d "$attachments_dir" ]]; then
     local attachments_size
-    attachments_size=$(du -sh "$attachments_dir" 2>/dev/null | awk '{print $1}' || echo "unknown")
+    attachments_size=$(du -sh "$attachments_dir" 2>/dev/null | awk '{print $1}') || attachments_size="unknown"
+    [[ -z "$attachments_size" ]] && attachments_size="unknown"
     info "Attachments Size: ${attachments_size}"
 
-    # Count files by type
-    local image_count video_count other_count
-    image_count=$(find "$attachments_dir" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.gif" -o -name "*.heic" \) 2>/dev/null | wc -l | tr -d ' ')
-    video_count=$(find "$attachments_dir" -type f \( -name "*.mov" -o -name "*.mp4" -o -name "*.m4v" \) 2>/dev/null | wc -l | tr -d ' ')
+    # Count files by type (with defensive error handling)
+    local image_count video_count
+    image_count=$(find "$attachments_dir" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.gif" -o -name "*.heic" \) 2>/dev/null | wc -l | tr -d ' ') || image_count="0"
+    video_count=$(find "$attachments_dir" -type f \( -name "*.mov" -o -name "*.mp4" -o -name "*.m4v" \) 2>/dev/null | wc -l | tr -d ' ') || video_count="0"
 
     echo ""
     info "Attachment counts: ~${image_count} images, ~${video_count} videos"
@@ -3248,6 +3258,7 @@ messages_attachments_report() {
   info "Or manually delete conversations with large attachments."
 
   success "Messages attachments report complete."
+  return 0
 }
 
 cloudstorage_report() {
@@ -3270,12 +3281,13 @@ cloudstorage_report() {
   echo ""
 
   info "Storage by provider:"
+  # Note: || true prevents pipefail from failing the function on permission errors
   du -sh "$cloud_dir"/*/ 2>/dev/null | sort -hr | while read -r size folder; do
     local folder_name
     folder_name=$(basename "$folder")
     # Clean up provider name (e.g., "Dropbox" from "Dropbox-Personal")
     printf "  %8s  %s\n" "$size" "$folder_name"
-  done
+  done || true
 
   echo ""
   warning "⚠️  NEVER delete from ~/Library/CloudStorage directly!"
@@ -3285,6 +3297,7 @@ cloudstorage_report() {
   info "  - Google Drive: Drive app → Preferences → Offline access"
 
   success "Cloud storage report complete."
+  return 0
 }
 
 virtualbox_report() {
@@ -3866,11 +3879,16 @@ get_app_name() {
 
 # Calculate directory size (returns bytes for sorting, human-readable for display)
 get_dir_size_bytes() {
+  # Returns directory/file size in bytes as a single numeric value
+  # Fixed: Use tail -1 and awk END to handle multi-line du output (permission errors, subdirs)
   local path="$1"
+  local result
   if [[ -d "$path" ]]; then
-    du -sk "$path" 2>/dev/null | awk '{print $1 * 1024}' || echo "0"
+    result=$(du -sk "$path" 2>/dev/null | tail -1 | awk '{print int($1 * 1024)}')
+    echo "${result:-0}"
   elif [[ -f "$path" ]]; then
-    stat -f%z "$path" 2>/dev/null || echo "0"
+    result=$(stat -f%z "$path" 2>/dev/null)
+    echo "${result:-0}"
   else
     echo "0"
   fi
@@ -4536,11 +4554,15 @@ trash_empty() {
   user_home=$(get_actual_user_home)
   local trash_dir="${user_home}/.Trash"
 
-  [[ -d "$trash_dir" ]] || { info "Trash folder not found or empty."; return 0; }
+  if [[ ! -d "$trash_dir" ]]; then
+    info "Trash folder not found or empty."
+    return 0
+  fi
 
-  # Check if trash has contents
+  # Check if trash has contents (defensive: handle permission errors)
   local item_count
-  item_count=$(find "$trash_dir" -mindepth 1 -maxdepth 1 2>/dev/null | wc -l | tr -d ' ')
+  item_count=$(find "$trash_dir" -mindepth 1 -maxdepth 1 2>/dev/null | wc -l | tr -d ' ') || item_count="0"
+  [[ -z "$item_count" ]] && item_count="0"
 
   if [[ "$item_count" -eq 0 ]]; then
     info "Trash is already empty."
@@ -4548,7 +4570,8 @@ trash_empty() {
   fi
 
   local size
-  size=$(du -sh "$trash_dir" 2>/dev/null | awk '{print $1}' || echo "unknown")
+  size=$(du -sh "$trash_dir" 2>/dev/null | awk '{print $1}') || size="unknown"
+  [[ -z "$size" ]] && size="unknown"
   info "Trash contains ${item_count} items (${size})"
 
   if [[ "${PREVIEW:-0}" -eq 1 ]]; then
@@ -4556,7 +4579,10 @@ trash_empty() {
     return 0
   fi
 
-  [[ "${DRY_RUN:-0}" -eq 1 ]] && { warning "DRY-RUN: would empty Trash"; return 0; }
+  if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
+    warning "DRY-RUN: would empty Trash"
+    return 0
+  fi
 
   warning "This will PERMANENTLY delete all ${item_count} items in Trash. This cannot be undone."
   if ! confirm "Proceed with emptying Trash?"; then
@@ -4564,10 +4590,12 @@ trash_empty() {
     return 0
   fi
 
+  # Empty trash (errors are expected for SIP-protected files)
   rm -rf "${trash_dir:?}"/* 2>/dev/null || true
   rm -rf "${trash_dir:?}"/.[!.]* 2>/dev/null || true  # Hidden files too
 
   success "Trash emptied."
+  return 0
 }
 
 docker_prune() {
