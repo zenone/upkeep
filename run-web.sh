@@ -1,6 +1,10 @@
 #!/bin/bash
 # Launch Upkeep web interface
 # Server runs as normal user - authentication is handled via web UI
+#
+# Options:
+#   --open    Auto-open browser on start (opt-in, like vite/webpack)
+#   --https   Force HTTPS if certificates are installed
 
 set -e
 set -o pipefail
@@ -300,6 +304,8 @@ else
     echo "✓ Dashboard, Storage"
     echo "✗ Maintenance (daemon not running)"
 fi
+echo ""
+echo "💡 Tip: Use --open to auto-open browser"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
@@ -397,8 +403,20 @@ open_browser() {
     fi
 }
 
-# Auto-open browser (can be disabled with: AUTO_OPEN_BROWSER=false ./run-web.sh)
-if [ "${AUTO_OPEN_BROWSER:-true}" = "true" ]; then
+# Parse --open flag for browser auto-open (opt-in, matching vite/webpack convention)
+OPEN_BROWSER=false
+for arg in "$@"; do
+    case "$arg" in
+        --open) OPEN_BROWSER=true ;;
+    esac
+done
+
+# Also support legacy env var (AUTO_OPEN_BROWSER=true ./run-web.sh)
+if [ "${AUTO_OPEN_BROWSER:-}" = "true" ]; then
+    OPEN_BROWSER=true
+fi
+
+if [ "$OPEN_BROWSER" = "true" ]; then
     open_browser &
 fi
 
