@@ -224,7 +224,7 @@ DAEMON_NEEDS_RELOAD=false
 DAEMON_PID=""
 
 # Get daemon PID if running
-DAEMON_PID=$(pgrep -f "upkeep_daemon.py" 2>/dev/null | head -1)
+DAEMON_PID=$(pgrep -f "upkeep_daemon.py" 2>/dev/null | head -1) || true
 
 if [ -n "$DAEMON_PID" ]; then
     DAEMON_RUNNING=true
