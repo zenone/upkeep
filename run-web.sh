@@ -218,56 +218,86 @@ if [ -f "./upkeep.sh" ]; then
 fi
 echo ""
 
-# Auto-update daemon if source files changed (zero friction updates)
-DAEMON_NEEDS_UPDATE=false
-INSTALLED_DAEMON="/usr/local/lib/upkeep/upkeep_daemon.py"
-INSTALLED_SCRIPT="/usr/local/lib/upkeep/upkeep.sh"
+# Check daemon status and detect if reload needed
+DAEMON_RUNNING=false
+DAEMON_NEEDS_RELOAD=false
+DAEMON_PID=""
 
-if [ -f "$INSTALLED_DAEMON" ] && [ -f "./daemon/upkeep_daemon.py" ]; then
-    if [ "./daemon/upkeep_daemon.py" -nt "$INSTALLED_DAEMON" ]; then
-        DAEMON_NEEDS_UPDATE=true
-    fi
-fi
+# Get daemon PID if running
+DAEMON_PID=$(pgrep -f "upkeep_daemon.py" 2>/dev/null | head -1)
 
-if [ -f "$INSTALLED_SCRIPT" ] && [ -f "./upkeep.sh" ]; then
-    if [ "./upkeep.sh" -nt "$INSTALLED_SCRIPT" ]; then
-        DAEMON_NEEDS_UPDATE=true
-    fi
-fi
-
-if [ "$DAEMON_NEEDS_UPDATE" = true ]; then
-    echo "🔄 Daemon update detected..."
-    echo "   Source files are newer than installed version."
-    echo "   Auto-updating daemon (requires administrator privileges)..."
-    echo ""
+if [ -n "$DAEMON_PID" ]; then
+    DAEMON_RUNNING=true
     
+    # Check if source files are newer than running daemon process
+    # (daemon has stale code in memory if source changed after it started)
+    DAEMON_START_TIME=$(ps -p "$DAEMON_PID" -o lstart= 2>/dev/null)
+    if [ -n "$DAEMON_START_TIME" ]; then
+        # Convert to epoch for comparison
+        DAEMON_EPOCH=$(date -j -f "%a %b %d %T %Y" "$DAEMON_START_TIME" "+%s" 2>/dev/null)
+        
+        if [ -n "$DAEMON_EPOCH" ]; then
+            # Check daemon source files
+            for src_file in "./daemon/upkeep_daemon.py" "./upkeep.sh"; do
+                if [ -f "$src_file" ]; then
+                    SRC_EPOCH=$(stat -f "%m" "$src_file" 2>/dev/null)
+                    if [ -n "$SRC_EPOCH" ] && [ "$SRC_EPOCH" -gt "$DAEMON_EPOCH" ]; then
+                        DAEMON_NEEDS_RELOAD=true
+                        break
+                    fi
+                fi
+            done
+        fi
+    fi
+fi
+
+# Handle daemon state
+if [ "$DAEMON_NEEDS_RELOAD" = true ]; then
+    echo "🔄 Daemon code changed since last start"
+    echo "   Reloading daemon with fresh code..."
+    echo ""
     if sudo ./install-daemon.sh; then
         echo ""
-        echo "✓ Daemon updated successfully"
+        echo "✓ Daemon reloaded"
     else
         echo ""
-        echo "⚠️  Daemon update failed. You may need to run manually:"
-        echo "    sudo ./install-daemon.sh"
+        echo "⚠️  Daemon reload failed. Run: sudo ./install-daemon.sh"
     fi
     echo ""
-fi
-
-# Check daemon status and auto-start if needed
-DAEMON_RUNNING=false
-
-# Check if daemon is running (not just installed)
-if sudo -n launchctl list 2>/dev/null | grep -q "com.upkeep.daemon"; then
-    # Daemon is loaded, check if actually running
-    if pgrep -f "maintenance_daemon.py" >/dev/null 2>&1; then
-        DAEMON_RUNNING=true
-        echo "✓ Daemon running"
-    else
-        echo "⚠️  Daemon installed but not running"
+elif [ "$DAEMON_RUNNING" = true ]; then
+    echo "✓ Daemon running (up-to-date)"
+else
+    # Daemon not running - check if source is newer than installed (first-time install case)
+    INSTALLED_DAEMON="/usr/local/lib/upkeep/upkeep_daemon.py"
+    NEEDS_INSTALL=false
+    
+    if [ ! -f "$INSTALLED_DAEMON" ]; then
+        NEEDS_INSTALL=true
+    elif [ -f "./daemon/upkeep_daemon.py" ] && [ "./daemon/upkeep_daemon.py" -nt "$INSTALLED_DAEMON" ]; then
+        NEEDS_INSTALL=true
     fi
-elif launchctl list 2>/dev/null | grep -q "com.upkeep.daemon"; then
-    # In user domain (shouldn't be)
-    DAEMON_RUNNING=true
-    echo "✓ Daemon running (user domain)"
+    
+    if [ "$NEEDS_INSTALL" = true ] || [ ! -f "/Library/LaunchDaemons/com.upkeep.daemon.plist" ]; then
+        echo "🔧 Installing maintenance daemon..."
+        if sudo ./install-daemon.sh; then
+            DAEMON_RUNNING=true
+            echo ""
+            echo "✓ Daemon installed"
+        else
+            echo "⚠️  Daemon installation failed"
+        fi
+        echo ""
+    else
+        # Installed but not running - start it
+        echo "🔄 Starting daemon..."
+        if sudo launchctl load /Library/LaunchDaemons/com.upkeep.daemon.plist 2>/dev/null; then
+            DAEMON_RUNNING=true
+            echo "✓ Daemon started"
+        else
+            echo "⚠️  Failed to start daemon"
+        fi
+        echo ""
+    fi
 fi
 
 # Auto-install daemon if not running (zero friction - no prompts)
@@ -315,56 +345,12 @@ cleanup() {
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "⏹  Server stopped"
-    echo ""
-
-    # Check if daemon is running
-    if pgrep -f "maintenance_daemon.py" >/dev/null 2>&1; then
-        # Check for active scheduled tasks
-        SCHEDULES_FILE="$HOME/.upkeep/schedules.json"
-        ACTIVE_SCHEDULES=""
-        if [ -f "$SCHEDULES_FILE" ]; then
-            # Use Python to parse JSON and find enabled schedules
-            ACTIVE_SCHEDULES=$(python3 <<EOF
-import json
-import sys
-try:
-    with open("$SCHEDULES_FILE") as f:
-        schedules = json.load(f)
-    enabled = [s for s in schedules if s.get("enabled", False)]
-    if enabled:
-        for s in enabled:
-            name = s.get("name", "Unknown")
-            next_run = s.get("next_run_display", "Unknown")
-            print(f"   • {name} (next run: {next_run})")
-except:
-    pass
-EOF
-)
-        fi
-
-        # Show prompt with context
-        if [ -n "$ACTIVE_SCHEDULES" ]; then
-            echo "ℹ️  Daemon is managing scheduled maintenance tasks:"
-            echo "$ACTIVE_SCHEDULES"
-            echo ""
-            echo "⚠️  Stopping daemon will disable these schedules."
-            echo ""
-        fi
-
-        read -p "Stop daemon too? (y/n): " -n 1 -r
+    
+    # Check if daemon is running and show status (no prompt)
+    if pgrep -f "upkeep_daemon.py" >/dev/null 2>&1; then
+        echo "✓ Daemon continues running (handles scheduled tasks)"
         echo ""
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            if sudo launchctl unload /Library/LaunchDaemons/com.upkeep.daemon.plist 2>/dev/null; then
-                echo "✓ Daemon stopped"
-                if [ -n "$ACTIVE_SCHEDULES" ]; then
-                    echo "⚠️  Scheduled maintenance tasks are now disabled"
-                fi
-            else
-                echo "⚠️  Failed to stop daemon"
-            fi
-        else
-            echo "✓ Daemon still running (auto-starts on reboot)"
-        fi
+        echo "💡 To stop daemon: sudo launchctl unload /Library/LaunchDaemons/com.upkeep.daemon.plist"
     fi
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     exit 0
