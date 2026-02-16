@@ -1,6 +1,6 @@
 # Current State - Upkeep
 
-**Last Updated:** 2026-02-14 13:35 PST
+**Last Updated:** 2026-02-15 20:15 PST
 **Branch:** main
 **Status:** 🎉 AUTOPILOT COMPLETE — All 47 units finished, awaiting human review
 
@@ -35,8 +35,12 @@ All autopilot work is finished. The following features are fully implemented:
 
 ## Completed Features
 
-### Historical Trends (In Progress)
+### Historical Trends ✅ (Backend COMPLETE, Frontend Deferred)
 - ✅ Design doc with full architecture
+- ✅ TrendRecorder backend (record, get_latest, get_range)
+- ✅ REST API endpoints (/api/trends/record, /api/trends/latest, /api/trends/range)
+- ⏸️ Chart.js frontend integration (deferred)
+- ⏸️ Trends tab UI (deferred)
 
 ### Duplicate Finder ✅ (COMPLETE)
 Multi-stage duplicate file scanner with full UI:
@@ -83,15 +87,17 @@ Full app removal with associated data:
 
 ---
 
-## Remaining Roadmap
+## Future Work (Deferred)
 
-### Priority Queue (Next)
-1. [ ] Historical Trends - Implement TrendRecorder (record, get_latest, get_range)
-2. [ ] Historical Trends - Implement compaction logic
-3. [ ] Historical Trends - REST API endpoints
-4. [ ] Historical Trends - Chart.js frontend integration
-5. [ ] Historical Trends - Trends tab UI
-6. [ ] Menu Bar Widget - Research implementation
+These items were intentionally deferred from the autopilot phase and require human decision:
+
+### Historical Trends Frontend
+- [ ] Chart.js frontend integration
+- [ ] Trends tab UI component
+
+### Menu Bar Widget
+- [x] Research complete (Electron tray approach documented)
+- [ ] Implementation (requires human prioritization)
 
 ---
 
