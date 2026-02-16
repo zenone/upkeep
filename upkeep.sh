@@ -3006,10 +3006,9 @@ ios_backups_report() {
     return 0
   fi
 
-  # Get total size
+  # Get total size (use pipefail-safe helper)
   local total_size
-  total_size=$(du -sh "$backups_dir" 2>/dev/null | awk '{print $1}') || total_size="unknown"
-  [[ -z "$total_size" ]] && total_size="unknown"
+  total_size=$(get_dir_size_human "$backups_dir" "unknown")
   info "Total iOS Backup Size: ${total_size}"
   echo ""
 
@@ -3032,8 +3031,7 @@ ios_backups_report() {
     [[ -d "$backup_path" ]] || continue
 
     local backup_size
-    backup_size=$(du -sh "$backup_path" 2>/dev/null | awk '{print $1}') || backup_size="?"
-    [[ -z "$backup_size" ]] && backup_size="?"
+    backup_size=$(get_dir_size_human "$backup_path" "?")
 
     # Try to get device name from Info.plist
     local device_name="Unknown Device"
@@ -3070,9 +3068,9 @@ application_support_report() {
     return 0
   fi
 
-  # Get total size
+  # Get total size (use pipefail-safe helper)
   local total_size
-  total_size=$(du -sh "$app_support" 2>/dev/null | awk '{print $1}' || echo "unknown")
+  total_size=$(get_dir_size_human "$app_support" "unknown")
   info "Total Application Support Size: ${total_size}"
   echo ""
 
@@ -3080,12 +3078,14 @@ application_support_report() {
   echo ""
 
   # List top 20 folders sorted by size
-  # Note: || true prevents pipefail from failing the function on permission errors
-  du -sh "$app_support"/*/ 2>/dev/null | sort -hr | head -20 | while read -r size folder; do
-    local folder_name
-    folder_name=$(basename "$folder")
-    printf "  %8s  %s\n" "$size" "$folder_name"
-  done || true
+  # Subshell with pipefail disabled to handle permission errors gracefully
+  (
+    set +o pipefail
+    du -sh "$app_support"/*/ 2>/dev/null | sort -hr | head -20 | while read -r size folder; do
+      folder_name=$(basename "$folder")
+      printf "  %8s  %s\n" "$size" "$folder_name"
+    done
+  ) || true
 
   echo ""
   warning "⚠️  DO NOT auto-delete Application Support folders!"
@@ -3186,9 +3186,9 @@ mail_size_report() {
     return 0
   fi
 
-  # Get total size
+  # Get total size (use pipefail-safe helper)
   local total_size
-  total_size=$(du -sh "$mail_dir" 2>/dev/null | awk '{print $1}' || echo "unknown")
+  total_size=$(get_dir_size_human "$mail_dir" "unknown")
   info "Total Mail Size: ${total_size}"
   echo ""
 
@@ -3196,12 +3196,14 @@ mail_size_report() {
   local v10_dir="${mail_dir}/V10"
   if [[ -d "$v10_dir" ]]; then
     info "Mail data breakdown:"
-    # Note: || true prevents pipefail from failing the function on permission errors
-    du -sh "$v10_dir"/*/ 2>/dev/null | sort -hr | head -10 | while read -r size folder; do
-      local folder_name
-      folder_name=$(basename "$folder")
-      printf "  %8s  %s\n" "$size" "$folder_name"
-    done || true
+    # Subshell with pipefail disabled to handle permission errors gracefully
+    (
+      set +o pipefail
+      du -sh "$v10_dir"/*/ 2>/dev/null | sort -hr | head -10 | while read -r size folder; do
+        folder_name=$(basename "$folder")
+        printf "  %8s  %s\n" "$size" "$folder_name"
+      done
+    ) || true
   fi
 
   echo ""
@@ -3228,17 +3230,15 @@ messages_attachments_report() {
     return 0
   fi
 
-  # Get total Messages size (with defensive error handling)
+  # Get total Messages size (use pipefail-safe helper)
   local total_size
-  total_size=$(du -sh "$messages_dir" 2>/dev/null | awk '{print $1}') || total_size="unknown"
-  [[ -z "$total_size" ]] && total_size="unknown"
+  total_size=$(get_dir_size_human "$messages_dir" "unknown")
   info "Total Messages Size: ${total_size}"
 
   # Get attachments size specifically
   if [[ -d "$attachments_dir" ]]; then
     local attachments_size
-    attachments_size=$(du -sh "$attachments_dir" 2>/dev/null | awk '{print $1}') || attachments_size="unknown"
-    [[ -z "$attachments_size" ]] && attachments_size="unknown"
+    attachments_size=$(get_dir_size_human "$attachments_dir" "unknown")
     info "Attachments Size: ${attachments_size}"
 
     # Count files by type (with defensive error handling)
@@ -3274,20 +3274,21 @@ cloudstorage_report() {
     return 0
   fi
 
-  # Get total size
+  # Get total size (use pipefail-safe helper)
   local total_size
-  total_size=$(du -sh "$cloud_dir" 2>/dev/null | awk '{print $1}' || echo "unknown")
+  total_size=$(get_dir_size_human "$cloud_dir" "unknown")
   info "Total Cloud Storage Size: ${total_size}"
   echo ""
 
   info "Storage by provider:"
-  # Note: || true prevents pipefail from failing the function on permission errors
-  du -sh "$cloud_dir"/*/ 2>/dev/null | sort -hr | while read -r size folder; do
-    local folder_name
-    folder_name=$(basename "$folder")
-    # Clean up provider name (e.g., "Dropbox" from "Dropbox-Personal")
-    printf "  %8s  %s\n" "$size" "$folder_name"
-  done || true
+  # Subshell with pipefail disabled to handle permission errors gracefully
+  (
+    set +o pipefail
+    du -sh "$cloud_dir"/*/ 2>/dev/null | sort -hr | while read -r size folder; do
+      folder_name=$(basename "$folder")
+      printf "  %8s  %s\n" "$size" "$folder_name"
+    done
+  ) || true
 
   echo ""
   warning "⚠️  NEVER delete from ~/Library/CloudStorage directly!"
@@ -3895,15 +3896,22 @@ get_dir_size_bytes() {
 }
 
 get_dir_size_human() {
+  # Returns human-readable size of a file or directory
+  # Safely handles pipefail by isolating the du|awk pipeline
   local path="$1"
+  local fallback="${2:-unknown}"
+  local result
   if [[ -d "$path" ]]; then
-    du -sh "$path" 2>/dev/null | awk '{print $1}' || echo "0B"
+    # Subshell disables pipefail for this pipeline to avoid false failures
+    # when du encounters permission errors but still outputs size
+    result=$(set +o pipefail; du -sh "$path" 2>/dev/null | awk '{print $1}')
+    echo "${result:-$fallback}"
   elif [[ -f "$path" ]]; then
     local bytes
-    bytes=$(stat -f%z "$path" 2>/dev/null || echo "0")
+    bytes=$(stat -f%z "$path" 2>/dev/null) || bytes=0
     numfmt_human "$bytes"
   else
-    echo "0B"
+    echo "$fallback"
   fi
 }
 
@@ -4561,8 +4569,9 @@ trash_empty() {
 
   # Check if trash has contents (defensive: handle permission errors)
   local item_count
-  item_count=$(find "$trash_dir" -mindepth 1 -maxdepth 1 2>/dev/null | wc -l | tr -d ' ') || item_count="0"
-  [[ -z "$item_count" ]] && item_count="0"
+  # Subshell disables pipefail to handle permission errors gracefully
+  item_count=$(set +o pipefail; find "$trash_dir" -mindepth 1 -maxdepth 1 2>/dev/null | wc -l | tr -d ' ')
+  item_count="${item_count:-0}"
 
   if [[ "$item_count" -eq 0 ]]; then
     info "Trash is already empty."
@@ -4570,8 +4579,7 @@ trash_empty() {
   fi
 
   local size
-  size=$(du -sh "$trash_dir" 2>/dev/null | awk '{print $1}') || size="unknown"
-  [[ -z "$size" ]] && size="unknown"
+  size=$(get_dir_size_human "$trash_dir" "unknown")
   info "Trash contains ${item_count} items (${size})"
 
   if [[ "${PREVIEW:-0}" -eq 1 ]]; then

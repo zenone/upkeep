@@ -78,9 +78,9 @@ export class DuplicateFinder {
                     <div class="control-row">
                         <label for="dup-path">Path:</label>
                         <input type="text" id="dup-path" value="~" placeholder="Directory to scan" />
-                        <button id="dup-home-btn" class="btn btn-secondary btn-sm">🏠 Home</button>
-                        <button id="dup-downloads-btn" class="btn btn-secondary btn-sm">📥 Downloads</button>
-                        <button id="dup-documents-btn" class="btn btn-secondary btn-sm">📄 Documents</button>
+                        <button id="dup-home-btn" class="quick-path-btn">🏠 Home</button>
+                        <button id="dup-downloads-btn" class="quick-path-btn">📥 Downloads</button>
+                        <button id="dup-documents-btn" class="quick-path-btn">📄 Documents</button>
                     </div>
                     <div class="control-row">
                         <label for="dup-min-size">Min size:</label>
@@ -94,7 +94,7 @@ export class DuplicateFinder {
                         <label for="dup-hidden">
                             <input type="checkbox" id="dup-hidden" /> Include hidden files
                         </label>
-                        <button id="dup-scan-btn" class="btn btn-primary">🔍 Scan for Duplicates</button>
+                        <button id="dup-scan-btn" class="primary">🔍 Scan for Duplicates</button>
                     </div>
                 </div>
                 
@@ -126,9 +126,9 @@ export class DuplicateFinder {
                     </div>
                     
                     <div class="results-actions">
-                        <button id="dup-export-csv" class="btn btn-secondary btn-sm">📊 Export CSV</button>
-                        <button id="dup-export-text" class="btn btn-secondary btn-sm">📝 Export Text</button>
-                        <button id="dup-delete-selected" class="btn btn-danger btn-sm" disabled>🗑️ Delete Selected (0)</button>
+                        <button id="dup-export-csv" class="action-btn">📊 Export CSV</button>
+                        <button id="dup-export-text" class="action-btn">📝 Export Text</button>
+                        <button id="dup-delete-selected" class="action-btn danger" disabled>🗑️ Delete Selected (0)</button>
                     </div>
                     
                     <div id="dup-groups-container" class="groups-container">
@@ -355,9 +355,9 @@ export class DuplicateFinder {
                     </div>
                 `).join("")}
                 <div class="group-actions">
-                    <button class="btn btn-sm keep-newest" data-group="${index}">Keep Newest</button>
-                    <button class="btn btn-sm keep-oldest" data-group="${index}">Keep Oldest</button>
-                    <button class="btn btn-sm select-all" data-group="${index}">Select All (except first)</button>
+                    <button class="group-btn keep-newest" data-group="${index}">Keep Newest</button>
+                    <button class="group-btn keep-oldest" data-group="${index}">Keep Oldest</button>
+                    <button class="group-btn select-all" data-group="${index}">Select All (except first)</button>
                 </div>
             </div>
         `;

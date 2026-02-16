@@ -34,7 +34,7 @@ export class AppUninstaller {
             <div class="app-uninstaller">
                 <div class="search-bar">
                     <input type="text" id="app-search" placeholder="Search installed applications..." />
-                    <button id="refresh-apps" class="btn btn-secondary">Refresh</button>
+                    <button id="refresh-apps" class="secondary">Refresh</button>
                 </div>
                 <div class="app-list-header">
                     <span>Name</span>
@@ -101,7 +101,7 @@ export class AppUninstaller {
                 </div>
                 <div class="app-size">${app.size_display}</div>
                 <div class="app-actions">
-                    <button class="btn btn-danger btn-sm" data-app="${app.name}">Uninstall</button>
+                    <button class="danger" data-app="${app.name}">Uninstall</button>
                 </div>
             `;
             
