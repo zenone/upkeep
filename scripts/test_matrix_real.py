@@ -16,15 +16,14 @@ import json
 import os
 import sys
 import time
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 # Allow running from repo root without install
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "src"))
 
 from upkeep.api.maintenance import MaintenanceAPI  # type: ignore
-
 
 OUT_DIR = REPO / "docs" / "test-matrix"
 OUT_DIR.mkdir(parents=True, exist_ok=True)

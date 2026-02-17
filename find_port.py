@@ -5,8 +5,8 @@ Standalone script for use by shell scripts.
 Returns first available port in range 8080-8089, or exits with error.
 """
 
-import sys
 import socket
+import sys
 
 
 def is_port_available(port: int, host: str = "127.0.0.1") -> bool:

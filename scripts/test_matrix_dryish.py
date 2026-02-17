@@ -19,7 +19,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MAINTAIN_SH = REPO_ROOT / "maintain.sh"
 OUT_DIR = REPO_ROOT / "docs" / "test-matrix"

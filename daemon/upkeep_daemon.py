@@ -14,13 +14,13 @@ Security:
 
 import json
 import os
+import pwd
+import subprocess
 import sys
 import time
-import subprocess
-import pwd
-from pathlib import Path
 from datetime import datetime
-from typing import Dict, Any, Optional, Tuple
+from pathlib import Path
+from typing import Any
 
 # Configuration
 QUEUE_DIR = Path("/var/local/upkeep-jobs")
@@ -100,7 +100,7 @@ def log(message: str, level: str = "INFO") -> None:
         print(log_message, file=sys.stderr)
 
 
-def get_console_user() -> Tuple[Optional[str], Optional[str]]:
+def get_console_user() -> tuple[str | None, str | None]:
     """
     Detect the user currently logged into the Mac console.
 
@@ -207,7 +207,7 @@ def cleanup_mas_zombies() -> None:
         log(f"Error cleaning up mas zombies: {e}", "WARN")
 
 
-def run_operation(operation_id: str, job_id: str = "") -> Dict[str, Any]:
+def run_operation(operation_id: str, job_id: str = "") -> dict[str, Any]:
     """
     Execute a whitelisted maintenance operation.
 
@@ -218,7 +218,7 @@ def run_operation(operation_id: str, job_id: str = "") -> Dict[str, Any]:
     Returns:
         Result dictionary with status, output, exit code
     """
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "operation_id": operation_id,
         "status": "error",
         "timestamp": datetime.now().isoformat(),
@@ -450,7 +450,7 @@ def process_job_file(job_file: Path) -> None:
 
     try:
         # Read job
-        with open(job_file, "r") as f:
+        with open(job_file) as f:
             job = json.load(f)
 
         operation_id = job.get("operation_id")
