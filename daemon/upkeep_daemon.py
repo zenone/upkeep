@@ -20,7 +20,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, Optional, Tuple
 
 # Configuration
 QUEUE_DIR = Path("/var/local/upkeep-jobs")
@@ -100,7 +100,7 @@ def log(message: str, level: str = "INFO") -> None:
         print(log_message, file=sys.stderr)
 
 
-def get_console_user() -> tuple[str | None, str | None]:
+def get_console_user() -> Tuple[Optional[str], Optional[str]]:
     """
     Detect the user currently logged into the Mac console.
 
@@ -207,7 +207,7 @@ def cleanup_mas_zombies() -> None:
         log(f"Error cleaning up mas zombies: {e}", "WARN")
 
 
-def run_operation(operation_id: str, job_id: str = "") -> dict[str, Any]:
+def run_operation(operation_id: str, job_id: str = "") -> Dict[str, Any]:
     """
     Execute a whitelisted maintenance operation.
 
@@ -218,7 +218,7 @@ def run_operation(operation_id: str, job_id: str = "") -> dict[str, Any]:
     Returns:
         Result dictionary with status, output, exit code
     """
-    result: dict[str, Any] = {
+    result: Dict[str, Any] = {
         "operation_id": operation_id,
         "status": "error",
         "timestamp": datetime.now().isoformat(),
