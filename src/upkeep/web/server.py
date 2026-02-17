@@ -645,52 +645,54 @@ async def stream_disk_usage(
     min_size_mb: int = 1,
 ) -> StreamingResponse:
     """Stream disk usage scan with progress updates."""
-    
+
     async def event_generator():
-        import os
-        import subprocess
-        
+
         try:
             # Validate inputs
             if depth < 1 or depth > 5:
                 yield f"event: error\ndata: {json.dumps({'error': 'Depth must be between 1 and 5'})}\n\n"
                 return
-            
+
             scan_path = Path(path).expanduser()
             if not scan_path.exists():
                 yield f"event: error\ndata: {json.dumps({'error': f'Path does not exist: {path}'})}\n\n"
                 return
-            
+
             if not scan_path.is_dir():
                 yield f"event: error\ndata: {json.dumps({'error': f'Path is not a directory: {path}'})}\n\n"
                 return
-            
+
             min_size_kb = min_size_mb * 1024
             item_count = 0
             current_dir = str(scan_path)
-            
+
             # Use du with streaming output
             process = await asyncio.create_subprocess_exec(
-                "du", "-k", "-d", str(depth), str(scan_path),
+                "du",
+                "-k",
+                "-d",
+                str(depth),
+                str(scan_path),
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-            
+
             # Stream progress while reading
             lines = []
             last_update = time.time()
-            
+
             async for line in process.stdout:
                 line_str = line.decode().strip()
                 if line_str:
                     lines.append(line_str)
                     item_count += 1
-                    
+
                     # Parse the current directory from du output
-                    parts = line_str.split('\t', 1)
+                    parts = line_str.split("\t", 1)
                     if len(parts) == 2:
                         current_dir = parts[1]
-                    
+
                     # Send progress every 100ms or every 10 items
                     now = time.time()
                     if now - last_update >= 0.1 or item_count % 10 == 0:
@@ -701,15 +703,15 @@ async def stream_disk_usage(
                         yield f"event: progress\ndata: {json.dumps(progress_data)}\n\n"
                         last_update = now
                         await asyncio.sleep(0)  # Allow other tasks to run
-            
+
             # Wait for process to complete
             await process.wait()
-            
+
             # Build the final result using the existing scanner logic
             scanner = DiskScanner(max_depth=depth, min_size_kb=min_size_kb)
             output = "\n".join(lines)
             entries = scanner._parse_du_output(output)
-            
+
             if entries:
                 tree = scanner._build_tree(entries, str(scan_path))
                 total_size = entries[-1][1] if entries else 0
@@ -718,23 +720,23 @@ async def stream_disk_usage(
                 tree["path"] = str(scan_path)
                 tree["itemCount"] = item_count
                 scanner._add_percentages(tree, total_size)
-                
+
                 yield f"event: complete\ndata: {json.dumps(tree)}\n\n"
             else:
                 yield f"event: error\ndata: {json.dumps({'error': 'No data returned from scan'})}\n\n"
-                
+
         except asyncio.CancelledError:
             yield f"event: cancelled\ndata: {json.dumps({'message': 'Scan cancelled'})}\n\n"
         except Exception as e:
             yield f"event: error\ndata: {json.dumps({'error': str(e)})}\n\n"
-    
+
     return StreamingResponse(
         event_generator(),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
-        }
+        },
     )
 
 
