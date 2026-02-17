@@ -31,6 +31,9 @@ export class DiskVisualizer {
     private currentPath: string = '/';
     private pathHistory: string[] = [];
     private isLoading: boolean = false;
+    private abortController: AbortController | null = null;
+    private scanStartTime: number = 0;
+    private elapsedTimerInterval: number | null = null;
 
     constructor(containerId: string) {
         const el = document.getElementById(containerId);
@@ -250,8 +253,51 @@ export class DiskVisualizer {
                     animation: spin 0.8s linear infinite;
                 }
                 
+                .disk-viz-loading .spinner-pulse {
+                    width: 60px;
+                    height: 60px;
+                    border: 4px solid var(--border-color);
+                    border-top-color: var(--accent-color);
+                    border-radius: 50%;
+                    animation: spin 0.8s linear infinite, pulse 2s ease-in-out infinite;
+                    box-shadow: 0 0 0 0 rgba(var(--accent-color-rgb, 0, 122, 255), 0.4);
+                }
+                
                 @keyframes spin {
                     to { transform: rotate(360deg); }
+                }
+                
+                @keyframes pulse {
+                    0%, 100% { 
+                        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+                        transform: rotate(0deg) scale(1);
+                    }
+                    50% { 
+                        box-shadow: 0 0 0 15px rgba(59, 130, 246, 0);
+                        transform: rotate(180deg) scale(1.05);
+                    }
+                }
+                
+                .cancel-scan-btn {
+                    margin-top: 1rem;
+                    padding: 0.5rem 1.25rem;
+                    background: var(--bg-secondary);
+                    color: var(--text-secondary);
+                    border: 1px solid var(--border-color);
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 0.875rem;
+                    transition: all 0.2s;
+                }
+                
+                .cancel-scan-btn:hover {
+                    background: #fee2e2;
+                    color: #dc2626;
+                    border-color: #fca5a5;
+                }
+                
+                .scan-elapsed {
+                    font-variant-numeric: tabular-nums;
                 }
                 
                 .disk-viz-legend {
@@ -353,10 +399,127 @@ export class DiskVisualizer {
         
         this.currentPath = path;
         this.isLoading = true;
+        
         this.showLoading();
         
+        // Use Server-Sent Events for streaming progress
+        const url = `/api/disk/usage/stream?path=${encodeURIComponent(path)}&depth=${depth}&min_size_mb=${minSizeMb}`;
+        
         try {
-            const response = await fetch(`/api/disk/usage?path=${encodeURIComponent(path)}&depth=${depth}&min_size_mb=${minSizeMb}`);
+            const eventSource = new EventSource(url);
+            this.abortController = new AbortController();
+            
+            // Store reference for cancellation
+            const cleanup = () => {
+                eventSource.close();
+                this.isLoading = false;
+                this.abortController = null;
+                this.stopElapsedTimer();
+            };
+            
+            // Handle abort
+            this.abortController.signal.addEventListener('abort', () => {
+                cleanup();
+            });
+            
+            eventSource.addEventListener('progress', (event) => {
+                const data = JSON.parse(event.data);
+                this.updateProgress(data.currentDir, data.itemCount);
+            });
+            
+            eventSource.addEventListener('complete', (event) => {
+                const result = JSON.parse(event.data);
+                const elapsedSecs = ((Date.now() - this.scanStartTime) / 1000).toFixed(1);
+                const itemCount = result.itemCount || this.countNodes(result);
+                
+                this.renderTreemap(result as DiskNode);
+                this.updateBreadcrumbs();
+                
+                if (result.warnings && result.warnings.length > 0) {
+                    showToast(`Scan complete: ${itemCount} items in ${elapsedSecs}s (${result.warnings.length} warnings)`, 'warning');
+                } else {
+                    showToast(`Scan complete: ${itemCount} items, ${result.totalSizeFormatted || result.sizeFormatted} in ${elapsedSecs}s`, 'success');
+                }
+                
+                cleanup();
+            });
+            
+            eventSource.addEventListener('error', (event) => {
+                // Check if it's a real error or just stream end
+                if (eventSource.readyState === EventSource.CLOSED) {
+                    return; // Normal close
+                }
+                
+                // Try to parse error data
+                try {
+                    const data = JSON.parse((event as MessageEvent).data);
+                    this.showError(data.error || 'Scan failed');
+                } catch {
+                    this.showError('Connection lost during scan');
+                }
+                cleanup();
+            });
+            
+            eventSource.addEventListener('cancelled', () => {
+                this.showCancelled();
+                cleanup();
+            });
+            
+            // Handle connection error
+            eventSource.onerror = () => {
+                if (this.isLoading) {
+                    // Fallback to non-streaming endpoint
+                    eventSource.close();
+                    this.scanFallback(path, depth, minSizeMb);
+                }
+            };
+            
+        } catch (error) {
+            // Fallback to non-streaming endpoint
+            this.scanFallback(path, depth, minSizeMb);
+        }
+    }
+    
+    private updateProgress(currentDir: string, itemCount: number) {
+        const pathEl = this.container.querySelector('.scan-path');
+        const statusEl = this.container.querySelector('.scan-status');
+        
+        if (pathEl) {
+            // Truncate long paths
+            const maxLen = 50;
+            const displayPath = currentDir.length > maxLen 
+                ? '...' + currentDir.slice(-maxLen + 3) 
+                : currentDir;
+            pathEl.textContent = displayPath;
+            pathEl.setAttribute('title', currentDir);
+        }
+        
+        if (statusEl) {
+            statusEl.textContent = `Scanning... ${itemCount.toLocaleString()} items found`;
+        }
+    }
+    
+    private showCancelled() {
+        const chartEl = this.container.querySelector('#disk-viz-chart') as HTMLElement;
+        chartEl.innerHTML = `
+            <div class="disk-viz-placeholder">
+                <div class="placeholder-icon">🚫</div>
+                <h3>Scan Cancelled</h3>
+                <p>The disk scan was cancelled.</p>
+                <p class="hint">Click "Scan" to try again.</p>
+            </div>
+        `;
+    }
+    
+    private async scanFallback(path: string, depth: number, minSizeMb: number) {
+        // Fallback to non-streaming endpoint
+        this.abortController = new AbortController();
+        
+        try {
+            const response = await fetch(
+                `/api/disk/usage?path=${encodeURIComponent(path)}&depth=${depth}&min_size_mb=${minSizeMb}`,
+                { signal: this.abortController.signal }
+            );
             
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ detail: 'Request failed' }));
@@ -365,40 +528,105 @@ export class DiskVisualizer {
             }
             
             const result = await response.json();
+            const elapsedSecs = ((Date.now() - this.scanStartTime) / 1000).toFixed(1);
             
-            // Backend returns tree directly (not wrapped in { success, data })
-            // Check if it's an error response or valid tree data
             if (result.error && !result.name) {
                 this.showError(result.error);
             } else if (result.name) {
-                // Valid tree data - render it
+                const itemCount = this.countNodes(result);
                 this.renderTreemap(result as DiskNode);
                 this.updateBreadcrumbs();
-                
-                if (result.warnings && result.warnings.length > 0) {
-                    showToast(`Scan complete with ${result.warnings.length} permission warning(s)`, 'warning');
-                } else {
-                    showToast(`Scan complete: ${result.totalSizeFormatted || 'done'}`, 'success');
-                }
+                showToast(`Scan complete: ${itemCount} items, ${result.totalSizeFormatted || result.sizeFormatted} in ${elapsedSecs}s`, 'success');
             } else {
                 this.showError('Invalid response from server');
             }
         } catch (error) {
+            if (error instanceof Error && error.name === 'AbortError') {
+                return;
+            }
             this.showError(`Failed to scan: ${error}`);
         } finally {
             this.isLoading = false;
+            this.abortController = null;
+            this.stopElapsedTimer();
         }
+    }
+    
+    private countNodes(node: DiskNode): number {
+        let count = 1;
+        if (node.children) {
+            for (const child of node.children) {
+                count += this.countNodes(child);
+            }
+        }
+        return count;
     }
 
     private showLoading() {
         const chartEl = this.container.querySelector('#disk-viz-chart') as HTMLElement;
+        this.scanStartTime = Date.now();
+        
         chartEl.innerHTML = `
             <div class="disk-viz-loading">
-                <div class="spinner"></div>
-                <div>Scanning disk structure...</div>
-                <div style="font-size: 0.8rem; color: var(--text-secondary);">This may take a moment for large directories</div>
+                <div class="spinner-pulse"></div>
+                <div class="scan-status">Scanning disk structure...</div>
+                <div class="scan-path" style="font-size: 0.85rem; color: var(--accent-color); font-family: monospace; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.currentPath}</div>
+                <div class="scan-elapsed" style="font-size: 0.9rem; color: var(--text-primary); margin-top: 0.5rem;">
+                    <span class="elapsed-icon">⏱️</span> <span id="elapsed-time">0s</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">This may take a moment for large directories</div>
+                <button id="cancel-scan-btn" class="cancel-scan-btn">✕ Cancel</button>
             </div>
         `;
+        
+        // Start elapsed timer
+        this.startElapsedTimer();
+        
+        // Bind cancel button
+        const cancelBtn = chartEl.querySelector('#cancel-scan-btn');
+        cancelBtn?.addEventListener('click', () => this.cancelScan());
+    }
+    
+    private startElapsedTimer() {
+        // Clear any existing timer
+        if (this.elapsedTimerInterval) {
+            clearInterval(this.elapsedTimerInterval);
+        }
+        
+        const updateElapsed = () => {
+            const elapsedEl = this.container.querySelector('#elapsed-time');
+            if (elapsedEl && this.isLoading) {
+                const elapsed = Math.floor((Date.now() - this.scanStartTime) / 1000);
+                if (elapsed < 60) {
+                    elapsedEl.textContent = `${elapsed}s`;
+                } else {
+                    const mins = Math.floor(elapsed / 60);
+                    const secs = elapsed % 60;
+                    elapsedEl.textContent = `${mins}m ${secs}s`;
+                }
+            }
+        };
+        
+        updateElapsed();
+        this.elapsedTimerInterval = window.setInterval(updateElapsed, 1000);
+    }
+    
+    private stopElapsedTimer() {
+        if (this.elapsedTimerInterval) {
+            clearInterval(this.elapsedTimerInterval);
+            this.elapsedTimerInterval = null;
+        }
+    }
+    
+    private cancelScan() {
+        if (this.abortController) {
+            this.abortController.abort();
+            this.abortController = null;
+        }
+        this.isLoading = false;
+        this.stopElapsedTimer();
+        this.showCancelled();
+        showToast('Scan cancelled', 'info');
     }
 
     private showError(message: string) {
