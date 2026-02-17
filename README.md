@@ -130,6 +130,89 @@ This will:
 
 ---
 
+## 🛠️ Using Upkeep (After Installation)
+
+### Available Commands
+
+After installing via Homebrew, you have three commands:
+
+| Command | What It Does |
+|---------|--------------|
+| `upkeep-web` | Launch the web dashboard at http://localhost:8080 |
+| `upkeep` | Python CLI with rich terminal output and colors |
+| `upkeep-sh` | Direct bash script (works without Python) |
+
+### Quick Reference
+
+```bash
+# Launch web UI (recommended for most users)
+upkeep-web
+
+# Quick health check (terminal)
+upkeep-sh --status
+
+# Run safe maintenance operations
+upkeep-sh --all-safe
+
+# See all available options
+upkeep-sh --help
+
+# Analyze disk usage in a directory
+upkeep analyze ~/Documents
+```
+
+### Web Dashboard
+
+The web dashboard is the easiest way to use Upkeep:
+
+```bash
+upkeep-web
+```
+
+- Opens automatically in your browser at **http://localhost:8080**
+- Runs in the foreground — press `Ctrl+C` to stop
+- Use a different port: `upkeep-web --port 9000`
+
+**To run in the background:**
+```bash
+upkeep-web &
+# Or use nohup to keep it running after closing terminal:
+nohup upkeep-web > /dev/null 2>&1 &
+```
+
+### Scheduled Maintenance (Daemon)
+
+Want Upkeep to run maintenance automatically on a schedule? Install the background daemon:
+
+```bash
+# Install the daemon (requires sudo)
+sudo "$(brew --prefix upkeep)/libexec/install-daemon.sh"
+```
+
+**What the daemon does:**
+- Runs as a launchd service with root privileges
+- Executes maintenance operations on your configured schedule
+- Uses a secure job queue (no passwords stored)
+
+**Daemon management:**
+```bash
+# Check if daemon is running
+sudo launchctl list | grep upkeep
+
+# View daemon logs
+tail -f /var/log/upkeep-daemon.log
+
+# Stop the daemon
+sudo launchctl unload /Library/LaunchDaemons/com.upkeep.daemon.plist
+
+# Start the daemon
+sudo launchctl load /Library/LaunchDaemons/com.upkeep.daemon.plist
+```
+
+**Configure schedules** via the web UI's **Schedule** tab — choose from 7 pre-configured templates or create your own.
+
+---
+
 ## 📸 Screenshots
 
 ### Dashboard
