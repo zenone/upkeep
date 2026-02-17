@@ -30,8 +30,6 @@ npm-debug.log*
 *.tsbuildinfo
 
 # TypeScript build output (generated from src)
-src/upkeep/web/static/app.js
-src/upkeep/web/static/app.js.map
 
 # -----------------------------------------------------------------------------
 # Testing & Coverage
