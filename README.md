@@ -5,8 +5,8 @@
 [![macOS](https://img.shields.io/badge/macOS-Sequoia%20%7C%20Sonoma%20%7C%20Ventura-blue.svg)](https://www.apple.com/macos/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-95%2B%20passing-brightgreen.svg)](tests/)
-[![Operations](https://img.shields.io/badge/operations-53-blue.svg)](docs/ROADMAP.md)
+[![Tests](https://img.shields.io/badge/tests-62%20passing-brightgreen.svg)](tests/)
+[![Operations](https://img.shields.io/badge/operations-44-blue.svg)](docs/ROADMAP.md)
 
 ---
 
@@ -62,9 +62,29 @@ Want to:
 
 ## 🚀 Quick Start
 
-### Option 1: Web Dashboard (Recommended)
+### Option 1: Homebrew (Recommended)
 
-The easiest way to get started—a modern web interface that runs locally:
+The easiest way to install—one command and you're done:
+
+```bash
+brew install zenone/tap/upkeep
+```
+
+Then launch the web dashboard:
+
+```bash
+upkeep-web
+```
+
+Opens **http://localhost:8080** in your browser. You'll see your Mac's health, run maintenance with one click, and actually understand what's happening.
+
+**Other commands:**
+- `upkeep` – Python CLI with rich output
+- `upkeep-sh` – Direct bash script access
+
+### Option 2: Web Dashboard (From Source)
+
+If you prefer to clone the repo:
 
 ```bash
 # Clone and enter
@@ -80,7 +100,7 @@ pip install -e .
 ./run-web.sh
 ```
 
-Opens **http://localhost:8080** in your browser. You'll see your Mac's health, run maintenance with one click, and actually understand what's happening.
+Opens **http://localhost:8080** in your browser.
 
 ### Option 2: Quick Status Check (One Command)
 
@@ -113,27 +133,43 @@ This will:
 ## 📸 Screenshots
 
 ### Dashboard
-Real-time system overview. CPU, memory, disk, health score, top processes—all updating live.
+Real-time system overview with health score, memory/disk stats, maintenance status, and top resource consumers.
 
-![Dashboard](docs/screenshots/dashboard-v3.png)
+![Dashboard](docs/screenshots/dashboard.jpg)
+
+**Dark mode included:**
+
+![Dashboard Dark](docs/screenshots/dashboard-dark.jpg)
 
 ### Maintenance Operations
-53 operations, each explaining **why** you'd run it and **what to expect**. No guesswork, no scary warnings.
+44 operations organized by category, each explaining **why** you'd run it and **what to expect**. One-click recommended maintenance or pick individual operations.
 
-### Roadmap
-Operator-first backlog: `docs/ROADMAP.md`
-
-![Operations](docs/screenshots/maintenance.png)
+![Operations](docs/screenshots/maintenance.jpg)
 
 ### Storage Analysis
-Where'd all your disk space go? Find out in seconds. Delete or trash right from the UI.
+Where'd all your disk space go? Analyze any directory, see largest files, and delete directly from the UI.
 
-![Storage](docs/screenshots/storage.png)
+![Storage](docs/screenshots/storage.jpg)
+
+### App Uninstaller
+Find and remove applications with ALL their associated data (caches, preferences, containers). Shows total size including app data.
+
+![Uninstaller](docs/screenshots/uninstaller.jpg)
+
+### Disk Visualization
+Interactive treemap showing disk usage. Click to drill down, color-coded by category.
+
+![Disk Viz](docs/screenshots/disk-viz.jpg)
+
+### Duplicate Finder
+Find and remove duplicate files to reclaim disk space. Files are safely moved to Trash.
+
+![Duplicates](docs/screenshots/duplicates.jpg)
 
 ### Scheduling
-Set it and forget it. Daily, weekly, or monthly maintenance—runs automatically via launchd.
+7 pre-configured templates: Essential Weekly, Light Daily, Deep Monthly, Software Updates, Developer Cleanup, Security Focus, and Storage Recovery. All managed via macOS launchd.
 
-![Scheduling](docs/screenshots/schedule.png)
+![Scheduling](docs/screenshots/schedule.jpg)
 
 ---
 
@@ -141,18 +177,23 @@ Set it and forget it. Daily, weekly, or monthly maintenance—runs automatically
 
 ### 1. 🌐 Web Dashboard (Recommended)
 
-A modern, visual interface for Mac maintenance:
+A modern, visual interface for Mac maintenance across **7 tabs**:
 
-- **System Overview**: CPU, memory, disk usage, health score at a glance
-- **53 Maintenance Operations**: Each explains *why* you'd run it and *what to expect*
-- **Quick Start Wizard**: 6 presets—Quick Clean, Weekly, Full Checkup, Developer, Security, or Custom
-- **Progress Tracking**: Live output, elapsed time, ETA based on your history
-- **Skip & Cancel**: Changed your mind? Stop or skip mid-operation
-- **Storage Analyzer**: Visual breakdown of what's eating your disk
-- **7 Schedule Templates**: Essential Weekly, Daily Cleanup, Deep Monthly, Software Updates, Developer, Security Focus, Storage Recovery
-- **Doctor/Preflight**: Catches missing dependencies before you waste time
+- **Dashboard**: Health score, system info, maintenance status, top resource consumers
+- **Storage**: Analyze any directory, see largest files, delete/trash directly
+- **Maintenance**: 44 operations organized by category with one-click recommended maintenance
+- **Uninstaller**: Remove apps with ALL associated data (caches, preferences, containers)
+- **Disk Viz**: Interactive treemap visualization of disk usage
+- **Duplicates**: Find and remove duplicate files to reclaim space
+- **Schedule**: 7 pre-configured templates with launchd integration
 
-**Launch it:** `./run-web.sh` → Opens **http://localhost:8080** automatically
+**Features:**
+- 🌙 **Dark mode** – 3-state toggle (system/light/dark)
+- ⚡ **Auto-retry** – Exponential backoff handles transient API failures
+- 📊 **Live progress** – Real-time output with elapsed time and ETA
+- ⌨️ **Keyboard shortcuts** – Navigate faster with hotkeys
+
+**Launch it:** `upkeep-web` (Homebrew) or `./run-web.sh` (source) → Opens **http://localhost:8080**
 
 ### 2. 🔍 Smart Storage Analysis
 
@@ -695,33 +736,39 @@ MIT License – see [LICENSE](LICENSE) file for details.
 
 ## 🚦 Status & Roadmap
 
-**Current Version:** 3.1.0
+**Current Version:** 3.2.2
 
-**What's New in 3.1:**
-- 🗑️ **App Uninstaller** – Remove apps with ALL associated data (App Support, Caches, Preferences, Containers)
-- 📥 **Export Logs** – Download maintenance logs for troubleshooting or audit
-- 🖥️ **Login Items Manager** – View, enable, and disable startup items
-- 📱 **App Report** – List installed apps with sizes and data footprints
-- 🔋 **Battery Health** – Check battery condition and cycle count (laptops)
+**What's New in 3.2:**
+- 🍺 **Homebrew distribution** – `brew install zenone/tap/upkeep`
+- 📊 **Disk Visualization** – Interactive treemap showing disk usage by category
+- 🔍 **Duplicate Finder** – Find and remove duplicate files to reclaim space
+- 🌙 **Dark mode** – Full dark mode support with 3-state toggle (system/light/dark)
+- ⚡ **Auto-retry** – Dashboard API calls use exponential backoff for reliability
+- 🎨 **UI harmonization** – Consistent styling across all 7 tabs
+- 🔧 **44 operations** – All passing with improved pipefail handling
+
+**What's in 3.1:**
+- 🗑️ **App Uninstaller** – Remove apps with ALL associated data
+- 📥 **Export Logs** – Download maintenance logs
+- 🖥️ **Login Items Manager** – View and manage startup items
+- 📱 **App Report** – List installed apps with sizes
+- 🔋 **Battery Health** – Check battery condition (laptops)
 - 💬 **Electron App Cache** – Clean Slack, Discord, VS Code caches
 - 📸 **Screenshot Folder Report** – Find forgotten screenshots
 - 📁 **Large Files Report** – Locate space hogs over 500MB
 - 🎯 **Category Filtering** – Filter operations by category
-- 📊 **Before/After Comparison** – See space recovered after operations
 - ⌨️ **Keyboard Shortcuts** – Navigate faster with hotkeys
 - 🎨 **Health Gauge** – Visual circular gauge showing system health score
-- 📂 **Smart Categories** – Collapsible operation categories with smart defaults
 
 **What's in 3.0:**
-- 🌐 **Web Dashboard** – Modern browser-based interface with live progress tracking
-- ✨ **Quick Start Wizard** – 6 presets for different maintenance scenarios (Developer, Security, etc.)
-- ⏱️ **Smart Scheduling** – 7 schedule templates with launchd integration
-- 💻 **Developer Tools Cache** – Clear npm, pip, Go, Cargo, Composer caches
-- 📊 **Operation History** – Track what ran, when, and how long it took
-- 🩺 **Doctor/Preflight** – Checks dependencies before running operations
-- ⏳ **ETA & Progress** – Know how long operations will take based on your history
-- 🔄 **Live Output** – Watch what's happening in real-time
-- ✅ 95+ automated tests across 17 test suites
+- 🌐 **Web Dashboard** – Modern browser-based interface
+- ✨ **Quick Start Wizard** – 6 presets for different scenarios
+- ⏱️ **Smart Scheduling** – 7 schedule templates with launchd
+- 💻 **Developer Tools Cache** – Clear npm, pip, Go, Cargo caches
+- 📊 **Operation History** – Track what ran and how long
+- 🩺 **Doctor/Preflight** – Checks dependencies before running
+- 🔄 **Live Output** – Watch operations in real-time
+- ✅ 62 automated tests passing
 
 ---
 
