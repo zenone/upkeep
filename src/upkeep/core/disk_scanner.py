@@ -149,6 +149,7 @@ class DiskScanner:
 
             node: dict[str, Any] = {
                 "name": name,
+                "path": path,  # Full path for drill-down navigation
                 "value": size,
                 "sizeFormatted": self.format_size(size),
             }
