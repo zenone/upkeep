@@ -629,8 +629,8 @@
       },
       "note": "To delete old backups safely, use Finder → iPhone → Manage Backups, or System Settings → General → iPhone & iPad. Do NOT manually delete backup folders."
     },
-    "application-support-report": {
-      "id": "application-support-report",
+    "app-support-report": {
+      "id": "app-support-report",
       "name": "Application Support Report",
       "category": "Reports",
       "safety": "safe",

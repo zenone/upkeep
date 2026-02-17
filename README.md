@@ -209,6 +209,13 @@ sudo launchctl unload /Library/LaunchDaemons/com.upkeep.daemon.plist
 sudo launchctl load /Library/LaunchDaemons/com.upkeep.daemon.plist
 ```
 
+**After upgrading Upkeep:**
+```bash
+# Re-run the daemon installer to update daemon files
+sudo "$(brew --prefix upkeep)/libexec/install-daemon.sh"
+```
+The daemon is installed separately from the main app. After `brew upgrade upkeep`, re-run the installer to get new operations and bug fixes.
+
 **Configure schedules** via the web UI's **Schedule** tab — choose from 7 pre-configured templates or create your own.
 
 ---
