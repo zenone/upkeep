@@ -28,14 +28,22 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Check if running from Homebrew installation (libexec/) or source
 if [ -d "$SCRIPT_DIR/src/daemon" ]; then
-    # Homebrew layout: libexec/src/daemon/
-    SRC_DIR="$SCRIPT_DIR/src"
+    # Homebrew layout: daemon in libexec/src/daemon/, upkeep.sh in libexec/
+    DAEMON_DIR="$SCRIPT_DIR/src/daemon"
+    # upkeep.sh is installed directly to libexec/ by Homebrew formula
+    if [ -f "$SCRIPT_DIR/upkeep.sh" ]; then
+        UPKEEP_SH="$SCRIPT_DIR/upkeep.sh"
+    else
+        UPKEEP_SH="$SCRIPT_DIR/src/upkeep.sh"
+    fi
 elif [ -d "$SCRIPT_DIR/daemon" ]; then
     # Source layout: ./daemon/
-    SRC_DIR="$SCRIPT_DIR"
+    DAEMON_DIR="$SCRIPT_DIR/daemon"
+    UPKEEP_SH="$SCRIPT_DIR/upkeep.sh"
 elif [ -d "./daemon" ]; then
     # Running from project root
-    SRC_DIR="."
+    DAEMON_DIR="./daemon"
+    UPKEEP_SH="./upkeep.sh"
 else
     echo "❌ Error: Cannot find source files"
     echo "Run this script from the project root or via Homebrew:"
@@ -46,11 +54,11 @@ fi
 # Directories
 LIB_DIR="/usr/local/lib/upkeep"
 QUEUE_DIR="/var/local/upkeep-jobs"
-PLIST_SRC="$SRC_DIR/daemon/com.upkeep.daemon.plist"
+PLIST_SRC="$DAEMON_DIR/com.upkeep.daemon.plist"
 PLIST_DST="/Library/LaunchDaemons/com.upkeep.daemon.plist"
-DAEMON_SRC="$SRC_DIR/daemon/upkeep_daemon.py"
+DAEMON_SRC="$DAEMON_DIR/upkeep_daemon.py"
 DAEMON_DST="$LIB_DIR/upkeep_daemon.py"
-MAINTAIN_SH_SRC="$SRC_DIR/upkeep.sh"
+MAINTAIN_SH_SRC="$UPKEEP_SH"
 MAINTAIN_SH_DST="$LIB_DIR/upkeep.sh"
 
 # Check source files exist
