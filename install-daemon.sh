@@ -23,20 +23,40 @@ echo "  • Executes maintenance operations securely"
 echo "  • Uses job queue for communication (no passwords needed)"
 echo ""
 
+# Determine script location and source directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Check if running from Homebrew installation (libexec/) or source
+if [ -d "$SCRIPT_DIR/src/daemon" ]; then
+    # Homebrew layout: libexec/src/daemon/
+    SRC_DIR="$SCRIPT_DIR/src"
+elif [ -d "$SCRIPT_DIR/daemon" ]; then
+    # Source layout: ./daemon/
+    SRC_DIR="$SCRIPT_DIR"
+elif [ -d "./daemon" ]; then
+    # Running from project root
+    SRC_DIR="."
+else
+    echo "❌ Error: Cannot find source files"
+    echo "Run this script from the project root or via Homebrew:"
+    echo "  sudo \$(brew --prefix upkeep)/libexec/install-daemon.sh"
+    exit 1
+fi
+
 # Directories
 LIB_DIR="/usr/local/lib/upkeep"
 QUEUE_DIR="/var/local/upkeep-jobs"
-PLIST_SRC="./daemon/com.upkeep.daemon.plist"
+PLIST_SRC="$SRC_DIR/daemon/com.upkeep.daemon.plist"
 PLIST_DST="/Library/LaunchDaemons/com.upkeep.daemon.plist"
-DAEMON_SRC="./daemon/upkeep_daemon.py"
+DAEMON_SRC="$SRC_DIR/daemon/upkeep_daemon.py"
 DAEMON_DST="$LIB_DIR/upkeep_daemon.py"
-MAINTAIN_SH_SRC="./upkeep.sh"
+MAINTAIN_SH_SRC="$SRC_DIR/upkeep.sh"
 MAINTAIN_SH_DST="$LIB_DIR/upkeep.sh"
 
 # Check source files exist
 if [ ! -f "$DAEMON_SRC" ]; then
     echo "❌ Error: $DAEMON_SRC not found"
-    echo "Run this script from the project root directory"
+    echo "Source directory: $SRC_DIR"
     exit 1
 fi
 
