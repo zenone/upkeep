@@ -637,6 +637,35 @@
             margin-top: 1rem;
         }
 
+        .error-retry {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            gap: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .error-retry .error-message {
+            font-size: 0.9rem;
+        }
+
+        .error-retry .retry-btn {
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: background 0.2s;
+        }
+
+        .error-retry .retry-btn:hover {
+            background: var(--primary-hover);
+        }
+
         .success {
             padding: 1rem;
             background: var(--success-bg);

@@ -5,6 +5,7 @@
 import type { StorageAnalyzeResponse } from '../types';
 import { showToast, showProgressOverlay, updateProgressOverlay, hideProgressOverlay } from './ui';
 import { escapeHtml } from './utils';
+import { fetchWithRetry } from './dashboard';
 
 // ============================================================================
 // Global State
@@ -33,21 +34,8 @@ export async function analyzeStorage(): Promise<void> {
   updateBreadcrumbs(path);
 
   try {
-    const response = await fetch(`/api/storage/analyze?path=${encodeURIComponent(path)}`);
-
-    if (!response.ok) {
-      let errorMsg = `Server error: ${response.status}`;
-      try {
-        const errorData = await response.json();
-        errorMsg = errorData.detail || errorMsg;
-      } catch {
-        // Response is not JSON
-      }
-      analyzeBtn.textContent = 'Analyze';
-      resultsDiv.innerHTML = `<div class="error">${errorMsg}</div>`;
-      showToast(errorMsg, 'error');
-      return;
-    }
+    const response = await fetchWithRetry(`/api/storage/analyze?path=${encodeURIComponent(path)}`);
+    // fetchWithRetry already handles HTTP errors by throwing
 
     const data: StorageAnalyzeResponse = await response.json();
     analyzeBtn.textContent = 'Analyze';

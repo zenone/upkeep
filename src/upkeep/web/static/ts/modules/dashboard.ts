@@ -32,11 +32,11 @@ export let currentUsername: string | null = null;
 /**
  * Fetch with automatic retry on failure
  * @param url - URL to fetch
- * @param maxRetries - Maximum number of retry attempts (default: 3)
- * @param delayMs - Initial delay between retries in ms (default: 1000)
+ * @param maxRetries - Maximum number of retry attempts (default: 4)
+ * @param delayMs - Initial delay between retries in ms (default: 500)
  * @returns Promise with the fetch response
  */
-async function fetchWithRetry(url: string, maxRetries = 3, delayMs = 1000): Promise<Response> {
+export async function fetchWithRetry(url: string, maxRetries = 4, delayMs = 500): Promise<Response> {
   let lastError: Error | null = null;
   
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -49,7 +49,7 @@ async function fetchWithRetry(url: string, maxRetries = 3, delayMs = 1000): Prom
     } catch (error) {
       lastError = error as Error;
       if (attempt < maxRetries) {
-        // Exponential backoff: 1s, 2s, 4s
+        // Exponential backoff: 500ms, 1s, 2s, 4s (total ~7.5s of retries)
         await new Promise(resolve => setTimeout(resolve, delayMs * Math.pow(2, attempt)));
       }
     }
@@ -248,8 +248,8 @@ export async function loadSystemInfo(): Promise<void> {
     previousMetrics.memory = data.memory.percent;
     previousMetrics.disk = data.disk.percent;
 
-    // Fetch full sparkline data and draw
-    fetch('/api/system/sparkline')
+    // Fetch full sparkline data and draw (async, non-blocking)
+    fetchWithRetry('/api/system/sparkline')
       .then(res => res.json())
       .then(sparkData => {
         console.log('Sparkline data received:', sparkData);
@@ -261,7 +261,7 @@ export async function loadSystemInfo(): Promise<void> {
           console.warn('Sparkline data insufficient:', sparkData);
         }
       })
-      .catch(err => console.error('Error loading sparkline data:', err));
+      .catch(err => console.warn('Sparkline data unavailable:', err.message));
 
     // System info
     const systemInfoDiv = document.getElementById('system-info');
@@ -300,7 +300,14 @@ export async function loadSystemInfo(): Promise<void> {
   } catch (error) {
     const metricsDiv = document.getElementById('system-metrics');
     if (metricsDiv) {
-      metricsDiv.innerHTML = `<div class="error">Error loading system info: ${(error as Error).message}</div>`;
+      metricsDiv.innerHTML = `
+        <div class="error-retry">
+          <div class="error-message">Unable to load system info</div>
+          <button class="retry-btn" onclick="window.loadSystemInfo()">
+            🔄 Retry
+          </button>
+        </div>
+      `;
     }
   }
 }
@@ -456,7 +463,14 @@ export async function loadHealthScore(): Promise<void> {
       ${issuesHTML}
     `;
   } catch (error) {
-    healthDiv.innerHTML = `<div class="error">Error loading health score: ${(error as Error).message}</div>`;
+    healthDiv.innerHTML = `
+      <div class="error-retry">
+        <div class="error-message">Unable to load health score</div>
+        <button class="retry-btn" onclick="window.loadHealthScore()">
+          🔄 Retry
+        </button>
+      </div>
+    `;
   }
 }
 
@@ -501,7 +515,14 @@ export async function loadTopProcesses(): Promise<void> {
 
     processesDiv.innerHTML = html;
   } catch (error) {
-    processesDiv.innerHTML = `<div class="error">Error loading processes: ${(error as Error).message}</div>`;
+    processesDiv.innerHTML = `
+      <div class="error-retry">
+        <div class="error-message">Unable to load processes</div>
+        <button class="retry-btn" onclick="window.loadTopProcesses()">
+          🔄 Retry
+        </button>
+      </div>
+    `;
   }
 }
 
@@ -513,7 +534,7 @@ export async function loadLastMaintenanceRun(diskWarning: string = '', memoryWar
   if (!statusDiv) return;
 
   try {
-    const response = await fetch('/api/maintenance/last-run');
+    const response = await fetchWithRetry('/api/maintenance/last-run');
     const data = await response.json();
 
     let lastRunText: string;
