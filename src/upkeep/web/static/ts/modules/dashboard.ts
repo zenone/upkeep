@@ -26,6 +26,39 @@ export const previousMetrics: PreviousMetrics = {
 export let currentUsername: string | null = null;
 
 // ============================================================================
+// Retry Utility
+// ============================================================================
+
+/**
+ * Fetch with automatic retry on failure
+ * @param url - URL to fetch
+ * @param maxRetries - Maximum number of retry attempts (default: 3)
+ * @param delayMs - Initial delay between retries in ms (default: 1000)
+ * @returns Promise with the fetch response
+ */
+async function fetchWithRetry(url: string, maxRetries = 3, delayMs = 1000): Promise<Response> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return response;
+    } catch (error) {
+      lastError = error as Error;
+      if (attempt < maxRetries) {
+        // Exponential backoff: 1s, 2s, 4s
+        await new Promise(resolve => setTimeout(resolve, delayMs * Math.pow(2, attempt)));
+      }
+    }
+  }
+  
+  throw lastError || new Error('Fetch failed after retries');
+}
+
+// ============================================================================
 // System Metrics & Health
 // ============================================================================
 
@@ -34,7 +67,7 @@ export let currentUsername: string | null = null;
  */
 export async function loadSystemInfo(): Promise<void> {
   try {
-    const response = await fetch('/api/system/info');
+    const response = await fetchWithRetry('/api/system/info');
     const data: SystemInfoData = await response.json();
 
     // Store username globally for use in path buttons
@@ -386,7 +419,7 @@ export async function loadHealthScore(): Promise<void> {
   if (!healthDiv) return;
 
   try {
-    const response = await fetch('/api/system/health');
+    const response = await fetchWithRetry('/api/system/health');
     const data = await response.json();
 
     // Generate SVG gauge
@@ -435,7 +468,7 @@ export async function loadTopProcesses(): Promise<void> {
   if (!processesDiv) return;
 
   try {
-    const response = await fetch('/api/system/processes?limit=3');
+    const response = await fetchWithRetry('/api/system/processes?limit=3');
     const data = await response.json();
 
     let html = '<div class="process-section">';
