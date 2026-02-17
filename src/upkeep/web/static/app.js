@@ -810,12 +810,32 @@ You can recover them from macOS Trash if needed.`,console.log("Showing confirmat
                 
                 /* Treemap styles */
                 .treemap-cell {
-                    cursor: pointer;
-                    transition: opacity 0.2s;
+                    transition: opacity 0.2s, stroke-width 0.2s;
                 }
                 
-                .treemap-cell:hover {
+                .treemap-cell.drillable {
+                    cursor: pointer;
+                }
+                
+                .treemap-cell.drillable:hover {
                     opacity: 0.85;
+                    stroke-width: 2px;
+                    stroke: rgba(255,255,255,0.8);
+                }
+                
+                .treemap-cell.leaf {
+                    cursor: default;
+                    opacity: 0.75;
+                }
+                
+                .treemap-cell.leaf:hover {
+                    opacity: 0.85;
+                }
+                
+                .treemap-folder-icon {
+                    pointer-events: none;
+                    font-size: 10px;
+                    fill: rgba(255,255,255,0.9);
                 }
                 
                 .treemap-label {
@@ -855,13 +875,14 @@ You can recover them from macOS Trash if needed.`,console.log("Showing confirmat
                 <h3>Scan Error</h3>
                 <p>${t}</p>
             </div>
-        `,h(t,"error")}renderTreemap(t){let n=this.container.querySelector("#disk-viz-chart");n.innerHTML="";let r=n.getBoundingClientRect();this.width=r.width||800,this.height=Math.max(500,r.height);let o=Xt(n).append("svg").attr("width",this.width).attr("height",this.height).attr("viewBox",`0 0 ${this.width} ${this.height}`).style("font-family","-apple-system, BlinkMacSystemFont, sans-serif"),s=de(t).sum(l=>l.children?0:l.value).sort((l,f)=>(f.value||0)-(l.value||0)),a=ln().size([this.width,this.height]).paddingOuter(3).paddingInner(2).paddingTop(20).round(!0)(s),c=Be().domain(["Applications","Users","Library","System","private","opt","usr","var","other"]).range(["#FF6B6B","#4ECDC4","#45B7D1","#96CEB4","#FFEAA7","#DDA0DD","#98D8C8","#F7DC6F","#B8B8B8"]),p=l=>{let f=l;for(;f&&f.depth>1;)f=f.parent;let m=f?.data.name||"other";return c(m)},d=a.descendants(),u=o.selectAll("g").data(d.filter(l=>l.depth>0)).join("g").attr("transform",l=>`translate(${l.x0},${l.y0})`);u.append("rect").attr("class","treemap-cell").attr("width",l=>Math.max(0,l.x1-l.x0)).attr("height",l=>Math.max(0,l.y1-l.y0)).attr("fill",l=>p(l)).attr("stroke","var(--bg-secondary)").attr("stroke-width",1).on("click",(l,f)=>this.handleCellClick(f)).on("mouseover",(l,f)=>this.showDetails(f)).on("mouseout",()=>this.hideDetails()).append("title").text(l=>`${l.data.path}
+        `,h(t,"error")}renderTreemap(t){let n=this.container.querySelector("#disk-viz-chart");n.innerHTML="";let r=n.getBoundingClientRect();this.width=r.width||800,this.height=Math.max(500,r.height);let o=Xt(n).append("svg").attr("width",this.width).attr("height",this.height).attr("viewBox",`0 0 ${this.width} ${this.height}`).style("font-family","-apple-system, BlinkMacSystemFont, sans-serif"),s=de(t).sum(l=>l.children?0:l.value).sort((l,f)=>(f.value||0)-(l.value||0)),a=ln().size([this.width,this.height]).paddingOuter(3).paddingInner(2).paddingTop(20).round(!0)(s),c=Be().domain(["Applications","Users","Library","System","private","opt","usr","var","other"]).range(["#FF6B6B","#4ECDC4","#45B7D1","#96CEB4","#FFEAA7","#DDA0DD","#98D8C8","#F7DC6F","#B8B8B8"]),p=l=>{let f=l;for(;f&&f.depth>1;)f=f.parent;let m=f?.data.name||"other";return c(m)},d=a.descendants(),u=o.selectAll("g").data(d.filter(l=>l.depth>0)).join("g").attr("transform",l=>`translate(${l.x0},${l.y0})`);u.append("rect").attr("class",l=>`treemap-cell ${l.children?"drillable":"leaf"}`).attr("width",l=>Math.max(0,l.x1-l.x0)).attr("height",l=>Math.max(0,l.y1-l.y0)).attr("fill",l=>p(l)).attr("stroke","var(--bg-secondary)").attr("stroke-width",1).on("click",(l,f)=>this.handleCellClick(f)).on("mouseover",(l,f)=>this.showDetails(f)).on("mouseout",()=>this.hideDetails()).append("title").text(l=>{let f=l.children?`
+\u{1F5B1}\uFE0F Click to explore`:"";return`${l.data.path}
 ${l.data.sizeFormatted||"N/A"}
-${(l.data.percentage||0).toFixed(1)}%`),u.filter(l=>l.x1-l.x0>60&&l.y1-l.y0>30).append("text").attr("class","treemap-label").attr("x",4).attr("y",14).text(l=>this.truncateLabel(l.data.name,l.x1-l.x0-8)),u.filter(l=>l.x1-l.x0>50&&l.y1-l.y0>45).append("text").attr("class","treemap-size").attr("x",4).attr("y",26).text(l=>l.data.sizeFormatted||""),this.renderLegend(c)}truncateLabel(t,n){let o=Math.floor(n/7);return t.length<=o?t:t.slice(0,o-2)+"\u2026"}handleCellClick(t){if(t.children&&t.data.path){this.pathHistory.push(this.currentPath),this.currentPath=t.data.path;let n=this.container.querySelector("#disk-viz-path");n.value=t.data.path;let r=this.container.querySelector("#disk-viz-back");r.disabled=!1,this.scan()}}showDetails(t){let n=this.container.querySelector("#disk-viz-details"),r=this.container.querySelector("#disk-viz-selected-info");n.style.display="block",r.innerHTML=`
+${(l.data.percentage||0).toFixed(1)}%${f}`}),u.filter(l=>l.x1-l.x0>60&&l.y1-l.y0>30).append("text").attr("class","treemap-label").attr("x",4).attr("y",14).text(l=>this.truncateLabel(l.data.name,l.x1-l.x0-8)),u.filter(l=>l.x1-l.x0>50&&l.y1-l.y0>45).append("text").attr("class","treemap-size").attr("x",4).attr("y",26).text(l=>l.data.sizeFormatted||""),u.filter(l=>l.children&&l.x1-l.x0>40&&l.y1-l.y0>25).append("text").attr("class","treemap-folder-icon").attr("x",l=>l.x1-l.x0-14).attr("y",12).text("\u{1F4C1}"),this.renderLegend(c)}truncateLabel(t,n){let o=Math.floor(n/7);return t.length<=o?t:t.slice(0,o-2)+"\u2026"}handleCellClick(t){if(t.children&&t.data.path){this.pathHistory.push(this.currentPath),this.currentPath=t.data.path;let n=this.container.querySelector("#disk-viz-path");n.value=t.data.path;let r=this.container.querySelector("#disk-viz-back");r.disabled=!1,this.scan()}}showDetails(t){let n=this.container.querySelector("#disk-viz-details"),r=this.container.querySelector("#disk-viz-selected-info"),o=t.children?'<br><span style="color: var(--accent-color)">\u{1F4C1} Click to explore contents</span>':'<br><span style="color: var(--text-secondary)">\u{1F4C4} File (no contents to explore)</span>';n.style.display="block",r.innerHTML=`
             <strong>${t.data.name}</strong><br>
             Path: ${t.data.path}<br>
             Size: ${t.data.sizeFormatted||"N/A"}<br>
-            Percent: ${(t.data.percentage||0).toFixed(2)}% of parent
+            Percent: ${(t.data.percentage||0).toFixed(2)}% of parent${o}
         `}hideDetails(){let t=this.container.querySelector("#disk-viz-details");t.style.display="none"}renderLegend(t){let n=this.container.querySelector("#disk-viz-legend"),r=t.domain();n.innerHTML=r.map(o=>`
             <div class="disk-viz-legend-item">
                 <div class="disk-viz-legend-color" style="background: ${t(o)}"></div>

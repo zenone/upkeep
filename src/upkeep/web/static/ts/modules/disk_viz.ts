@@ -342,12 +342,32 @@ export class DiskVisualizer {
                 
                 /* Treemap styles */
                 .treemap-cell {
-                    cursor: pointer;
-                    transition: opacity 0.2s;
+                    transition: opacity 0.2s, stroke-width 0.2s;
                 }
                 
-                .treemap-cell:hover {
+                .treemap-cell.drillable {
+                    cursor: pointer;
+                }
+                
+                .treemap-cell.drillable:hover {
                     opacity: 0.85;
+                    stroke-width: 2px;
+                    stroke: rgba(255,255,255,0.8);
+                }
+                
+                .treemap-cell.leaf {
+                    cursor: default;
+                    opacity: 0.75;
+                }
+                
+                .treemap-cell.leaf:hover {
+                    opacity: 0.85;
+                }
+                
+                .treemap-folder-icon {
+                    pointer-events: none;
+                    font-size: 10px;
+                    fill: rgba(255,255,255,0.9);
                 }
                 
                 .treemap-label {
@@ -713,7 +733,7 @@ export class DiskVisualizer {
         
         // Rectangles
         cell.append('rect')
-            .attr('class', 'treemap-cell')
+            .attr('class', d => `treemap-cell ${d.children ? 'drillable' : 'leaf'}`)
             .attr('width', d => Math.max(0, d.x1 - d.x0))
             .attr('height', d => Math.max(0, d.y1 - d.y0))
             .attr('fill', d => getColor(d))
@@ -723,7 +743,10 @@ export class DiskVisualizer {
             .on('mouseover', (event, d) => this.showDetails(d))
             .on('mouseout', () => this.hideDetails())
             .append('title')
-            .text(d => `${d.data.path}\n${d.data.sizeFormatted || 'N/A'}\n${(d.data.percentage || 0).toFixed(1)}%`);
+            .text(d => {
+                const clickHint = d.children ? '\n🖱️ Click to explore' : '';
+                return `${d.data.path}\n${d.data.sizeFormatted || 'N/A'}\n${(d.data.percentage || 0).toFixed(1)}%${clickHint}`;
+            });
         
         // Labels (only for cells large enough)
         cell.filter(d => (d.x1 - d.x0) > 60 && (d.y1 - d.y0) > 30)
@@ -740,6 +763,14 @@ export class DiskVisualizer {
             .attr('x', 4)
             .attr('y', 26)
             .text(d => d.data.sizeFormatted || '');
+        
+        // Folder icon for drillable cells (show in top-right corner)
+        cell.filter(d => d.children && (d.x1 - d.x0) > 40 && (d.y1 - d.y0) > 25)
+            .append('text')
+            .attr('class', 'treemap-folder-icon')
+            .attr('x', d => (d.x1 - d.x0) - 14)
+            .attr('y', 12)
+            .text('📁');
         
         // Update legend
         this.renderLegend(colorScale);
@@ -769,16 +800,20 @@ export class DiskVisualizer {
         }
     }
 
-    private showDetails(d: { data: DiskNode }) {
+    private showDetails(d: { data: DiskNode; children?: unknown }) {
         const detailsEl = this.container.querySelector('#disk-viz-details') as HTMLElement;
         const infoEl = this.container.querySelector('#disk-viz-selected-info') as HTMLElement;
+        
+        const drillHint = d.children 
+            ? '<br><span style="color: var(--accent-color)">📁 Click to explore contents</span>'
+            : '<br><span style="color: var(--text-secondary)">📄 File (no contents to explore)</span>';
         
         detailsEl.style.display = 'block';
         infoEl.innerHTML = `
             <strong>${d.data.name}</strong><br>
             Path: ${d.data.path}<br>
             Size: ${d.data.sizeFormatted || 'N/A'}<br>
-            Percent: ${(d.data.percentage || 0).toFixed(2)}% of parent
+            Percent: ${(d.data.percentage || 0).toFixed(2)}% of parent${drillHint}
         `;
     }
 
