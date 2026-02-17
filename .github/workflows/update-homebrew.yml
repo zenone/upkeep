@@ -1,0 +1,53 @@
+name: Update Homebrew Formula
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags like v3.1.1, v3.2.0, etc.
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Download release and calculate SHA256
+        id: sha
+        run: |
+          curl -sL "https://github.com/${{ github.repository }}/archive/refs/tags/${{ steps.version.outputs.VERSION }}.tar.gz" -o release.tar.gz
+          SHA256=$(shasum -a 256 release.tar.gz | cut -d ' ' -f 1)
+          echo "SHA256=$SHA256" >> $GITHUB_OUTPUT
+
+      - name: Checkout homebrew-tap
+        uses: actions/checkout@v4
+        with:
+          repository: zenone/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Update formula
+        run: |
+          cd homebrew-tap
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          VERSION_NUM="${VERSION#v}"  # Remove 'v' prefix for version number
+          SHA256="${{ steps.sha.outputs.SHA256 }}"
+          
+          # Update version in formula
+          sed -i "s|url \"https://github.com/zenone/upkeep/archive/refs/tags/v[^\"]*\.tar\.gz\"|url \"https://github.com/zenone/upkeep/archive/refs/tags/${VERSION}.tar.gz\"|" Formula/upkeep.rb
+          
+          # Update SHA256 in formula
+          sed -i "s|sha256 \"[a-f0-9]*\"|sha256 \"${SHA256}\"|" Formula/upkeep.rb
+          
+          echo "Updated formula to $VERSION with SHA256: $SHA256"
+          cat Formula/upkeep.rb | grep -E "(url|sha256)"
+
+      - name: Commit and push
+        run: |
+          cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/upkeep.rb
+          git commit -m "Update upkeep to ${{ steps.version.outputs.VERSION }}" || echo "No changes to commit"
+          git push
