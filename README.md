@@ -3,7 +3,7 @@
 **Your Mac's Personal Health Coach** – Keep your macOS system running smoothly without the snake oil.
 
 [![macOS](https://img.shields.io/badge/macOS-Sequoia%20%7C%20Sonoma%20%7C%20Ventura-blue.svg)](https://www.apple.com/macos/)
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-189%20passing-brightgreen.svg)](tests/)
 [![Operations](https://img.shields.io/badge/operations-44-blue.svg)](docs/ROADMAP.md)
@@ -102,7 +102,7 @@ pip install -e .
 
 Opens **http://localhost:8080** in your browser.
 
-### Option 2: Quick Status Check (One Command)
+### Option 3: Quick Status Check (One Command)
 
 Just want to know if your Mac is okay?
 
@@ -112,7 +112,7 @@ Just want to know if your Mac is okay?
 
 Health dashboard in seconds. No changes, just information.
 
-### Option 3: The "I'm Feeling Lucky" Button
+### Option 4: The "I'm Feeling Lucky" Button
 
 Run safe maintenance operations that almost everyone should do regularly:
 
@@ -390,7 +390,7 @@ Perfect for scheduled maintenance or remote systems:
 - Terminal app with Full Disk Access permission
 
 **Optional (for web dashboard and storage analyzer):**
-- Python 3.10 or newer
+- Python 3.9 or newer (macOS system Python works)
 - 5 minutes for setup
 
 ### Step 1: Get the Script
@@ -826,9 +826,9 @@ MIT License – see [LICENSE](LICENSE) file for details.
 
 ## 🚦 Status & Roadmap
 
-**Current Version:** 3.2.2
+**Current Version:** 3.2.8
 
-**What's New in 3.2:**
+**Recent Updates (3.2.x):**
 - 🍺 **Homebrew distribution** – `brew install zenone/tap/upkeep`
 - 📊 **Disk Visualization** – Interactive treemap showing disk usage by category
 - 🔍 **Duplicate Finder** – Find and remove duplicate files to reclaim space
