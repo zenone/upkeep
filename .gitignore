@@ -120,3 +120,7 @@ uv.lock
 !check_types.sh
 !run_tests.sh
 !find_port.py
+
+# Audit gates track alongside code — must version with commits
+!.local/
+!.local/AUDIT-GATES.md
